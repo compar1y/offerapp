@@ -12,7 +12,7 @@ import {
   useStore,
   type OfferSource,
 } from '../lib/store'
-import { Layout } from '../components/ui'
+import { Layout, Picture } from '../components/ui'
 
 const OFFERABLE: ProductId[] = ['bump', 'upsell', 'downsell']
 const MODULE_OF: Record<string, string> = { bump: 'bonus', upsell: 'guia', downsell: 'essencial' }
@@ -49,6 +49,7 @@ export function Offer() {
   return (
     <Layout title="Oferta" back="/">
       <article className="offer">
+        <Picture id={copy.image} className="hero" />
         <span className="offer-kicker">{id === 'downsell' ? 'Condição especial' : 'Para você que já é cliente'}</span>
         <h1>{copy.headline}</h1>
         <p className="lead">{copy.intro}</p>
@@ -89,7 +90,7 @@ export function Payment() {
     return (
       <Layout title="Pagamento" back="/">
         <div className="card center">
-          <span className="big-icon">🎉</span>
+          <Picture id="pagamento-ok" className="hero" />
           <h1>Pagamento confirmado!</h1>
           <p>
             O <strong>{p.name}</strong> já está liberado.

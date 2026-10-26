@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { RECIPES } from '../data/content'
 import { guideOffer, toggleDone, track, useStore } from '../lib/store'
-import { Layout, OfferCta } from '../components/ui'
+import { Layout, OfferCta, Picture } from '../components/ui'
 
 export function Recipe() {
   const { id } = useParams()
@@ -20,6 +20,7 @@ export function Recipe() {
   return (
     <Layout title="Receita" back="/">
       <article className="recipe">
+        <Picture id={recipe.image} className="hero" />
         <h1>{recipe.title}</h1>
         <p className="lead">{recipe.summary}</p>
         <div className="meta">

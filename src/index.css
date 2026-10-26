@@ -567,3 +567,116 @@ input {
   text-decoration: none;
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.2);
 }
+
+/* blocos de imagem */
+.picture {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background: var(--gold-soft);
+}
+
+.picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.picture-empty {
+  position: absolute;
+  inset: 8px;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  text-align: center;
+  padding: 8px;
+  border: 2px dashed var(--gold);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.picture-empty span {
+  font-size: 1.6rem;
+}
+
+.picture-empty strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.picture-empty small {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+}
+
+.picture-lock {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brand);
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+}
+
+.hero {
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+}
+
+.access .hero {
+  margin-top: 8px;
+}
+
+.cards {
+  display: grid;
+  gap: 14px;
+}
+
+.card-link {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  text-decoration: none;
+}
+
+.card-locked .picture {
+  filter: saturate(0.6);
+}
+
+.card-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.pill {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pill-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.cta-picture {
+  border-radius: 12px;
+  margin-bottom: 8px;
+  aspect-ratio: 16 / 9 !important;
+}

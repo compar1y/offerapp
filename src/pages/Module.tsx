@@ -1,7 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { MODULES } from '../data/content'
 import { owns, ownsGuide, useStore, type State } from '../lib/store'
-import { Layout } from '../components/ui'
+import { Layout, Picture } from '../components/ui'
 
 function canOpen(s: State, moduleId: string): boolean {
   if (moduleId === 'bonus') return owns(s, 'bump')
@@ -19,16 +19,20 @@ export function Module() {
 
   return (
     <Layout title={m.title} back="/">
+      <Picture id={m.mockup} className="hero" />
       <h1>{m.title}</h1>
       <p className="lead">{m.subtitle}</p>
-      <div className="list">
+      <div className="cards">
         {m.lessons.map((l, i) => (
-          <Link key={l.id} to={`/modulo/${m.id}/${l.id}`} className="tile">
-            <span className="num">{i + 1}</span>
-            <span className="tile-body">
-              <strong>{l.title}</strong>
+          <Link key={l.id} to={`/modulo/${m.id}/${l.id}`} className="card-link">
+            <Picture id={l.image} />
+            <span className="card-info">
+              <span className="num">{i + 1}</span>
+              <span className="tile-body">
+                <strong>{l.title}</strong>
+              </span>
+              <span className="chev">›</span>
             </span>
-            <span className="chev">›</span>
           </Link>
         ))}
       </div>
@@ -47,6 +51,7 @@ export function Lesson() {
   return (
     <Layout title={m.title} back={`/modulo/${m.id}`}>
       <article className="recipe">
+        <Picture id={lesson.image} className="hero" />
         <h1>{lesson.title}</h1>
         {lesson.body.map((p) => (
           <p key={p}>{p}</p>

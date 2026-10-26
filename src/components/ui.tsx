@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CONFIG, PRODUCTS, brl, type ProductId } from '../data/config'
 import { OFFER } from '../data/content'
+import { IMAGES, type ImageId } from '../data/images'
 import { track, type OfferSource } from '../lib/store'
 
 export function Layout({ title, back, children }: { title?: string; back?: string; children: ReactNode }) {
@@ -25,6 +26,29 @@ export function Layout({ title, back, children }: { title?: string; back?: strin
       </header>
       <main className="content">{children}</main>
       <SupportButton />
+    </div>
+  )
+}
+
+// bloco de imagem: mostra a imagem quando existe, senão um espaço marcado com o que falta
+export function Picture({ id, locked, className }: { id: ImageId; locked?: boolean; className?: string }) {
+  const img = IMAGES[id]
+  return (
+    <div className={`picture ${className ?? ''}`} style={{ aspectRatio: img.ratio }}>
+      {img.src ? (
+        <img src={img.src} alt={img.label} loading="lazy" />
+      ) : (
+        <div className="picture-empty">
+          <span aria-hidden>🖼</span>
+          <strong>{img.label}</strong>
+          <small>{id}</small>
+        </div>
+      )}
+      {locked && (
+        <span className="picture-lock" aria-label="Bloqueado">
+          🔒
+        </span>
+      )}
     </div>
   )
 }
@@ -74,6 +98,7 @@ export function OfferCta({
   const copy = product === 'bump' ? OFFER.bump : product === 'downsell' ? OFFER.downsell : OFFER.upsell
   return (
     <Link to={`/oferta/${product}?de=${source}`} className={compact ? 'cta cta-compact' : 'cta'}>
+      <Picture id={copy.image} className="cta-picture" />
       <span className="cta-kicker">Próximo passo</span>
       <span className="cta-text">{text ?? copy.headline}</span>
       <span className="cta-action">

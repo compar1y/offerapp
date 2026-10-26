@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { CONFIG } from '../data/config'
 import { finishWelcome, track } from '../lib/store'
+import { Picture } from '../components/ui'
 
 function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent)
@@ -17,13 +18,10 @@ export function Welcome() {
 
   return (
     <div className="page access">
+      <Picture id="boas-vindas" className="hero" />
       <div className="access-hero">
         <h1>Boas-vindas à {CONFIG.brand}!</h1>
         <p>Aqui ficam suas receitas, seus bônus e tudo que você comprar depois.</p>
-      </div>
-      <div className="video-placeholder" role="img" aria-label="Vídeo de boas-vindas">
-        <span>▶</span>
-        <small>Vídeo de boas-vindas (1 min)</small>
       </div>
       <div className="card">
         <h2>Deixe o app na tela do celular</h2>

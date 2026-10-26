@@ -20,3 +20,7 @@ Falta ligar: login por código no e-mail (Supabase), webhook de pagamento da Wia
 - `src/data/config.ts`: produtos, preços, links de checkout, WhatsApp de suporte
 - `src/data/content.ts`: receitas, módulos e textos das ofertas
 - `src/lib/store.ts`: acesso, compras, progresso e eventos; é a peça trocada pelo servidor na integração
+
+## Imagens
+
+Os blocos tracejados são imagens que faltam. A lista com o que cada uma mostra, o tamanho e onde aparece está em [IMAGENS.md](IMAGENS.md). O arquivo vai em `public/img/` e o caminho em `src/data/images.ts`.

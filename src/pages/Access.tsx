@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CONFIG } from '../data/config'
 import { DEMO_CODE, requestCode, useStore, verifyCode } from '../lib/store'
-import { SupportButton } from '../components/ui'
+import { Picture, SupportButton } from '../components/ui'
 
 export function Login() {
   const navigate = useNavigate()
@@ -18,10 +18,8 @@ export function Login() {
 
   return (
     <div className="page access">
+      <Picture id="login-hero" className="hero" />
       <div className="access-hero">
-        <span className="access-icon" aria-hidden>
-          🎄
-        </span>
         <h1>{CONFIG.brand}</h1>
         <p>Entre com o e-mail que você usou na compra.</p>
       </div>

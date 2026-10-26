@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { PRODUCTS, brl } from '../data/config'
 import { MODULES, RECIPES } from '../data/content'
 import { guideOffer, owns, ownsGuide, pendingOrder, useStore } from '../lib/store'
-import { Layout, OfferCta, Progress } from '../components/ui'
+import { Layout, OfferCta, Picture, Progress } from '../components/ui'
 
 export function Home() {
   const s = useStore()
@@ -15,6 +15,7 @@ export function Home() {
   return (
     <Layout>
       <section className="hello">
+        <Picture id="inicio-hero" className="hero" />
         <h1>Olá! O que vamos assar hoje?</h1>
         <Progress done={done} total={RECIPES.length} />
       </section>
@@ -27,19 +28,21 @@ export function Home() {
 
       <section>
         <h2 className="section-title">Receitas</h2>
-        <div className="list">
+        <div className="cards">
           {RECIPES.map((r) => (
-            <Link key={r.id} to={`/receita/${r.id}`} className="tile">
-              <span className={s.done[r.id] ? 'check check-on' : 'check'} aria-hidden>
-                {s.done[r.id] ? '✓' : ''}
+            <Link key={r.id} to={`/receita/${r.id}`} className="card-link">
+              <Picture id={r.image} />
+              <span className="card-info">
+                <span className="tile-body">
+                  <strong>{r.title}</strong>
+                  <small>
+                    {r.time} · {r.yield}
+                  </small>
+                </span>
+                <span className={s.done[r.id] ? 'check check-on' : 'check'} aria-label={s.done[r.id] ? 'Feita' : 'Não feita'}>
+                  {s.done[r.id] ? '✓' : ''}
+                </span>
               </span>
-              <span className="tile-body">
-                <strong>{r.title}</strong>
-                <small>
-                  {r.time} · {r.yield}
-                </small>
-              </span>
-              <span className="chev">›</span>
             </Link>
           ))}
         </div>
@@ -47,7 +50,7 @@ export function Home() {
 
       <section>
         <h2 className="section-title">Seus materiais</h2>
-        <div className="list">
+        <div className="cards">
           <ModuleTile id="bonus" unlocked={hasBump} lockTo="/oferta/bump?de=cadeado" />
           {guide === 'essential' ? (
             <ModuleTile id="essencial" unlocked />
@@ -73,15 +76,19 @@ export function Home() {
 function ModuleTile({ id, unlocked, lockTo }: { id: string; unlocked: boolean; lockTo?: string }) {
   const m = MODULES.find((x) => x.id === id)!
   return (
-    <Link to={unlocked ? `/modulo/${m.id}` : lockTo!} className={unlocked ? 'tile' : 'tile tile-locked'}>
-      <span className="lock" aria-hidden>
-        {unlocked ? '📖' : '🔒'}
+    <Link to={unlocked ? `/modulo/${m.id}` : lockTo!} className={unlocked ? 'card-link' : 'card-link card-locked'}>
+      <Picture id={m.mockup} locked={!unlocked} />
+      <span className="card-info">
+        <span className="tile-body">
+          <strong>{m.title}</strong>
+          <small>{m.subtitle}</small>
+        </span>
+        {unlocked ? (
+          <span className="pill pill-ok">Liberado</span>
+        ) : (
+          <span className="pill">Desbloquear · {brl(PRODUCTS[m.product].price)}</span>
+        )}
       </span>
-      <span className="tile-body">
-        <strong>{m.title}</strong>
-        <small>{unlocked ? m.subtitle : `${m.subtitle} · ${brl(PRODUCTS[m.product].price)}`}</small>
-      </span>
-      <span className="chev">›</span>
     </Link>
   )
 }
