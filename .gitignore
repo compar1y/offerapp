@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# NUNCA versionar: PDFs pagos, segredos e dados locais
+.env
+.env.*
+!.env.example
+.vercel
+.data/
+private-files/
+pdfs-app/
+*.pdf
+!public/demo/amostra-modo-demonstracao.pdf
+dist*

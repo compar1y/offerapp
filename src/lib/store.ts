@@ -1,70 +1,54 @@
-// Estado da cliente. Hoje vive no navegador (modo demonstração).
-// Na integração, compras e pedidos passam a vir do servidor (Supabase + webhook da Wiapy);
-// as telas só falam com as funções exportadas aqui.
+// Estado da tela. Fala com o AccessProvider (demo ou servidor); guarda no aparelho só o que é da interface
+// (boas-vindas feitas, materiais vistos, "fiz essa", ofertas dispensadas). Eventos também vão ao servidor, sem bloquear a tela.
 
 import { useSyncExternalStore } from 'react'
-import { PRODUCTS, type ProductId } from '../data/config'
-
-export type OrderStatus = 'pending' | 'paid' | 'refunded'
-
-export interface Order {
-  id: string
-  product: ProductId
-  status: OrderStatus
-  createdAt: number
-}
-
-export type OfferSource = 'obrigado' | 'receita' | 'banner' | 'cadeado' | 'inicio'
-
-export interface TrackedEvent {
-  name: string
-  at: number
-  props?: Record<string, string>
-}
+import { provider, getDemoFlags, setDemoFlags, type OpenFileResult } from './access'
+import { ITEM_BY_ID, findFile, type ItemId, type MeResponse, type OfferId } from '../../shared/catalog'
 
 export interface State {
-  email: string | null
+  ready: boolean
+  session: MeResponse | null
   pendingEmail: string | null
   welcomed: boolean
-  orders: Order[]
-  done: Record<string, boolean>
-  upsellRefused: boolean
-  downsellRefused: boolean
-  events: TrackedEvent[]
+  seen: Partial<Record<ItemId, boolean>>
+  // "Fiz essa": receitas/bônus que a cliente marcou
+  done: Partial<Record<ItemId, boolean>>
+  // ofertas que a cliente dispensou com "Agora não"
+  dismissed: Partial<Record<OfferId, boolean>>
+  // ofertas em que a cliente já disse ter interesse (oferta sazonal sem checkout)
+  interested: Partial<Record<OfferId, boolean>>
+  demoBump: boolean
+  demoOffers: boolean
 }
 
-const KEY = 'offerapp:v1'
+const UI_KEY = 'panetone-app:v2'
 
-const initial: State = {
-  email: null,
-  pendingEmail: null,
-  welcomed: false,
-  orders: [],
-  done: {},
-  upsellRefused: false,
-  downsellRefused: false,
-  events: [],
-}
+type UiState = Pick<State, 'welcomed' | 'seen' | 'done' | 'dismissed' | 'interested'>
+const UI_EMPTY: UiState = { welcomed: false, seen: {}, done: {}, dismissed: {}, interested: {} }
 
-function load(): State {
+function loadUi(): UiState {
   try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? { ...initial, ...JSON.parse(raw) } : initial
+    const raw = localStorage.getItem(UI_KEY)
+    if (raw) return { ...UI_EMPTY, ...JSON.parse(raw) }
   } catch {
-    return initial
+    /* nada */
+  }
+  return UI_EMPTY
+}
+
+function saveUi() {
+  try {
+    localStorage.setItem(UI_KEY, JSON.stringify({ welcomed: state.welcomed, seen: state.seen, done: state.done, dismissed: state.dismissed, interested: state.interested }))
+  } catch {
+    /* segue em memória */
   }
 }
 
-let state: State = load()
+let state: State = { ready: false, session: null, pendingEmail: null, demoBump: getDemoFlags().bump, demoOffers: getDemoFlags().offers, ...loadUi() }
 const listeners = new Set<() => void>()
 
 function set(patch: Partial<State>) {
   state = { ...state, ...patch }
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state))
-  } catch {
-    // sem armazenamento (aba anônima): segue só em memória
-  }
   listeners.forEach((l) => l())
 }
 
@@ -78,99 +62,121 @@ export function useStore(): State {
   )
 }
 
-export function track(name: string, props?: Record<string, string>) {
-  set({ events: [...state.events, { name, at: Date.now(), props }].slice(-500) })
+export async function init() {
+  const session = await provider.getSession()
+  set({ session, ready: true })
 }
 
-// ---------- acesso ----------
-
-export const DEMO_CODE = '123456'
-
-export function requestCode(email: string) {
-  set({ pendingEmail: email.trim().toLowerCase() })
-  track('codigo_pedido')
+export async function requestCode(email: string) {
+  const r = await provider.requestCode(email)
+  if (r.ok) set({ pendingEmail: email.trim().toLowerCase() })
+  return r
 }
 
-export function verifyCode(code: string): boolean {
-  if (!state.pendingEmail || code.trim() !== DEMO_CODE) return false
-  const orders = state.orders.length
-    ? state.orders
-    : [{ id: newId(), product: 'front' as ProductId, status: 'paid' as OrderStatus, createdAt: Date.now() }]
-  set({ email: state.pendingEmail, pendingEmail: null, orders })
-  track('entrou')
-  return true
+export async function verifyCode(code: string) {
+  if (!state.pendingEmail) return { ok: false, error: 'Peça o código de novo.' }
+  const r = await provider.verifyCode(state.pendingEmail, code)
+  if (r.ok) {
+    const session = await provider.getSession()
+    set({ session, pendingEmail: null })
+  }
+  return r
 }
 
-export function logout() {
-  set({ email: null, pendingEmail: null })
+export async function logout() {
+  await provider.logout()
+  set({ session: null, pendingEmail: null })
 }
 
 export function finishWelcome() {
-  set({ welcomed: true })
+  state = { ...state, welcomed: true }
+  saveUi()
+  set({})
 }
 
-// ---------- compras ----------
-
-export function owns(s: State, product: ProductId): boolean {
-  return s.orders.some((o) => o.product === product && o.status === 'paid')
+export function cancelPending() {
+  set({ pendingEmail: null })
 }
 
-// o downsell libera o mesmo guia em versão enxuta; o upsell cobre tudo
-export function ownsGuide(s: State): 'full' | 'essential' | null {
-  if (owns(s, 'upsell')) return 'full'
-  if (owns(s, 'downsell')) return 'essential'
-  return null
+export function toggleSeen(id: ItemId) {
+  state = { ...state, seen: { ...state.seen, [id]: !state.seen[id] } }
+  saveUi()
+  set({})
 }
 
-// qual oferta do guia mostrar agora: upsell, depois downsell, depois volta ao upsell
-export function guideOffer(s: State): 'upsell' | 'downsell' | null {
-  if (ownsGuide(s)) return null
-  if (s.upsellRefused && !s.downsellRefused) return 'downsell'
-  return 'upsell'
+// "Fiz essa": marca local + evento no servidor. Libera o rodapé de oferta da página (ver lib/offers.ts).
+export function toggleDone(id: ItemId) {
+  const on = !state.done[id]
+  state = { ...state, done: { ...state.done, [id]: on } }
+  saveUi()
+  set({})
+  void provider.trackEvent(on ? 'item.done' : 'item.undone', { itemId: id }).catch(() => undefined)
 }
 
-export function pendingOrder(s: State, product: ProductId): Order | undefined {
-  return s.orders.find((o) => o.product === product && o.status === 'pending')
+// "Agora não": guarda local + evento. É o que libera o downsell (requiresDismissed).
+export function dismissOffer(id: OfferId, from: string) {
+  state = { ...state, dismissed: { ...state.dismissed, [id]: true } }
+  saveUi()
+  set({})
+  void provider.trackEvent('offer.dismiss', { offerId: id, from }).catch(() => undefined)
 }
 
-function newId() {
-  return Math.random().toString(36).slice(2, 10)
-}
-
-export function startCheckout(product: ProductId, source: OfferSource): Order {
-  track('checkout_iniciado', { product, source })
-  const existing = pendingOrder(state, product)
-  if (existing) return existing
-  const order: Order = { id: newId(), product, status: 'pending', createdAt: Date.now() }
-  set({ orders: [...state.orders, order] })
-  track('pix_gerado', { product })
-  const url = PRODUCTS[product].checkoutUrl
-  if (url && state.email) {
-    window.open(`${url}${url.includes('?') ? '&' : '?'}email=${encodeURIComponent(state.email)}`, '_blank')
+// clique numa oferta (comprar, abrir card) ou interesse (oferta sazonal sem checkout). Só registra, nunca bloqueia.
+export function trackOffer(name: 'offer.click' | 'offer.interest', id: OfferId, from: string) {
+  if (name === 'offer.interest') {
+    state = { ...state, interested: { ...state.interested, [id]: true } }
+    saveUi()
+    set({})
   }
-  return order
+  void provider.trackEvent(name, { offerId: id, from }).catch(() => undefined)
 }
 
-// na integração isso é feito pelo webhook da Wiapy, nunca pelo navegador
-export function simulatePayment(orderId: string) {
-  const order = state.orders.find((o) => o.id === orderId)
-  set({ orders: state.orders.map((o) => (o.id === orderId ? { ...o, status: 'paid' } : o)) })
-  if (order) track('compra_paga', { product: order.product })
+// só no modo demonstração. Ligar/desligar as ofertas recarrega a página (OFFERS é lida ao iniciar o app).
+export async function changeDemo(patch: Partial<{ bump: boolean; offers: boolean }>) {
+  setDemoFlags(patch)
+  if (patch.offers !== undefined) {
+    window.location.reload()
+    return
+  }
+  const session = await provider.getSession()
+  set({ demoBump: getDemoFlags().bump, session })
 }
 
-export function refuse(product: 'upsell' | 'downsell') {
-  set(product === 'upsell' ? { upsellRefused: true } : { downsellRefused: true })
-  track('oferta_recusada', { product })
+export function owns(s: State, id: ItemId): boolean {
+  return !!s.session?.items.includes(id)
 }
 
-// ---------- progresso ----------
-
-export function toggleDone(recipeId: string) {
-  const done = { ...state.done, [recipeId]: !state.done[recipeId] }
-  set({ done })
-  if (done[recipeId]) track('receita_feita', { recipe: recipeId })
+// abre ou baixa um arquivo. A janela é aberta antes do pedido ao servidor para o navegador do celular não bloquear.
+export async function openFile(fileKey: string, download: boolean): Promise<OpenFileResult> {
+  const hit = findFile(fileKey)
+  if (!hit || !owns(state, hit.item.id)) return { ok: false, error: 'Este material não está liberado no seu acesso.' }
+  const win = download ? null : window.open('', '_blank')
+  const r = await provider.getFileUrl(fileKey, download)
+  if (!r.ok || !r.url) {
+    win?.close()
+    return r
+  }
+  if (download) {
+    const a = document.createElement('a')
+    a.href = r.url
+    a.download = ''
+    a.rel = 'noopener'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  } else if (win) {
+    win.location.href = r.url
+  } else {
+    window.location.assign(r.url)
+  }
+  return r
 }
 
-export function resetDemo() {
-  set({ ...initial })
+export function sendFeedback(choice: string, text: string) {
+  return provider.sendFeedback(choice, text)
+}
+
+export function progress(s: State): { seen: number; total: number } {
+  const ids = (s.session?.items ?? []).filter((i) => ITEM_BY_ID[i] && ITEM_BY_ID[i].kind !== 'offer')
+  return { seen: ids.filter((i) => s.seen[i]).length, total: ids.length }
 }

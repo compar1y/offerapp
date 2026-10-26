@@ -1,0 +1,216 @@
+// Camada de dados trocável. As telas só falam com AccessProvider (via store.ts).
+//   demo   : tudo no navegador (localStorage), código 123456, seletor de teste só para Fichas de Socorro e ofertas.
+//   server : fetch para /api/* (Vercel Functions em api/), sessão por token assinado.
+
+import { CONFIG } from '../data/config'
+import { itemsFor, type ItemId, type MeResponse, type PlanId, type PurchaseView } from '../../shared/catalog'
+
+export type AppEventName = 'offer.click' | 'offer.dismiss' | 'offer.interest' | 'item.done' | 'item.undone'
+
+export interface Result {
+  ok: boolean
+  error?: string
+}
+
+export interface OpenFileResult extends Result {
+  url?: string
+}
+
+export interface AccessProvider {
+  readonly mode: 'demo' | 'server'
+  requestCode(email: string): Promise<Result>
+  verifyCode(email: string, code: string): Promise<Result>
+  // null = sem sessão
+  getSession(): Promise<MeResponse | null>
+  logout(): Promise<void>
+  // "qual sua maior dificuldade agora?" (vai para a tabela de eventos)
+  sendFeedback(choice: string, text: string): Promise<Result>
+  // eventos simples para medir interesse (clique em oferta, "agora não", "fiz essa"). Nunca bloqueia a tela.
+  trackEvent(name: AppEventName, props: Record<string, string>): Promise<void>
+  // devolve uma URL temporária para abrir/baixar o arquivo (só se o usuário tem direito)
+  getFileUrl(fileKey: string, download: boolean): Promise<OpenFileResult>
+}
+
+// ------------------------------------------------------------------ demo
+
+export const DEMO_KEY = 'panetone-demo:v2'
+
+// no modo demonstração o cliente sempre tem o kit completo; só se alterna "com Fichas de Socorro" e "ofertas ligadas"
+interface DemoState {
+  email: string | null
+  bump: boolean
+  offers: boolean
+}
+
+function loadDemo(): DemoState {
+  try {
+    const raw = localStorage.getItem(DEMO_KEY)
+    if (raw) {
+      const j = JSON.parse(raw) as Partial<DemoState>
+      return { email: j.email ?? null, bump: !!j.bump, offers: !!j.offers }
+    }
+  } catch {
+    /* sem armazenamento */
+  }
+  return { email: null, bump: false, offers: false }
+}
+
+function saveDemo(s: DemoState) {
+  try {
+    localStorage.setItem(DEMO_KEY, JSON.stringify(s))
+  } catch {
+    /* segue em memória */
+  }
+}
+
+export function getDemoFlags(): { bump: boolean; offers: boolean } {
+  const { bump, offers } = loadDemo()
+  return { bump, offers }
+}
+
+export function setDemoFlags(patch: Partial<{ bump: boolean; offers: boolean }>) {
+  saveDemo({ ...loadDemo(), ...patch })
+}
+
+let demoPending: string | null = null
+
+export const demoProvider: AccessProvider = {
+  mode: 'demo',
+  async requestCode(email) {
+    demoPending = email.trim().toLowerCase()
+    return { ok: true }
+  },
+  async verifyCode(email, code) {
+    if (code.trim() !== CONFIG.demoCode) return { ok: false, error: 'Código errado. Confira e tente de novo.' }
+    saveDemo({ ...loadDemo(), email: (demoPending ?? email).trim().toLowerCase() })
+    return { ok: true }
+  },
+  async getSession() {
+    const s = loadDemo()
+    if (!s.email) return null
+    const plan: PlanId = 'completo'
+    const purchases: PurchaseView[] = [{ orderId: 'demo-1', plan, bump: false, status: 'paid', source: 'manual', createdAt: new Date().toISOString() }]
+    if (s.bump) purchases.push({ orderId: 'demo-2', plan: null, bump: true, status: 'paid', source: 'manual', createdAt: new Date().toISOString() })
+    return { email: s.email, plan, items: itemsFor(plan, s.bump), purchases }
+  },
+  async logout() {
+    saveDemo({ ...loadDemo(), email: null })
+  },
+  async sendFeedback(choice, text) {
+    try {
+      const k = 'panetone-demo-events:v2'
+      const list = JSON.parse(localStorage.getItem(k) ?? '[]') as unknown[]
+      list.push({ name: 'dificuldade', choice, text, at: new Date().toISOString(), source: 'app-demo' })
+      localStorage.setItem(k, JSON.stringify(list.slice(-50)))
+    } catch {
+      /* sem armazenamento */
+    }
+    return { ok: true }
+  },
+  async trackEvent(name, props) {
+    try {
+      const k = 'panetone-demo-events:v2'
+      const list = JSON.parse(localStorage.getItem(k) ?? '[]') as unknown[]
+      list.push({ name, ...props, at: new Date().toISOString(), source: 'app-demo' })
+      localStorage.setItem(k, JSON.stringify(list.slice(-100)))
+    } catch {
+      /* sem armazenamento */
+    }
+  },
+  async getFileUrl(fileKey, download) {
+    // Nunca devolve PDF real. Só uma amostra gerada localmente.
+    void fileKey
+    void download
+    return { ok: true, url: 'demo/amostra-modo-demonstracao.pdf' }
+  },
+}
+
+// ------------------------------------------------------------------ server
+
+const TOKEN_KEY = 'panetone-session:v2'
+
+function token(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+async function api<T>(path: string, init?: RequestInit & { auth?: boolean }): Promise<{ status: number; data: T | null }> {
+  const headers = new Headers(init?.headers)
+  headers.set('content-type', 'application/json')
+  const t = token()
+  if (init?.auth && t) headers.set('authorization', `Bearer ${t}`)
+  try {
+    const res = await fetch(`/api${path}`, { ...init, headers })
+    let data: T | null = null
+    try {
+      data = (await res.json()) as T
+    } catch {
+      data = null
+    }
+    return { status: res.status, data }
+  } catch {
+    return { status: 0, data: null }
+  }
+}
+
+export const serverProvider: AccessProvider = {
+  mode: 'server',
+  async requestCode(email) {
+    const r = await api<{ error?: string }>('/auth/request-code', { method: 'POST', body: JSON.stringify({ email }) })
+    if (r.status === 429) return { ok: false, error: 'Muitas tentativas. Espere alguns minutos e tente de novo.' }
+    if (r.status === 0) return { ok: false, error: 'Sem conexão. Tente de novo.' }
+    return r.status < 300 ? { ok: true } : { ok: false, error: r.data?.error ?? 'Não foi possível enviar o código.' }
+  },
+  async verifyCode(email, code) {
+    const r = await api<{ token?: string; error?: string }>('/auth/verify', { method: 'POST', body: JSON.stringify({ email, code }) })
+    if (r.status < 300 && r.data?.token) {
+      try {
+        localStorage.setItem(TOKEN_KEY, r.data.token)
+      } catch {
+        return { ok: false, error: 'O navegador não deixou guardar o acesso. Saia do modo anônimo.' }
+      }
+      return { ok: true }
+    }
+    return { ok: false, error: r.data?.error ?? 'Código errado ou vencido. Peça um novo.' }
+  },
+  async getSession() {
+    if (!token()) return null
+    const r = await api<MeResponse>('/me', { auth: true })
+    if (r.status === 401) {
+      try {
+        localStorage.removeItem(TOKEN_KEY)
+      } catch {
+        /* nada */
+      }
+      return null
+    }
+    return r.data
+  },
+  async logout() {
+    try {
+      localStorage.removeItem(TOKEN_KEY)
+    } catch {
+      /* nada */
+    }
+  },
+  async sendFeedback(choice, text) {
+    const r = await api<{ error?: string }>('/feedback', { method: 'POST', auth: true, body: JSON.stringify({ choice, text }) })
+    return r.status < 300 ? { ok: true } : { ok: false, error: r.data?.error ?? 'Não foi possível enviar agora. Tente de novo.' }
+  },
+  async trackEvent(name, props) {
+    await api('/event', { method: 'POST', auth: true, body: JSON.stringify({ name, ...props }) })
+  },
+  async getFileUrl(fileKey, download) {
+    const r = await api<{ url?: string; error?: string }>(`/file/${encodeURIComponent(fileKey)}${download ? '?dl=1' : ''}`, { auth: true })
+    if (r.status === 403) return { ok: false, error: 'Este material não está liberado no seu acesso.' }
+    if (r.status === 401) return { ok: false, error: 'Sua sessão venceu. Entre de novo.' }
+    return r.status < 300 && r.data?.url ? { ok: true, url: r.data.url } : { ok: false, error: r.data?.error ?? 'Não foi possível abrir o arquivo.' }
+  },
+}
+
+export const provider: AccessProvider = CONFIG.demo ? demoProvider : serverProvider
+
+export type { ItemId }

@@ -1,94 +1,171 @@
+import { ITEMS, ITEM_BY_ID } from '../../shared/catalog'
+import { PHOTOS, MOCKUPS } from '../data/images'
+import { CONFIG, supportUrl } from '../data/config'
+import { owns, progress, useStore, openFile } from '../lib/store'
+import { DemoBar, Layout, OfferBlock, Picture, ProductCard, ProgressBar } from '../components/ui'
+import { ownedOffers, visibleOffers } from '../lib/offers'
+import { DifficultyForm } from '../components/DifficultyForm'
+import { WelcomeModal } from '../components/WelcomeModal'
 import { Link } from 'react-router-dom'
-import { PRODUCTS, brl } from '../data/config'
-import { MODULES, RECIPES } from '../data/content'
-import { guideOffer, owns, ownsGuide, pendingOrder, useStore } from '../lib/store'
-import { Layout, OfferCta, Picture, Progress } from '../components/ui'
+import { useState } from 'react'
 
 export function Home() {
   const s = useStore()
-  const done = RECIPES.filter((r) => s.done[r.id]).length
-  const offer = guideOffer(s)
-  const guide = ownsGuide(s)
-  const hasBump = owns(s, 'bump')
-  const waiting = s.orders.filter((o) => o.status === 'pending')
+  const { seen, total } = progress(s)
+  const main = ITEM_BY_ID.main
+  const bonuses = ITEMS.filter((i) => i.kind === 'bonus' && !i.extra)
+  const extra = ITEMS.filter((i) => i.extra)
+  const bump = ITEM_BY_ID.bump
+  const hasMain = owns(s, 'main')
+  const pending = !!s.session?.purchases.some((p) => p.status === 'pending')
+  const [msg, setMsg] = useState('')
+  const banner = visibleOffers(s, 'home-banner')[0]
+  const cards = visibleOffers(s, 'home-card')
+  const mine = ownedOffers(s)
+
+  async function openMain() {
+    setMsg('')
+    const r = await openFile(main.files[0].storageKey, false)
+    if (!r.ok) setMsg(r.error ?? 'Não foi possível abrir.')
+    else if (CONFIG.demo) setMsg('Modo demonstração: abriu um PDF de exemplo, não o produto.')
+  }
 
   return (
     <Layout>
-      <section className="hello">
-        <Picture id="inicio-hero" className="hero" />
-        <h1>Olá! O que vamos assar hoje?</h1>
-        <Progress done={done} total={RECIPES.length} />
+      <WelcomeModal />
+      <DemoBar />
+
+      <section className="block">
+        <Picture img={PHOTOS.kit} lazy={false} className="pic-wide" />
+        <div className="block-info">
+          <h1>Olá! Sua Fábrica de Panetones está aqui</h1>
+          <p className="lead">
+            Tudo para produzir em casa e ter seus panetones prontos para o Natal, para a família ou para vender. Siga as receitas, use os materiais e monte a sua meta.
+          </p>
+          {hasMain ? (
+            <p className="kit-line">
+              <strong>Seu kit completo está liberado</strong>
+              <span>
+                {total} {total === 1 ? 'material liberado' : 'materiais liberados'}
+                {owns(s, 'bump') ? ', com as Fichas de Socorro' : ''}
+              </span>
+            </p>
+          ) : (
+            <p className="kit-line">
+              <strong>{pending ? 'Aguardando a confirmação do pagamento' : 'O kit ainda não está liberado neste e-mail'}</strong>
+              <span>{pending ? 'Assim que o banco confirmar, os materiais aparecem aqui.' : 'Se você já comprou, fale com o suporte.'}</span>
+            </p>
+          )}
+          <ProgressBar seen={seen} total={total} />
+        </div>
       </section>
 
-      {waiting.map((o) => (
-        <Link key={o.id} to={`/pagamento/${o.id}`} className="notice">
-          Pagamento do {PRODUCTS[o.product].name} aguardando. Toque para ver.
-        </Link>
-      ))}
+      {hasMain && (
+        <>
+      <section className="block">
+        <h2 className="section-title">Produto principal</h2>
+        <div className="feature">
+          <Picture img={MOCKUPS.main} className="pic-feature" lazy={false} />
+          <div className="block-info">
+            <span className="tag">{main.badge}</span>
+            <h3>{main.title}</h3>
+            <p className="lead">{main.subtitle}. Abra no celular e vá direto à receita que quiser.</p>
+            {hasMain && (
+              <div className="actions">
+                <button className="btn btn-primary" onClick={openMain}>
+                  Abrir PDF
+                </button>
+                <Link className="btn btn-secondary" to={`/produto/${main.id}`}>
+                  Ver detalhes e baixar
+                </Link>
+              </div>
+            )}
+            {msg && <p className="demo-note" role="status">{msg}</p>}
+          </div>
+        </div>
+      </section>
 
-      <section>
-        <h2 className="section-title">Receitas</h2>
-        <div className="cards">
-          {RECIPES.map((r) => (
-            <Link key={r.id} to={`/receita/${r.id}`} className="card-link">
-              <Picture id={r.image} />
-              <span className="card-info">
-                <span className="tile-body">
-                  <strong>{r.title}</strong>
-                  <small>
-                    {r.time} · {r.yield}
-                  </small>
-                </span>
-                <span className={s.done[r.id] ? 'check check-on' : 'check'} aria-label={s.done[r.id] ? 'Feita' : 'Não feita'}>
-                  {s.done[r.id] ? '✓' : ''}
-                </span>
-              </span>
-            </Link>
+      <section className="block">
+        <Picture img={PHOTOS.fornada} className="pic-wide" />
+        <div className="block-info">
+          <h2 className="section-title">Bônus do kit completo</h2>
+          <p className="lead">
+            Seus bônus estão liberados. Toque em um para abrir.
+          </p>
+        </div>
+        <div className="grid">
+          {bonuses.map((i) => (
+            <ProductCard key={i.id} item={i} unlocked={owns(s, i.id)} seen={!!s.seen[i.id]} />
           ))}
         </div>
+        {extra.map((i) => (
+          <div className="grid grid-one" key={i.id}>
+            <ProductCard item={i} unlocked={owns(s, i.id)} seen={!!s.seen[i.id]} />
+          </div>
+        ))}
       </section>
 
-      <section>
-        <h2 className="section-title">Seus materiais</h2>
-        <div className="cards">
-          <ModuleTile id="bonus" unlocked={hasBump} lockTo="/oferta/bump?de=cadeado" />
-          {guide === 'essential' ? (
-            <ModuleTile id="essencial" unlocked />
-          ) : (
-            <ModuleTile id="guia" unlocked={guide === 'full'} lockTo={`/oferta/${offer ?? 'upsell'}?de=cadeado`} />
-          )}
+        </>
+      )}
+
+      <section className="block">
+        <Picture img={PHOTOS.chocotone} className="pic-wide" />
+        <div className="block-info">
+          <h2 className="section-title">Socorro do panetone</h2>
+          <p className="lead">Se a massa não cresceu ou o panetone murchou, aqui você acha o que fazer.</p>
+        </div>
+        <div className="grid grid-one">
+          <ProductCard item={bump} unlocked={owns(s, 'bump')} seen={!!s.seen.bump} />
         </div>
       </section>
 
-      {offer && <OfferCta product={offer} source="banner" />}
-      {!hasBump && !pendingOrder(s, 'bump') && (
-        <OfferCta
-          product="bump"
-          source="banner"
-          compact
-          text={`Ainda não tem o Bônus da Fornada? Leve por ${brl(PRODUCTS.bump.price)}.`}
-        />
+      {mine.length > 0 && (
+        <section className="block">
+          <div className="block-info">
+            <h2 className="section-title">Seus extras</h2>
+          </div>
+          <div className="grid grid-one">
+            {mine.map((o) => (
+              <ProductCard key={o.id} item={ITEM_BY_ID[o.id]} unlocked seen={!!s.seen[o.id]} />
+            ))}
+          </div>
+        </section>
       )}
-    </Layout>
-  )
-}
 
-function ModuleTile({ id, unlocked, lockTo }: { id: string; unlocked: boolean; lockTo?: string }) {
-  const m = MODULES.find((x) => x.id === id)!
-  return (
-    <Link to={unlocked ? `/modulo/${m.id}` : lockTo!} className={unlocked ? 'card-link' : 'card-link card-locked'}>
-      <Picture id={m.mockup} locked={!unlocked} />
-      <span className="card-info">
-        <span className="tile-body">
-          <strong>{m.title}</strong>
-          <small>{m.subtitle}</small>
-        </span>
-        {unlocked ? (
-          <span className="pill pill-ok">Liberado</span>
-        ) : (
-          <span className="pill">Desbloquear · {brl(PRODUCTS[m.product].price)}</span>
-        )}
-      </span>
-    </Link>
+      {cards.length > 0 && (
+        <section className="block">
+          <div className="block-info">
+            <h2 className="section-title">Materiais adicionais</h2>
+          </div>
+          <div className="grid grid-one">
+            {cards.map((o) => (
+              <ProductCard key={o.id} item={ITEM_BY_ID[o.id]} unlocked={false} seen={false} from="home-card" />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {banner && <OfferBlock offer={banner} from="home-banner" />}
+
+      <section className="block">
+        <Picture img={PHOTOS.presente} className="pic-wide" />
+        <div className="block-info">
+          <h2 className="section-title">Qual sua maior dificuldade agora?</h2>
+          <p className="lead">Conte para a gente. Isso ajuda a melhorar o app e os próximos materiais.</p>
+          <DifficultyForm />
+        </div>
+      </section>
+
+      <section className="block help">
+        <Picture img={PHOTOS.entrega} className="pic-wide" />
+        <div className="block-info">
+          <h2 className="section-title">Precisa de ajuda?</h2>
+          <p className="lead">Fale com o suporte pelo WhatsApp se algum material não abrir ou não aparecer.</p>
+          <a className="btn btn-primary btn-block" href={supportUrl()} target="_blank" rel="noreferrer">
+            Falar com o suporte
+          </a>
+        </div>
+      </section>
+    </Layout>
   )
 }

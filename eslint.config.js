@@ -25,4 +25,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // servidor (Vercel Functions), scripts e testes rodam no Node
+    files: ['api/**/*.ts', 'server/**/*.ts', 'scripts/**/*.ts'],
+    languageOptions: { globals: { ...globals.node } },
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 )
