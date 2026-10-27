@@ -295,7 +295,7 @@ Gerado de `shared/game.ts`. Pontos só por ação que a cliente marca; nada de d
 
 **Níveis:** Aprendiz (0 PF), Fornada (100 PF), Confeiteira (300 PF), Mestra do Panetone (700 PF). O nível nunca desce.
 
-**Tabela de PF:** feita 10, refeita 3, casa 5, foto 5, nota 3, ingredientes 2, etapa 15, desafio 20, desafioTodos 30, seq3 10, seq7 25, primeiraEncomenda 10, entregue 5, socorro 5, metaDia 2, sugestao 5, conta 15, presente 10, variedade 10, contaReceita 5, conta5 10. Teto: 60 PF por dia (vale para tudo). Desafios: 3 por semana, 20 PF cada + 30 PF por fechar os 3 (máximo 90 PF por semana).
+**Tabela de PF:** feita 10, refeita 3, casa 5, foto 5, nota 3, ingredientes 2, etapa 15, desafio 20, desafioTodos 30, seq3 10, seq7 25, primeiraEncomenda 10, entregue 5, socorro 5, metaDia 2, sugestao 5, conta 15, presente 10, variedade 10, contaReceita 5, conta5 10, missao 4, missaoTodas 6, secreto 5, constancia 10, venda1 10. Teto: 60 PF por dia (vale para tudo). Desafios: 3 por semana, 20 PF cada + 30 PF por fechar os 3 (máximo 90 PF por semana).
 
 **Ramos de habilidade:** Massa, Recheio, Cobertura, Embalagem, Venda (3 níveis: Iniciante, Segura, Craque).
 
@@ -310,6 +310,7 @@ Gerado de `shared/game.ts`. Pontos só por ação que a cliente marca; nada de d
 - Registre uma encomenda no caderno
 - Marque uma receita como favorita
 - Cumpra a meta do dia
+- Faça uma conta na Conta da Fornada
 
 **Meta do dia (lista fixa):**
 
@@ -344,7 +345,7 @@ Gerado de `shared/game.ts`. Pontos só por ação que a cliente marca; nada de d
 | Minha primeira encomenda | Registre a primeira encomenda no caderno. |
 | Fiz minha conta | Marque no Bônus 07 que você calculou o custo da sua fornada. |
 | Conta de 5 receitas | Termine a conta de 5 receitas diferentes na Conta da Fornada. |
-| Fornada de presente | Marque uma fornada que você fez para presentear. |
+| Primeira venda anotada | Anote a primeira venda no Diário de vendas (só os números que você digitar). |
 | Variedade: 3 tipos | Faça materiais de 3 categorias diferentes. |
 | Variedade: 5 tipos | Faça materiais de 5 categorias diferentes. |
 | Variedade: 8 tipos | Faça materiais de 8 categorias diferentes. |
@@ -355,10 +356,58 @@ Gerado de `shared/game.ts`. Pontos só por ação que a cliente marca; nada de d
 
 **Extras liberados por progresso** (nunca por gastar PF; nada do que foi comprado fica trancado):
 
-- Ficha extra: Recheio que escorre ou fica mole (libera em Fornada)
-- Mini-guia: Ponto da massa em 5 sinais (libera em Confeiteira)
-- Mini-guia: Separe tudo antes: o passo a passo (libera em Confeiteira)
-- Guia final: Checklist da fornada de encomenda (libera em Mestra do Panetone)
+- Ficha extra: Recheio que escorre ou fica mole. Libera quando você chegar a Fornada.
+- Mini-guia: Ponto da massa em 5 sinais. Libera quando você chegar a Confeiteira.
+- Mini-guia: Separe tudo antes: o passo a passo. Libera quando você chegar a Confeiteira.
+- Guia final: Checklist da fornada de encomenda. Libera quando você chegar a Mestra do Panetone.
+- Mini-guia: Como anotar uma fornada para aprender com ela. Libera com 1 receita marcada no Livro de Fornadas.
+- Ficha extra: Receita extra: creme de confeiteiro para rechear. Libera com 3 receitas marcadas no Livro de Fornadas.
+- Ficha extra: Receita extra: ganache para cobertura e recheio. Libera com 5 receitas marcadas no Livro de Fornadas.
+- Mini-guia: Conheça o seu forno em 3 testes simples. Libera com 10 receitas marcadas no Livro de Fornadas.
+- Mini-guia: Organize a semana de fornadas em 4 passos. Libera quando a sua sequência chegar a 3 dias (o dia de descanso vale).
+- Mini-guia: Guardar o panetone: do forno ao dia seguinte. Libera com 4 selos conquistados.
+- Mini-guia: Como ler o custo da sua fornada, sem achismo. Libera depois de 1 conta feita na Conta da Fornada.
+- Guia final: Cozinhar sem pressa: um ritmo que cabe na sua semana. Libera quando a sua sequência chegar a 7 dias (o dia de descanso vale).
+
+## Gamificação v3: visível na tela inicial
+
+Tudo abaixo aparece só para quem tem o kit, com o jogo ligado e FORA do modo sem pressão. O texto rotulado "Extra do app, liberado por progresso" nunca tranca algo comprado.
+
+- **Barra fixa no topo:** nível, barra até o próximo nível e PF, sempre à vista (Início, Meus produtos, Caminho, Fornada, Conta). Toque abre a Minha fornada.
+- **Missões do dia:** 3 por dia, de uma lista fixa, 4 PF cada e +6 PF pelas 3 (no máximo 18 PF/dia, dentro do teto de 60). A caixinha marca sozinha quando a ação acontece no app. Sem prazo e sem punição.
+
+  - Faça uma receita e marque "Fiz essa"
+  - Anote como ficou uma fornada
+  - Faça uma conta na Conta da Fornada (só com a Conta da Fornada ou a rodada grátis)
+  - Abra um extra do app (só quando já há extra liberado)
+  - Tire uma foto de uma fornada
+  - Separe os ingredientes antes de começar uma receita
+  - Marque uma receita como favorita
+  - Use uma Ficha de Socorro e conte se resolveu (só com as Fichas de Socorro)
+
+- **Próxima recompensa:** o próximo extra do app, "Extra do app, liberado por progresso", com quanto falta e uma barra. Extras já abertos nunca voltam a trancar.
+- **Comemoração:** cartão com confete leve em CSS ao concluir uma receita, ganhar selo ou extra, completar as missões e subir de nível. Com "reduzir movimento" no aparelho, sem confete (só o cartão). Sem som. Dá para desligar em Minha conta.
+- **Metas da conta:** primeira conta, 5 contas (selo "Conta de 5 receitas") e primeira venda anotada (selo "Primeira venda anotada").
+- **Diário de vendas:** a cliente digita produto, quantidade, valor e data. O total do mês é só a soma do que ela digitou. Sem estimativa, comparação ou promessa. Fica no aparelho; com a Conta da Fornada, sincroniza pela conta. Escondido no modo sem pressão (os dados continuam guardados).
+
+**Ranking semanal anônimo e opcional:**
+
+- Opcional e anônimo. Você aparece só com um apelido gerado (por exemplo "Fornada 4F2") e os PF da semana. Sem nome, e-mail ou foto. Não tem prêmio, e o ranking recomeça toda segunda-feira.
+- O servidor guarda só o apelido e os PF da semana. Você pode sair e apagar tudo quando quiser.
+- A lista só aparece quando houver participantes de verdade suficientes. Nunca preenchemos com perfis de mentira. Mínimo padrão: 10 participantes (configurável no servidor por RANK_MIN_PARTICIPANTS). Mostra o top 10 e a posição da cliente. Botão "Sair e apagar meus dados do ranking". Escondido no modo sem pressão e com o jogo desligado.
+
+**Selos surpresa (interno: não anunciar nem dar dicas no app; aparecem só quando conquistados por ação real):**
+
+- Fornada de presente: Você marcou uma fornada que fez para presentear.
+- Madrugadora: Você marcou uma receita antes das 7h da manhã.
+- Fornada da noite: Você marcou uma receita depois das 21h.
+- Fornada de domingo: Você marcou uma receita num domingo.
+- Constância: Você chegou a 14 dias de sequência.
+- Cozinha cheia: Você marcou 10 fornadas no Livro de Fornadas.
+- Tarde cheia: Você fez 3 receitas diferentes no mesmo dia.
+- Álbum de fornadas: Você guardou 5 fotos de fornadas.
+- Volta por cima: Você voltou a cozinhar depois de uma semana sem marcar receita.
+- Fornada de Natal: Você marcou uma receita entre 20 e 25 de dezembro.
 
 **30 frases de incentivo (cada uma só aparece com um fato real do uso da cliente):**
 

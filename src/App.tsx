@@ -4,7 +4,7 @@ import { init, owns, useStore } from './lib/store'
 import { Code, Confirmed, Login } from './pages/Access'
 import { Home } from './pages/Home'
 import { Item } from './pages/Item'
-import { Encomendas, ExtraView, Extras, Fornada, Livro, Mes, Pontos, Selos } from './pages/Game'
+import { Encomendas, ExtraView, Extras, Fornada, Livro, Mes, Pontos, Ranking, Selos, Vendas } from './pages/Game'
 import { Account } from './pages/Account'
 import { Catalog } from './pages/Catalog'
 import { Journey } from './pages/Journey'
@@ -58,6 +58,8 @@ export default function App() {
         <Route path="/fornada/mes" element={<Kit><Mes /></Kit>} />
         <Route path="/fornada/extras" element={<Kit><Extras /></Kit>} />
         <Route path="/fornada/extras/:id" element={<Kit><ExtraView /></Kit>} />
+        <Route path="/fornada/vendas" element={<Kit><Vendas /></Kit>} />
+        <Route path="/fornada/ranking" element={<Kit><Ranking /></Kit>} />
         {CALC_ENABLED && <Route path="/conta-da-fornada/*" element={<Private><CalcApp /></Private>} />}
         <Route path="/conta" element={<Private><Account /></Private>} />
         <Route path="*" element={<Navigate to="/" replace />} />

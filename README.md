@@ -189,6 +189,21 @@ Detalhes e textos: `../GAMIFICACAO-APP.md`. Regras puras em `shared/game.ts` (te
 - **Decisão (Levi): a gamificação fica LIGADA em produção**, independente de `VITE_CATALOG_ENABLED`. "Minha fornada" aparece na Início só para quem já tem o kit principal; as rotas `/fornada/*` sem o kit voltam para a Início. A barra inferior (aba Fornada) continua dependendo da flag do catálogo.
 - **Ideias futuras (não implementadas):** 14, 16, 18, 19 e 26 de `../GAMIFICACAO-GPT.md`.
 
+### Gamificação v3 (barra fixa, missões, extras por progresso, comemoração, ranking anônimo, diário)
+
+Textos completos em `COMUNICACAO-OFERTAS.md` (seção "Gamificação v3") e regras em `../GAMIFICACAO-APP.md`.
+
+- **Barra fixa** (`GameBar`, sticky no topo de todas as telas do app): selo do nível, nome, PF e barra até o próximo nível ("faltam N PF para X"). Só para quem tem o kit; some no modo sem pressão ou com o jogo desligado. Toque abre `/fornada`. O `body` usa `overflow-x: clip` (com `hidden` o `position: sticky` não cola).
+- **Missões do dia:** 3 por dia, sorteadas de uma lista fixa de 8 (`MISSIONS`), cada uma marcada só pela ação real (+4 PF; as 3 juntas +6; sempre dentro do teto de 60 PF por dia). O que não deu hoje não vira dívida: no dia seguinte as missões trocam, sem punição.
+- **Extras por progresso:** 12 extras de texto real (`EXTRAS` em `shared/game.ts`), com a regra de abertura (nível, fornadas, dias, selos ou contas). Etiqueta fixa "Extra do app, liberado por progresso". Nunca trancam o que a cliente comprou e, uma vez abertos, nunca fecham de novo. A tela mostra o próximo extra e o que falta.
+- **Comemoração:** cartão no topo (selo, nível, extra, missões feitas ou receita) com confete só de CSS (28 peças, sem canvas, sem som). Com `prefers-reduced-motion` aparece só o cartão. Liga/desliga em Minha conta, "Comemorações".
+- **Selos surpresa:** 10 selos escondidos (`HIDDEN_SEALS`), mostrados só depois de conquistados, sem dica prévia. SVG funcional em `Seal.tsx`; a arte do GPT está pedida em `../IMAGENS-FALTANDO.md`.
+- **Metas da Conta da Fornada:** primeira conta, 5 contas (selo s11) e primeira venda anotada (selo s12), no hub `/fornada`.
+- **Diário de vendas** (`/fornada/vendas`): produto, quantidade, valor e data que a cliente digita; só soma o que foi digitado, nada estimado. Mora no mesmo documento da Conta da Fornada (IndexedDB; sincroniza com a conta SÓ com o direito `calculadora`, senão fica no aparelho). Apagar uma venda deixa uma marca (`apagadas`) para não voltar na sincronização. "Apagar meus dados da calculadora" apaga o diário junto.
+- **Ranking semanal anônimo** (`/fornada/ranking`, opcional): a cliente escolhe entrar, recebe um apelido gerado ("Fornada 4F2") e o servidor guarda SÓ o apelido e os PF da semana (semana de segunda a domingo, horário de Brasília). Sem nome, e-mail ou foto. Top 10 mais a posição da própria cliente; empate divide a posição. A lista só aparece quando houver participantes reais suficientes (`RANK_MIN_PARTICIPANTS`, padrão 10, aceita 2 a 1000); antes disso a tela diz quantos faltam e nunca há perfil falso. Botão "Sair e apagar meus dados do ranking" apaga o apelido e os PF. Fica escondido no modo sem pressão e com o jogo desligado. Código em `shared/rank.ts` (regras puras), `server/rank.ts` (KV: `rank:me:<hmac>`, `rank:names`, `rank:wk:<semana>`, `rank:rl:<id>`) e `src/lib/rank.ts`. As rotas (`/api/event?r=board|join|score|leave`) ficam dentro de `api/event.ts`: **continuam 10 funções** (limite de 12 do plano Hobby da Vercel). Na prévia o ranking é simulado no navegador com UM participante (você), e por isso nunca mostra lista.
+- **Flags:** `VITE_RANK_ENABLED=false` esconde o ranking (padrão ligado); `VITE_CATALOG_ENABLED` e `VITE_CALC_ENABLED` seguem como antes (a barra e as missões NÃO dependem do catálogo). Variável de servidor: `RANK_MIN_PARTICIPANTS`.
+- **Decisão sobre "ranking e diário fora do modo sem pressão":** no modo sem pressão (e com o jogo desligado) o ranking e o diário somem das telas e as rotas voltam para `/fornada`; os dados ficam guardados e voltam quando a cliente sair do modo. Sair do ranking é outro botão.
+
 ## Estados de compra e liberação
 
 | `payment.status` (Wiapy) | Estado no app | Efeito |
@@ -237,7 +252,7 @@ Fluxo: o app chama `GET /api/file/<arquivo>` com a sessão; o servidor confere s
 - Login por código de 6 números (vale 10 minutos, 5 tentativas, 5 pedidos por hora por e-mail, 30 por IP). O código só é enviado para e-mail que tenha compra registrada, mas a resposta é sempre a mesma. "Reenviar código" na tela do código (espera de 30 segundos).
 - PWA: `manifest.webmanifest`, ícones e `sw.js` só com o "casco" do app. O service worker nunca guarda `/api/*`, PDFs, planilhas, textos ou respostas `no-store`. `vercel.json` manda `sw.js` sem cache.
 - Pop-up de instalação no primeiro acesso, sem obrigar a instalar.
-- Sem pontos, ranking ou sequências; só uma barra de progresso simples. Sem contador falso, sem escassez falsa, sem promessa de renda em número, sem depoimentos.
+- Gamificação só com ações marcadas pela cliente (PF com teto diário, sem valor em dinheiro). O ranking é opcional, anônimo e fica atrás da flag `VITE_RANK_ENABLED`. Sem contador falso, sem escassez falsa, sem promessa de renda em número, sem depoimentos.
 - Se o servidor não está configurado em produção, a tela mostra erro claro e nada é liberado.
 
 ## Pendências que dependem de contas

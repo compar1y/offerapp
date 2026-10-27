@@ -31,6 +31,10 @@ export const CATALOG_ENABLED: boolean = PREVIEW || import.meta.env.VITE_CATALOG_
 // Para esconder em produção sem mexer no código: VITE_CALC_ENABLED=false no build.
 export const CALC_ENABLED: boolean = PREVIEW || import.meta.env.VITE_CALC_ENABLED !== 'false'
 
+// Ranking semanal anônimo (opcional, opt-in). LIGADO por padrão; a lista só aparece com participantes reais suficientes (RANK_MIN_PARTICIPANTS, padrão 10).
+// Para esconder o ranking em produção sem mexer no código: VITE_RANK_ENABLED=false no build.
+export const RANK_ENABLED: boolean = PREVIEW || import.meta.env.VITE_RANK_ENABLED !== 'false'
+
 export function supportUrl(message: string = CONFIG.supportMessage): string {
   return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(message)}`
 }

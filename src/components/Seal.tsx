@@ -18,6 +18,15 @@ const G: Record<SealIcon, string> = {
   contas: 'M5 3h14v18H5zM8 7h8M8 11h3M13 11h3M8 15h3M13 15h3M8 19h8',
   venda: 'M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2zM9 9h6M9 13h4',
   variedade: 'M7 3v7a2 2 0 0 0 2 2v9M11 3v7M7 3v7M17 3c-2 2-2 6 0 8v10',
+  madrugadora: 'M3 18h18M7 18a5 5 0 0 1 10 0M12 4v3M5 9l2 2M19 9l-2 2',
+  lua: 'M20 14A8 8 0 1 1 10 4a6.5 6.5 0 0 0 10 10z',
+  domingo: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M11 14h2v3h-2z',
+  tarde: 'M3 20h18M5 20v-4h6v4M13 20v-4h6v4M8 16v-4h8v4M12 12V8',
+  album: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M9 9h.01',
+  volta: 'M4 12a8 8 0 1 0 3-6.2M4 4v4h4',
+  natal: 'M12 3l7 9h-4l5 7H4l5-7H5zM12 19v3',
+  constancia: 'M3 12h4l2-6 4 12 2-6h6',
+  cozinha: 'M4 10h16v9H4zM2 10h20M8 6c0-2 2-2 2-4M14 6c0-2 2-2 2-4',
 }
 
 // selo redondo: contorno colorido + símbolo. "grey" = ainda não conquistado; "gold" = Receita de casa.

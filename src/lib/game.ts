@@ -3,7 +3,9 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { ITEM_BY_ID, TRACKS, shortTitle, type ItemId, type OfferId } from '../../shared/catalog'
 import * as G from '../../shared/game'
+import { CALC_ENABLED, RANK_ENABLED } from '../data/config'
 import { getState, owns, useStore } from './store'
+import { rankLeave, rankScore, thisWeek } from './rank'
 import { catalogOffers } from './offers'
 import { delPhoto, delPhotos, putPhoto, resizeImage } from './photos'
 
@@ -59,8 +61,42 @@ function commit(st: G.GameState, msgs: string[] = []) {
   if (msgs.length) toast = { id: toast.id + 1, msgs }
   emit()
 }
-const apply = (r: G.Res) => {
-  if (r.st !== cur().st || r.msgs.length) commit(r.st, r.msgs)
+let celebration: { id: number; c: G.Celebration | null } = { id: 0, c: null }
+const apply = (r0: G.Res) => {
+  const before = cur().st
+  const r = G.withUnlocks(before, r0)
+  if (r.st !== before || r.msgs.length) {
+    commit(r.st, r.msgs)
+    const c = G.showGame(r.st) && r.st.config.festa ? G.celebrationOf(r.msgs) : null
+    if (c) {
+      celebration = { id: celebration.id + 1, c }
+      emit()
+    }
+    pushRankSoon()
+  }
+}
+export const useCelebration = (): { id: number; c: G.Celebration | null } => useSyncExternalStore(sub, () => celebration)
+export const closeCelebration = () => {
+  celebration = { id: celebration.id, c: null }
+  emit()
+}
+
+// ---- ranking anônimo: só manda os PF da semana quando a cliente entrou e o jogo está visível
+let rankTimer: ReturnType<typeof setTimeout> | undefined
+function pushRankSoon() {
+  const st = cur().st
+  if (!RANK_ENABLED || !st.rank?.on || !G.showRank(st)) return
+  clearTimeout(rankTimer)
+  rankTimer = setTimeout(() => {
+    const s = cur().st
+    if (s.rank?.on && G.showRank(s)) void rankScore(G.weeklyPf(s, today()), thisWeek())
+  }, 2500)
+}
+/** entrar: o servidor gera o apelido; só então ele fica gravado aqui */
+export function gameRankSet(apelido: string | null) {
+  const st = cur().st
+  commit({ ...st, rank: apelido ? { on: true, apelido } : undefined })
+  if (apelido) pushRankSoon()
 }
 
 export function useGame(): G.GameState {
@@ -73,7 +109,12 @@ export const clearToast = () => {
   emit()
 }
 
-const base = (): G.BaseCtx => ({ today: today(), hasBump: owns(getState(), 'bump') })
+const contaOkNow = (): boolean => {
+  if (!CALC_ENABLED) return false
+  const t = getState().session?.tools?.calculadora
+  return !!t && (t.owned || !t.roundUsed)
+}
+const base = (): G.BaseCtx => ({ today: today(), hasBump: owns(getState(), 'bump'), contaOk: contaOkNow(), hour: new Date().getHours() })
 const ownedGameItems = (): string[] => (getState().session?.items ?? []) as string[]
 const uid = (): string => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
 
@@ -134,10 +175,27 @@ export async function gameDelFornada(id: string) {
 }
 export const gameConfig = (patch: Parameters<typeof G.setConfig>[1]) => commit(G.setConfig(cur().st, patch))
 export const gameCloseLevel = () => commit(G.closeLevelCard(cur().st))
-export const gameSeeExtra = (id: string) => commit(G.seeExtra(cur().st, id))
+export function gameSeeExtra(id: string) {
+  const st = G.seeExtra(cur().st, id)
+  if (st !== cur().st) commit(st)
+  apply(G.onExtraAberto(cur().st, base())) // missão do dia "abra um extra" (uma vez por dia)
+}
+export const gameVenda = () => apply(G.onVendaAnotada(cur().st, base()))
+/** grava a lista de missões de hoje (a mesma que a tela mostra) para ela não mudar durante o dia */
+export function useMissions(): { itens: string[]; feitos: string[]; todas: boolean } {
+  const st = useGame()
+  useStore()
+  const b = base()
+  useEffect(() => {
+    const c = cur()
+    if (c.email && c.st.missoes?.d !== b.today) commit(G.startDay(c.st, base()))
+  }, [st.missoes?.d, b.today])
+  return G.missionsToday(st, b)
+}
 export const gameAck = (key: string | null) => commit(G.ackStep(cur().st, key))
 export async function gameErase() {
   const c = cur()
+  if (c.st.rank?.on) await rankLeave().catch(() => false) // sair do ranking apaga o apelido e os PF no servidor
   await delPhotos(c.st.fornadas.map((f) => f.id))
   commit(G.eraseAll(today()))
   toast = { id: toast.id + 1, msgs: ['Seus dados de jogo foram apagados deste aparelho.'] }

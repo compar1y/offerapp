@@ -11,7 +11,7 @@ import { DifficultyForm } from '../components/DifficultyForm'
 import { WelcomeModal } from '../components/WelcomeModal'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { GameEntry, WelcomeBack } from '../components/Game'
+import { GameEntry, MissionsCard, NextUnlockCard, WelcomeBack } from '../components/Game'
 import { useGame } from '../lib/game'
 
 export function Home() {
@@ -94,6 +94,8 @@ export function Home() {
 
       {hasMain && <WelcomeBack />}
       {hasMain && <GameEntry />}
+      {hasMain && <MissionsCard />}
+      {hasMain && <NextUnlockCard />}
 
       {(hasMain || hasTool) && (
         <Section title="Meus produtos">

@@ -984,14 +984,15 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
     wk = cdone(wk, ev, G.addDays('2026-11-02', i + 1), 10 + i)
   })
   const fromChallenges = wk.pfLog.filter((e) => e.k.startsWith('desafio')).reduce((t, e) => t + e.pf, 0)
-  assert.equal(fromChallenges, G.WEEKLY_CHALLENGE_MAX, '3 x 20 + 30 = 90')
+  // 3 x 20 + 30 = 90, no máximo: o teto de 60 PF por dia pode cortar um pouco do bônus quando missões e desafios caem no mesmo dia
+  assert.ok(fromChallenges <= G.WEEKLY_CHALLENGE_MAX && fromChallenges >= 3 * 20, `desafios pagaram ${fromChallenges}`)
   assert.equal(G.WEEKLY_CHALLENGE_MAX, 90)
   assert.equal(wk.challenges.feitos.length, 3)
   assert.ok(wk.seals.desafio1 && wk.seals.desafio3)
   assert.ok(wk.pf > before)
   // fazer de novo o mesmo evento na semana não paga duas vezes
   const repeat = cdone(wk, 'meta', G.addDays('2026-11-02', 6), 77)
-  assert.equal(repeat.pfLog.filter((e) => e.k.startsWith('desafio')).reduce((t, e) => t + e.pf, 0), 90)
+  assert.equal(repeat.pfLog.filter((e) => e.k.startsWith('desafio')).reduce((t, e) => t + e.pf, 0), fromChallenges)
   // semana nova: troca os desafios, sem punição
   const nx = G.onMetaDia(wk, { today: '2026-11-09' }).st
   assert.equal(nx.challenges.semana, '2026-11-09')
@@ -1036,7 +1037,7 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
 
   // outros marcos: meta do dia +2 (1x por dia), conta +15 (1x), checklist +2, sugestão +5, variedade 3/5/8
   const md = G.onMetaDia(G.emptyGame(T0), { today: T0 })
-  const semDesafio = (st: import('../../shared/game.js').GameState) => st.pfLog.filter((e) => !e.k.startsWith('desafio')).reduce((t, e) => t + e.pf, 0) // o desafio da semana depende do rodízio fixo
+  const semDesafio = (st: import('../../shared/game.js').GameState) => st.pfLog.filter((e) => !e.k.startsWith('desafio') && !e.k.startsWith('missao')).reduce((t, e) => t + e.pf, 0) // o desafio da semana depende do rodízio fixo
   assert.equal(semDesafio(md.st), 2)
   assert.equal(semDesafio(G.onMetaDia(md.st, { today: T0 }).st), 2)
   const ct = G.onConta(G.emptyGame(T0), { today: T0 })
@@ -1046,7 +1047,7 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   for (const t of G.BASE_CHECKLIST) ck = G.setChecklist(ck, 'main', { toggle: t })
   assert.ok(G.checklistComplete(ck.ingr.main))
   const withCk = G.onDone(ck, ctx(T0, 'main', 1))
-  assert.equal(withCk.st.pfLog.filter((e) => !e.k.startsWith('desafio')).reduce((t, e) => t + e.pf, 0), 12, '+10 da receita e +2 do checklist antes de começar')
+  assert.equal(withCk.st.pfLog.filter((e) => !e.k.startsWith('desafio') && !e.k.startsWith('missao')).reduce((t, e) => t + e.pf, 0), 12, '+10 da receita e +2 do checklist antes de começar')
   assert.ok(withCk.st.challenges.feitos.includes('ingr'), 'o checklist também fecha o desafio de ingredientes')
   assert.equal(G.checklistComplete(withCk.st.ingr.main), false, 'a lista zera para a próxima fornada')
   const sug = G.suggestionOf('2026-11-02', ['main', 'panetones-vulcao'])
@@ -1075,12 +1076,13 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   const onlyTrail = G.nextStepOf(G.emptyGame(T0), { today: T0, titleOf, seenNotDone: ['panetones-vulcao', 'main'] })
   assert.equal(onlyTrail?.to, '/produto/panetones-vulcao')
 
-  // extras por nível (nunca por gastar PF), com texto real
-  assert.ok(G.EXTRAS.length >= 3)
+  // extras por progresso (nunca por gastar PF), com texto real
+  assert.ok(G.EXTRAS.length >= 12)
   assert.ok(G.EXTRAS.every((e) => e.blocks.length >= 2 && e.blocks.every((b) => b.p || b.ul?.length)))
-  assert.equal(G.extraUnlocked(G.EXTRAS[0], 0), false)
-  assert.equal(G.extraUnlocked(G.EXTRAS[0], 1), true)
-  assert.equal(G.extraUnlocked(G.EXTRAS[0], 0, true), true, 'sem pressão: tudo aberto')
+  const lv1 = G.EXTRAS.find((e) => e.req.t === 'level' && e.req.n === 1)!
+  assert.equal(G.extraUnlocked(lv1, G.emptyGame(T0)), false)
+  assert.equal(G.extraUnlocked(lv1, { ...G.emptyGame(T0), pf: 100, level: 1 }), true)
+  assert.equal(G.extraUnlocked(lv1, { ...G.emptyGame(T0), semPressao: true }), true, 'sem pressão: tudo aberto')
   assert.match(G.extraReason(G.EXTRAS[1]), /^Extra do app, liberado por progresso\./)
 
   // Meu mês: números reais
@@ -1116,7 +1118,7 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.deepEqual(wiped.fornadas, [])
   assert.deepEqual(Object.keys(wiped.seals), ['nivel:0'])
   // cada selo tem desenho funcional pronto e nome de arquivo mapeado para trocar por imagem
-  assert.deepEqual(Object.keys(G.SEAL_FILES).sort(), ['aprendiz', 'casa', 'confeiteira', 'conta', 'contas', 'desafio', 'encomenda', 'fornada', 'mestra', 'presente', 'receita', 'sequencia', 'socorro', 'variedade', 'venda'])
+  assert.deepEqual(Object.keys(G.SEAL_FILES).sort(), ['album', 'aprendiz', 'casa', 'confeiteira', 'constancia', 'conta', 'contas', 'cozinha', 'desafio', 'domingo', 'encomenda', 'fornada', 'lua', 'madrugadora', 'mestra', 'natal', 'presente', 'receita', 'sequencia', 'socorro', 'tarde', 'variedade', 'venda', 'volta'])
   assert.ok(G.STATIC_SEALS.every((x) => x.icon in G.SEAL_FILES))
   ok('gamificação: níveis 0/100/300/700, teto 60 PF/dia, sequência com descanso e recomeço, desafios 3x20+30=90, selos, livro, encomendas, socorro, extras por nível, bolinha única, frases e avisos honestos')
 }
@@ -1311,33 +1313,316 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   // 32. gamificação da ferramenta: só por fazer de verdade
   {
     const G = await import('../../shared/game.js')
+    const pfc = (x: import('../../shared/game.js').GameState) => x.pfLog.filter((e) => !/^(desafio|missao)/.test(e.k)).reduce((t, e) => t + e.pf, 0) // desafio da semana e missão do dia têm testes próprios
     let st = G.emptyGame('2026-11-02')
     let r = G.onContaFeita(st, { today: '2026-11-02', receita: 1 })
-    assert.equal(r.st.pf, G.PF.conta + G.PF.contaReceita, '+15 (Fiz minha conta) +5 (receita nova)')
+    assert.equal(pfc(r.st), G.PF.conta + G.PF.contaReceita, '+15 (Fiz minha conta) +5 (receita nova)')
     assert.ok(r.st.seals.conta)
     st = r.st
     r = G.onContaFeita(st, { today: '2026-11-02', receita: 1 })
-    assert.equal(r.st.pf, st.pf, 'mesma receita de novo: 0')
+    assert.equal(pfc(r.st), pfc(st), 'mesma receita de novo: 0')
     r = G.onContaFeita(st, { today: '2026-11-02', receita: 2 })
-    assert.equal(r.st.pf, st.pf + 5)
+    assert.equal(pfc(r.st), pfc(st) + 5)
     st = r.st
     r = G.onContaFeita(st, { today: '2026-11-02', receita: 3 })
-    assert.equal(r.st.pf, st.pf, 'máx. 2 receitas novas com pontos por dia')
+    assert.equal(pfc(r.st), pfc(st), 'máx. 2 receitas novas com pontos por dia')
     assert.ok(r.st.contas && '3' in r.st.contas, 'mas a receita conta para o selo')
     st = r.st
     st = G.onContaFeita(st, { today: '2026-11-03', receita: 4 }).st
     r = G.onContaFeita(st, { today: '2026-11-03', receita: 5 })
     assert.ok(r.st.seals.conta5, 'selo Conta de 5 receitas')
-    assert.equal(r.st.pf - st.pf, G.PF.contaReceita + G.PF.conta5)
+    assert.equal(pfc(r.st) - pfc(st), G.PF.contaReceita + G.PF.conta5)
     const again = G.onContaFeita(r.st, { today: '2026-11-04', receita: 6 })
-    assert.equal(again.st.pf - r.st.pf, G.PF.contaReceita, 'o selo só paga uma vez')
-    assert.equal(G.onContaFeita(G.emptyGame('2026-11-02'), { today: '2026-11-02', receita: null }).st.pf, G.PF.conta, 'conta livre: só o "Fiz minha conta"')
+    assert.equal(pfc(again.st) - pfc(r.st), G.PF.contaReceita, 'o selo só paga uma vez')
+    assert.equal(pfc(G.onContaFeita(G.emptyGame('2026-11-02'), { today: '2026-11-02', receita: null }).st), G.PF.conta, 'conta livre: só o "Fiz minha conta"')
     // o botão manual do Bônus 07 continua e é idempotente
     assert.equal(G.onConta(r.st, { today: '2026-11-05' }).st, r.st)
     assert.ok(G.sealDef('conta5', () => '')?.icon === 'contas')
     ok('gamificação da Conta da Fornada: +15 uma vez, +5 por receita nova (máx. 2/dia), selo de 5 receitas (+10 uma vez), conta livre sem pontos extras, botão manual idempotente')
   }
 
+}
+
+// ---------------------------------------------------------------- v3: missões, extras por progresso, selos surpresa, diário de vendas, ranking anônimo
+{
+  const G = await import('../../shared/game.js')
+  const R = await import('../../shared/rank.js')
+  const CS = await import('../../shared/calc-sync.js')
+  const { signSession } = await import('../crypto.js')
+  const T0 = '2026-11-02' // segunda-feira
+  const ctx = (day: string, item: string, n: number, hour?: number) => ({ today: day, item, title: item, id: `f${n}`, ...(hour !== undefined ? { hour } : {}) })
+  const pfOf = (st: import('../../shared/game.js').GameState, pre: string) => st.pfLog.filter((e) => e.k.startsWith(pre)).reduce((t, e) => t + e.pf, 0)
+
+  // 29. missões do dia: 3 de uma lista fixa, só por ação real, 4 PF cada, +6 pelas 3, tudo dentro do teto
+  {
+    const none = G.pickMissions(T0, { bump: false, conta: false, extra: false })
+    assert.equal(new Set(none).size, 3)
+    assert.deepEqual(none, G.pickMissions(T0, { bump: false, conta: false, extra: false }), 'determinística')
+    for (let i = 0; i < 40; i++) {
+      const d = G.addDays(T0, i)
+      const a = G.pickMissions(d, { bump: false, conta: false, extra: false })
+      assert.ok(!a.includes('conta') && !a.includes('socorro') && !a.includes('extra'), 'sem direito, sem missão dessa ação')
+      assert.equal(new Set(a).size, 3)
+      const b = G.pickMissions(d, { bump: true, conta: true, extra: true })
+      assert.ok(b.every((id) => G.missionById(id)))
+    }
+    const union = new Set(Array.from({ length: 40 }, (_, i) => G.pickMissions(G.addDays(T0, i), { bump: true, conta: true, extra: true })).flat())
+    assert.equal(union.size, G.MISSIONS.length, 'o rodízio passa por todas as missões')
+    assert.equal(G.PF.missao, 4)
+    assert.equal(G.MISSION_MAX, 18)
+
+    let st = G.startDay(G.emptyGame(T0), { today: T0 })
+    st = { ...st, missoes: { d: T0, itens: ['fav', 'feita', 'nota'], feitos: [], todas: false } }
+    const f1 = G.onFav(st, { today: T0, item: 'main', title: 'Receita' })
+    assert.equal(pfOf(f1.st, 'missao:'), 4)
+    assert.equal(G.onFav(G.onFav(f1.st, { today: T0, item: 'main', title: 'x' }).st, { today: T0, item: 'main', title: 'x' }).st.missoes!.feitos.length, 1, 'repetir não paga de novo')
+    const f2 = G.onDone(f1.st, ctx(T0, 'main', 1))
+    assert.equal(pfOf(f2.st, 'missao:'), 8)
+    const f3 = G.onNote(f2.st, { today: T0, id: 'f1', texto: 'ficou macio' })
+    assert.equal(pfOf(f3.st, 'missao'), 12 + G.PF.missaoTodas)
+    assert.ok(f3.st.missoes!.todas)
+    assert.ok(f3.msgs.some((m) => m.startsWith('Missões de hoje completas')))
+    assert.ok(G.pfOnDay(f3.st, T0) <= G.DAILY_CAP, 'dentro do teto de 60 PF')
+    const next = G.onFav(f3.st, { today: G.addDays(T0, 1), item: 'bonus-01', title: 'y' }).st
+    assert.equal(next.missoes!.d, G.addDays(T0, 1))
+    assert.equal(next.missoes!.feitos.length <= 1, true, 'dia novo recomeça, sem punição')
+    // abrir um extra vale uma vez por dia e só com a missão na lista
+    const ex = { ...G.emptyGame(T0), missoes: { d: T0, itens: ['extra', 'foto', 'nota'], feitos: [], todas: false } }
+    const ex1 = G.onExtraAberto(ex, { today: T0 })
+    assert.equal(pfOf(ex1.st, 'missao:'), 4)
+    assert.equal(pfOf(G.onExtraAberto(ex1.st, { today: T0 }).st, 'missao:'), 4)
+    assert.equal(pfOf(G.onExtraAberto(G.emptyGame(T0), { today: T0 }).st, 'missao:'), 0, 'sem a missão do dia, abrir extra não dá ponto')
+    // desafio da semana "faça uma conta" só entra com a calculadora
+    const weeks = Array.from({ length: 30 }, (_, i) => G.addDays(T0, i * 7))
+    assert.ok(weeks.every((w) => !G.pickChallenges(w, false, false).includes('conta')))
+    assert.ok(weeks.some((w) => G.pickChallenges(w, false, true).includes('conta')))
+    ok('missões do dia: lista fixa, 3 por dia, 4 PF cada e +6 pelas 3 (18 PF no máximo, dentro do teto), uma vez por ação, extra só com a missão, desafio "conta" só com a calculadora')
+  }
+
+  // 30. selos surpresa: só por ação real, uma vez, sem pressa
+  {
+    assert.equal(G.hiddenSealIds().length, 10)
+    assert.ok(G.HIDDEN_SEALS.every((h) => h.hidden && G.sealDef(h.id, (x) => x)))
+    const mad = G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1, 6))
+    assert.ok(mad.st.seals['h:madrugadora'] && !mad.st.seals['h:noite'])
+    assert.ok(mad.msgs.includes('Selo surpresa conquistado: Madrugadora.'))
+    assert.ok(G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1, 22)).st.seals['h:noite'])
+    assert.ok(!G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1, 12)).st.seals['h:madrugadora'], 'meio-dia não ganha selo de madrugada')
+    assert.ok(G.onDone(G.emptyGame('2026-11-01'), ctx('2026-11-01', 'main', 1)).st.seals['h:domingo'], '01/11/2026 é domingo')
+    assert.ok(!G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1)).st.seals['h:domingo'])
+    assert.ok(G.onDone(G.emptyGame('2026-12-22'), ctx('2026-12-22', 'main', 1)).st.seals['h:natal'])
+    assert.ok(!G.onDone(G.emptyGame('2026-12-26'), ctx('2026-12-26', 'main', 1)).st.seals['h:natal'])
+    const again = G.onDone(mad.st, ctx(G.addDays(T0, 1), 'bonus-01', 2, 5))
+    assert.equal(again.st.pfLog.filter((e) => e.k === 'h:madrugadora').length, 1, 'o selo paga uma vez')
+    // 3 receitas diferentes no mesmo dia
+    let t = G.emptyGame(T0)
+    for (const [i, it] of ['main', 'bonus-01', 'bonus-02'].entries()) t = G.onDone(t, ctx(T0, it, i + 1)).st
+    assert.ok(t.seals['h:tarde-cheia'])
+    // volta depois de 7 dias; 10 fornadas; 5 fotos; 14 dias de sequência
+    const v = G.onDone(G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1)).st, ctx(G.addDays(T0, 7), 'main', 2))
+    assert.ok(v.st.seals['h:volta'])
+    assert.ok(!G.onDone(G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1)).st, ctx(G.addDays(T0, 6), 'main', 2)).st.seals['h:volta'])
+    let c10 = G.emptyGame(T0)
+    for (let i = 0; i < 10; i++) c10 = G.onDone(c10, ctx(G.addDays(T0, i), 'main', i + 1)).st
+    assert.ok(c10.seals['h:cozinha-cheia'])
+    assert.ok(c10.seals['h:constancia'] === undefined || c10.fornadas.length === 10)
+    let c14 = G.emptyGame(T0)
+    for (let i = 0; i < 14; i++) c14 = G.onDone(c14, ctx(G.addDays(T0, i), 'main', i + 1)).st
+    assert.ok(c14.seals['h:constancia'], '14 dias seguidos')
+    let ph = c10
+    for (let i = 1; i <= 5; i++) ph = G.onNote(ph, { today: G.addDays(T0, 11), id: `f${i}`, foto: true }).st
+    assert.ok(ph.seals['h:album'])
+    const gift = G.onGift(G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1)).st, { today: T0, id: 'f1', on: true })
+    assert.ok(gift.st.seals.presente && gift.msgs.some((m) => /^Selo surpresa conquistado/.test(m)))
+    assert.ok(Object.values(G.PF).every((x) => x <= 60))
+    for (const h of G.HIDDEN_SEALS) assert.ok(!/lucro|renda|ganhe|garanta|desconto|restam|vagas|perdeu/i.test(`${h.name} ${h.how}`), h.id)
+    ok('selos surpresa: 10 escondidos, cada um só pela ação real (hora, domingo, Natal, 3 receitas no dia, volta, 10 fornadas, 5 fotos, 14 dias, presente), pagam uma vez, sem promessa nem pressão')
+  }
+
+  // 31. extras por progresso: próximo desbloqueio, quanto falta, nunca volta a trancar, nada comprado é trancado
+  {
+    const e0 = G.emptyGame(T0)
+    const nu = G.nextUnlock(e0)
+    assert.ok(nu && nu.missing.length > 5 && nu.pct >= 0 && nu.pct <= 100)
+    assert.ok(G.EXTRAS.every((e) => ['level', 'fornadas', 'dias', 'selos', 'contas'].includes(e.req.t) && G.reqRule(e).startsWith('Libera')))
+    assert.ok(G.EXTRAS.some((e) => e.req.t === 'fornadas') && G.EXTRAS.some((e) => e.req.t === 'contas'))
+    const guia = G.EXTRAS.find((e) => e.id === 'guia-anotar-fornada')!
+    assert.equal(G.extraUnlocked(guia, e0), false)
+    const done1 = G.withUnlocks(e0, G.onDone(e0, ctx(T0, 'main', 1)))
+    assert.ok(done1.msgs.includes(`Extra liberado: ${guia.title}.`))
+    assert.ok(done1.st.desbloqueados!.includes(guia.id))
+    assert.ok(G.extraUnlocked(guia, done1.st))
+    const again = G.withUnlocks(done1.st, { st: done1.st, msgs: [] })
+    assert.deepEqual(again.msgs, [], 'não avisa duas vezes')
+    // apagar a fornada não tranca de novo
+    const apagada = { ...done1.st, fornadas: [] }
+    assert.ok(G.extraUnlocked(guia, apagada), 'o que abriu continua aberto')
+    assert.equal(G.extrasUnlockedIds({ ...e0, semPressao: true }).length, G.EXTRAS.length, 'sem pressão: tudo aberto')
+    const nu2 = G.nextUnlock(done1.st)
+    assert.ok(nu2 && nu2.extra.id !== guia.id)
+    assert.ok(G.nextUnlock({ ...e0, desbloqueados: G.EXTRAS.map((e) => e.id) }) === null)
+    for (const e of G.EXTRAS) assert.ok(e.blocks.flatMap((b) => [b.p ?? '', ...(b.ul ?? [])]).join(' ').length > 200, `texto real em ${e.id}`)
+    ok('extras por progresso: regra por extra, próximo desbloqueio com quanto falta, aviso único, nunca volta a trancar, sem pressão abre tudo, texto real')
+  }
+
+  // 32. comemoração, PF da semana, metas da conta e primeira venda anotada
+  {
+    assert.equal(G.celebrationOf([])?.kind ?? null, null)
+    const c = G.celebrationOf(['+10 PF: Fiz Panetone', 'Selo conquistado: Panetone', 'Você agora é Fornada! Continue.'])
+    assert.equal(c?.kind, 'nivel')
+    assert.equal(G.celebrationOf(['Extra liberado: X.', 'Selo surpresa conquistado: Madrugadora.'])?.kind, 'selo')
+    const sur = G.celebrationOf(['Selo conquistado: Panetone.', 'Selo surpresa conquistado: Madrugadora.'])
+    assert.equal(sur?.title, 'Selo surpresa!', 'selo surpresa vence o selo comum na comemoração')
+    assert.equal(sur?.icon, 'madrugadora')
+    assert.equal(G.celebrationOf(['Extra liberado: X.', 'Missões de hoje completas. Descanse.'])?.kind, 'extra')
+    assert.equal(G.celebrationOf(['+10 PF: Fiz Panetone'])?.kind, 'receita')
+    assert.equal(G.celebrationOf(['Salva nas suas favoritas: X.']), null)
+    let st = G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1)).st
+    st = G.onDone(st, ctx(G.addDays(T0, 7), 'main', 2)).st
+    assert.equal(G.weeklyPf(st, T0), st.pfLog.filter((e) => e.d === T0).reduce((a, e) => a + e.pf, 0))
+    assert.ok(G.weeklyPf(st, G.addDays(T0, 7)) > 0)
+    assert.equal(G.weeklyPf(G.emptyGame(T0), T0), 0)
+    const m0 = G.contaMetas(G.emptyGame(T0))
+    assert.deepEqual(m0.map((m) => [m.id, m.feita, m.now, m.de]), [['conta1', false, 0, 1], ['conta5', false, 0, 5], ['venda1', false, 0, 1]])
+    const v = G.onVendaAnotada(G.emptyGame(T0), { today: T0 })
+    assert.equal(v.st.pf, G.PF.venda1)
+    assert.ok(v.st.seals.venda1)
+    assert.equal(G.onVendaAnotada(v.st, { today: G.addDays(T0, 1) }).st, v.st, 'só a primeira venda paga, e o valor nunca entra na conta')
+    assert.equal(G.contaMetas(v.st)[2].feita, true)
+    assert.ok(G.showGame(G.emptyGame(T0)) && G.showRank(G.emptyGame(T0)) && G.showDiary(G.emptyGame(T0)))
+    const sp = G.setConfig(G.emptyGame(T0), { semPressao: true })
+    assert.ok(!G.showGame(sp) && !G.showRank(sp) && !G.showDiary(sp), 'sem pressão esconde jogo, ranking e diário')
+    const off = G.setConfig(G.emptyGame(T0), { gamificacao: false })
+    assert.ok(!G.showRank(off) && !G.showDiary(off))
+    assert.equal(G.emptyGame(T0).config.festa, true)
+    ok('comemoração (prioridade nível > selo > extra > missões > receita), PF da semana, metas da conta (1 conta, 5 contas, 1ª venda), ranking e diário escondidos no modo sem pressão')
+  }
+
+  // 33. diário de vendas: validação, mescla com apagados, partes do servidor e total só do que ela digitou
+  {
+    const t1 = '2026-11-02T10:00:00.000Z'
+    const t2 = '2026-11-02T11:00:00.000Z'
+    const venda = (id: string, data: string, qtd: number, valorCents: number, em = t1) => ({ id, data, produto: 'Panetone trufado', qtd, valorCents, atualizadaEm: em })
+    assert.ok(CS.vendaValida(venda('v1', '2026-11-02', 2, 9000)))
+    assert.ok(CS.vendaValida(venda('v1', '2026-11-02', 1, 0)), 'valor 0 é permitido (brinde)')
+    for (const bad of [venda('', '2026-11-02', 1, 100), venda('v', '02/11/2026', 1, 100), venda('v', '2026-02-31', 1, 100), venda('v', '2026-11-02', 0, 100), venda('v', '2026-11-02', 1.5, 100), venda('v', '2026-11-02', 1, -1), venda('v', '2026-11-02', 1, 1.5), { ...venda('v', '2026-11-02', 1, 100), produto: ' ' }, { ...venda('v', '2026-11-02', 1, 100), produto: 'x'.repeat(61) }]) assert.ok(!CS.vendaValida(bad))
+    const a = { ...CS.docVazio(t1), vendas: [venda('v1', '2026-11-02', 2, 9000), venda('v2', '2026-11-03', 1, 4500)] }
+    const b = { ...CS.docVazio(t1), vendas: [{ ...venda('v1', '2026-11-02', 3, 13500, t2) }, venda('v3', '2026-10-30', 1, 4000)], apagadas: { v2: t2 } }
+    const m = CS.mesclar(a, b, t2)
+    assert.deepEqual(m.vendas.map((x) => x.id), ['v1', 'v3'], 'v2 apagada some, ordem pela data')
+    assert.equal(m.vendas.find((x) => x.id === 'v1')!.qtd, 3, 'a edição mais recente vence')
+    assert.deepEqual(CS.resumoMes(m.vendas, '2026-11'), { vendas: 1, unidades: 3, totalCents: 13500 })
+    assert.deepEqual(CS.resumoMes(m.vendas, '2026-10'), { vendas: 1, unidades: 1, totalCents: 4000 })
+    assert.deepEqual(CS.resumoMes(m.vendas, '2026-09'), { vendas: 0, unidades: 0, totalCents: 0 }, 'sem venda, zero: nada estimado')
+    // ida e volta pelas partes que o servidor guarda
+    const p = CS.partes(m)
+    const back = CS.juntar(p.core as Record<string, unknown>, p.contas, p.extra as Record<string, unknown>, t2)
+    assert.deepEqual(back.vendas, m.vendas)
+    assert.equal(CS.validarDoc(m).ok, true)
+    const bad = CS.validarDoc({ ...m, vendas: [venda('x', '2026-11-02', 0, 1)] })
+    assert.equal(bad.ok, false)
+    const rep = CS.validarDoc({ ...m, vendas: [venda('x', '2026-11-02', 1, 1), venda('x', '2026-11-02', 1, 1)] })
+    assert.equal(rep.ok, false, 'id repetido')
+    const many = CS.validarDoc({ ...CS.docVazio(t1), vendas: Array.from({ length: CS.SYNC_LIMITS.maxVendas + 1 }, (_, i) => venda(`v${i}`, '2026-11-02', 1, 1)) })
+    assert.ok(!many.ok && many.status === 413)
+    ok('diário de vendas: validação (data, produto, quantidade inteira, valor em centavos), mescla com apagados e edição mais recente, total do mês só da soma digitada (zero sem vendas), partes/juntar, limite')
+  }
+
+  // 34. ranking: regras puras
+  {
+    const nk = (i: number) => `Fornada ${R.RANK.alphabet[i % 32]}${R.RANK.alphabet[(i >> 5) % 32]}2`
+    assert.match(R.nickFrom(() => 7), R.NICK_RE)
+    assert.ok(R.isNick('Fornada 4F2') && !R.isNick('Fornada 0F2') && !R.isNick('Maria Silva') && !R.isNick('a@b.com'))
+    const nine: Record<string, number> = {}
+    for (let i = 0; i < 9; i++) nine[nk(i)] = i * 10
+    const w = '2026-11-02'
+    const b9 = R.boardOf(w, nine, nk(3), 10)
+    assert.equal(b9.ready, false)
+    assert.deepEqual(b9.top, [])
+    assert.equal(b9.me, null, 'abaixo do mínimo, nem posição aparece')
+    assert.equal(b9.participants, 9)
+    const twelve = { ...nine, [nk(9)]: 90, [nk(10)]: 90, [nk(11)]: 5 }
+    const b12 = R.boardOf(w, twelve, nk(11), 10)
+    assert.equal(b12.ready, true)
+    assert.equal(b12.top.length, 10)
+    assert.deepEqual(b12.top.slice(0, 3).map((r) => r.pos), [1, 1, 3], 'empate divide a posição')
+    assert.equal(b12.me!.pos, 11, 'a posição dela fora do top 10: 10 pessoas com mais PF')
+    assert.ok(R.boardOf(w, { ...twelve, 'Maria Silva': 999, 'x@y.com': 999 }, null, 10).participants === 12, 'nome e e-mail nunca entram na lista')
+    assert.equal(R.RANK.minDefault, 10)
+    assert.ok(!/prêmio de|sorteio de|ganhe|dinheiro/i.test(R.rankText.explica.replace('Não tem prêmio', '')))
+    ok('ranking: apelido "Fornada XXX" sem 0/1/I/O, lista só com o mínimo de participantes reais, empate divide posição, top 10 + posição, nada fora do formato de apelido')
+  }
+
+  // 35. ranking no servidor (dentro de api/event.ts): sessão, entrar, pontuar só subindo, semana certa, sair apaga
+  {
+    const req = (action: string, method: string, email: string | null, body?: unknown) =>
+      (method === 'GET' ? eventApi.GET : eventApi.POST)(new Request(`http://x/api/event?r=${action}`, { method, headers: email ? { authorization: `Bearer ${signSession(email)}`, 'content-type': 'application/json' } : { 'content-type': 'application/json' }, ...(method === 'POST' ? { body: JSON.stringify(body ?? {}) } : {}) }))
+    type B = import('../../shared/rank.js').Board & { error?: string }
+    const jb = async (r: Response) => (await r.json()) as B
+    const { rankWeek, rankMin } = await import('../rank.js')
+    assert.equal(rankMin(), 10)
+    assert.equal((await req('board', 'GET', null)).status, 401)
+    assert.equal((await req('join', 'POST', null)).status, 401)
+    assert.equal((await req('board', 'POST', 'r0@example.com')).status, 405)
+    assert.equal((await req('score', 'POST', 'r0@example.com', { pf: 5, week: rankWeek() })).status, 409, 'pontuar sem ter entrado')
+    const wk = rankWeek()
+    assert.equal(wk, G.weekKey(wk), 'a chave da semana é uma segunda-feira')
+    const nicks = new Set<string>()
+    let last: B | null = null
+    for (let i = 1; i <= 9; i++) {
+      const b = await jb(await req('join', 'POST', `rank${i}@example.com`))
+      assert.ok(b.joined && R.isNick(b.apelido))
+      nicks.add(b.apelido!)
+      last = b
+    }
+    assert.equal(nicks.size, 9, 'apelidos diferentes')
+    assert.equal(last!.participants, 9)
+    assert.equal(last!.ready, false)
+    assert.deepEqual(last!.top, [], 'com 9 participantes reais a lista não aparece')
+    const again = await jb(await req('join', 'POST', 'rank1@example.com'))
+    assert.equal(again.participants, 9, 'entrar de novo não duplica')
+    const mine = [...nicks][0]
+    assert.equal(again.apelido, mine)
+    const view = await jb(await req('board', 'GET', 'rank-fora@example.com'))
+    assert.equal(view.joined, false)
+    assert.equal(view.apelido, null)
+    // o décimo participante abre a lista
+    const b10 = await jb(await req('join', 'POST', 'rank10@example.com'))
+    assert.equal(b10.ready, true)
+    assert.equal(b10.top.length, 10)
+    assert.ok(b10.top.every((r) => R.isNick(r.apelido)))
+    assert.ok(!JSON.stringify(b10).includes('@'), 'nenhum e-mail na resposta')
+    // PF: só sobe, 0..420, só a semana de agora
+    const s1 = await jb(await req('score', 'POST', 'rank1@example.com', { pf: 80, week: wk }))
+    assert.equal(s1.me!.pf, 80)
+    assert.equal((await jb(await req('score', 'POST', 'rank1@example.com', { pf: 30, week: wk }))).me!.pf, 80, 'não desce')
+    assert.equal((await jb(await req('score', 'POST', 'rank1@example.com', { pf: 120, week: wk }))).me!.pf, 120)
+    assert.equal((await jb(await req('score', 'POST', 'rank1@example.com', { pf: 400, week: G.addDays(wk, -7) }))).me!.pf, 120, 'semana velha é ignorada')
+    for (const pf of [-1, 421, 1.5, 'x', null]) assert.equal((await req('score', 'POST', 'rank1@example.com', { pf, week: wk })).status, 400)
+    assert.equal(s1.me!.pos, 1)
+    // limite mínimo configurável
+    process.env.RANK_MIN_PARTICIPANTS = '12'
+    assert.equal((await jb(await req('board', 'GET', 'rank1@example.com'))).ready, false)
+    process.env.RANK_MIN_PARTICIPANTS = '3'
+    assert.equal((await jb(await req('board', 'GET', 'rank1@example.com'))).ready, true)
+    process.env.RANK_MIN_PARTICIPANTS = 'lixo'
+    assert.equal(rankMin(), 10, 'valor inválido volta para 10')
+    delete process.env.RANK_MIN_PARTICIPANTS
+    // sair apaga apelido e PF
+    const left = await jb(await req('leave', 'POST', 'rank1@example.com'))
+    assert.equal(left.joined, false)
+    assert.equal(left.participants, 9)
+    assert.equal((await jb(await req('board', 'GET', 'rank1@example.com'))).joined, false)
+    assert.ok(!JSON.stringify(await jb(await req('board', 'GET', 'rank2@example.com'))).includes(mine), 'o apelido some da lista')
+    assert.equal((await req('score', 'POST', 'rank1@example.com', { pf: 10, week: wk })).status, 409)
+    const rejoin = await jb(await req('join', 'POST', 'rank1@example.com'))
+    assert.equal(rejoin.me?.pf ?? 0, 0, 'quem volta começa do zero')
+    assert.equal((await req('nada', 'POST', 'rank1@example.com')).status, 400)
+    // /api/event de sempre continua funcionando
+    const ev = await eventApi.POST(new Request('http://x/api/event', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'catalog.view', props: {} }) }))
+    assert.ok(ev.status < 500)
+    ok('ranking no servidor (dentro de api/event.ts): 401 sem sessão, 405, 409 sem entrar, apelido único, lista só com 10 reais, sem e-mail na resposta, PF só sobe (0 a 420, semana atual), mínimo configurável, sair apaga')
+  }
 }
 
 // buildMe sem plano

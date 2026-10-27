@@ -70,6 +70,7 @@ export function Dados() {
 
       <section className="cc-card cc-danger" aria-label="Apagar">
         <h2>Apagar</h2>
+        <p className="cc-small">O Diário de vendas (em Minha fornada) faz parte desses dados: apagar aqui também apaga as vendas que você anotou.</p>
         {conf === '' ? (
           <>
             <button className="btn btn-secondary btn-block" onClick={() => setConf('aparelho')}>Apagar deste aparelho</button>

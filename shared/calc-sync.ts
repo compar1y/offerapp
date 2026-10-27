@@ -13,6 +13,7 @@ export const SYNC_LIMITS = {
   maxTombstones: 1000,
   maxCenarios: 60,
   maxCanais: 12,
+  maxVendas: 1000,
   /** pedidos de sincronização por hora e por cliente */
   perHour: 60,
 }
@@ -46,6 +47,18 @@ export interface Cenario {
   unidadesPct: number
 }
 
+/** Diário de vendas: só o que a cliente digitou. O app nunca estima nem sugere nada aqui. */
+export interface Venda {
+  id: string
+  /** AAAA-MM-DD */
+  data: string
+  produto: string
+  qtd: number
+  /** quanto ela recebeu nesta venda (centavos), digitado por ela */
+  valorCents: number
+  atualizadaEm: string
+}
+
 export interface CalcDoc {
   v: number
   /** versão guardada no servidor (só o servidor aumenta) */
@@ -55,7 +68,9 @@ export interface CalcDoc {
   precos: Precos
   prefs: Prefs
   cenarios: Cenario[]
-  /** id da conta -> quando foi apagada */
+  /** Diário de vendas (só números digitados pela cliente) */
+  vendas: Venda[]
+  /** id da conta (ou da venda) -> quando foi apagada */
   apagadas: Record<string, string>
   /** conta da rodada grátis (nunca se perde ao pagar) */
   rodadaContaId: string | null
@@ -81,6 +96,7 @@ export const docVazio = (agora: string): CalcDoc => ({
   precos: {},
   prefs: PREFS_PADRAO('1970-01-01T00:00:00.000Z'),
   cenarios: [],
+  vendas: [],
   apagadas: {},
   rodadaContaId: null,
 })
@@ -117,6 +133,13 @@ export function mesclar(a: CalcDoc, b: CalcDoc, agora: string = new Date().toISO
   }
   for (const [id, c] of cen) if (apagadas[id] && t(apagadas[id]) >= t(c.atualizadaEm)) cen.delete(id)
 
+  const ven = new Map<string, Venda>()
+  for (const v of [...(a.vendas ?? []), ...(b.vendas ?? [])]) {
+    const cur = ven.get(v.id)
+    if (!cur || t(v.atualizadaEm) > t(cur.atualizadaEm)) ven.set(v.id, v)
+  }
+  for (const [id, v] of ven) if (apagadas[id] && t(apagadas[id]) >= t(v.atualizadaEm)) ven.delete(id)
+
   const prefs = t(b.prefs.em) > t(a.prefs.em) ? b.prefs : a.prefs
   const rodada = a.rodadaContaId ?? b.rodadaContaId
   return {
@@ -127,6 +150,7 @@ export function mesclar(a: CalcDoc, b: CalcDoc, agora: string = new Date().toISO
     precos,
     prefs,
     cenarios: [...cen.values()],
+    vendas: [...ven.values()].sort((x, y) => (y.data < x.data ? -1 : y.data > x.data ? 1 : t(y.atualizadaEm) - t(x.atualizadaEm))).slice(0, SYNC_LIMITS.maxVendas),
     apagadas,
     rodadaContaId: rodada && contas.has(rodada) ? rodada : null,
   }
@@ -135,6 +159,31 @@ export function mesclar(a: CalcDoc, b: CalcDoc, agora: string = new Date().toISO
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
 const num = (v: unknown, min: number, max: number): v is number => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max
 const iso = (v: unknown): v is string => typeof v === 'string' && v.length <= 40 && Number.isFinite(Date.parse(v))
+
+const DATA_RE = /^\d{4}-\d{2}-\d{2}$/
+/** data que existe no calendário (2026-02-31 não vale) */
+const dataReal = (d: string): boolean => {
+  if (!DATA_RE.test(d)) return false
+  const t = Date.parse(`${d}T12:00:00Z`)
+  return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === d
+}
+export function vendaValida(v: unknown): v is Venda {
+  return (
+    isObj(v) &&
+    typeof v.id === 'string' && v.id.length > 0 && v.id.length <= 64 &&
+    typeof v.data === 'string' && dataReal(v.data) &&
+    typeof v.produto === 'string' && v.produto.trim().length > 0 && v.produto.length <= 60 &&
+    num(v.qtd, 1, 99999) && Number.isInteger(v.qtd) &&
+    num(v.valorCents, 0, LIMITES.maxCents) && Number.isInteger(v.valorCents) &&
+    iso(v.atualizadaEm)
+  )
+}
+
+/** total do mês: SÓ a soma dos valores que a cliente digitou. Sem estimativa, sem projeção, sem comparação. */
+export function resumoMes(vendas: Venda[], ym: string): { vendas: number; unidades: number; totalCents: number } {
+  const m = vendas.filter((v) => v.data.startsWith(ym))
+  return { vendas: m.length, unidades: m.reduce((a, v) => a + v.qtd, 0), totalCents: m.reduce((a, v) => a + v.valorCents, 0) }
+}
 
 export type Validacao = { ok: true; doc: CalcDoc } | { ok: false; erro: string; status: 400 | 413 }
 
@@ -182,6 +231,10 @@ export function validarDoc(raw: unknown): Validacao {
     if (!isObj(c) || typeof c.id !== 'string' || typeof c.contaId !== 'string' || typeof c.nome !== 'string' || c.nome.length > 60 || !iso(c.atualizadaEm) || !num(c.precoPct, -50, 100) || !num(c.custoPct, -50, 100) || !num(c.unidadesPct, -90, 1000))
       return { ok: false, erro: 'Cenário inválido.', status: 400 }
   }
+  const vendas = Array.isArray(raw.vendas) ? raw.vendas : []
+  if (vendas.length > SYNC_LIMITS.maxVendas) return { ok: false, erro: 'Vendas demais no diário.', status: 413 }
+  for (const v of vendas) if (!vendaValida(v)) return { ok: false, erro: 'Há uma venda com valores inválidos.', status: 400 }
+  if (new Set(vendas.map((v) => (v as Venda).id)).size !== vendas.length) return { ok: false, erro: 'Vendas repetidas.', status: 400 }
   const rodada = typeof raw.rodadaContaId === 'string' && raw.rodadaContaId.length <= 64 ? raw.rodadaContaId : null
   const doc: CalcDoc = {
     v: DOC_VERSION,
@@ -191,6 +244,7 @@ export function validarDoc(raw: unknown): Validacao {
     precos: limpos,
     prefs: { em: prefs.em, despesasFixasCents: prefs.despesasFixasCents, valorHoraCents: prefs.valorHoraCents, metaCents: prefs.metaCents, semanas: prefs.semanas, horasMes: prefs.horasMes, pesos: pesos as Record<string, number>, canais: canais as Prefs['canais'], vistos: isObj(prefs.vistos) ? (prefs.vistos as Record<string, boolean>) : {} },
     cenarios: cenarios as Cenario[],
+    vendas: (vendas as Venda[]).map((v) => ({ id: v.id, data: v.data, produto: v.produto, qtd: v.qtd, valorCents: v.valorCents, atualizadaEm: v.atualizadaEm })),
     apagadas: apagadas as Record<string, string>,
     rodadaContaId: rodada,
   }
@@ -204,7 +258,7 @@ export function partes(doc: CalcDoc): { core: unknown; contas: Conta[]; extra: u
   return {
     core: { v: doc.v, versao: doc.versao, atualizadoEm: doc.atualizadoEm, precos: doc.precos, prefs: doc.prefs, apagadas: doc.apagadas, rodadaContaId: doc.rodadaContaId },
     contas: doc.contas,
-    extra: { cenarios: doc.cenarios },
+    extra: { cenarios: doc.cenarios, vendas: doc.vendas },
   }
 }
 export function juntar(core: Record<string, unknown> | null, contas: Conta[] | null, extra: Record<string, unknown> | null, agora: string): CalcDoc {
@@ -220,5 +274,6 @@ export function juntar(core: Record<string, unknown> | null, contas: Conta[] | n
     rodadaContaId: (core.rodadaContaId as string | null) ?? null,
     contas: contas ?? [],
     cenarios: ((extra?.cenarios as Cenario[]) ?? []),
+    vendas: ((extra?.vendas as Venda[]) ?? []),
   }
 }

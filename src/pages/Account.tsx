@@ -67,6 +67,13 @@ export function Account() {
           </li>
           <li>
             <span>
+              <strong>Comemorações</strong>
+              <small>Cartão com confete leve ao fazer uma receita, subir de nível ou ganhar um selo. Sem som. Se o seu aparelho pede menos movimento, vem só o cartão.</small>
+            </span>
+            <button role="switch" aria-checked={g.config.festa} aria-label="Comemorações" className={`sw${g.config.festa ? ' sw-on' : ''}`} onClick={() => gameConfig({ festa: !g.config.festa })} />
+          </li>
+          <li>
+            <span>
               <strong>Jogo ligado</strong>
               <small>Desligado, o app esconde a Minha fornada da tela inicial.</small>
             </span>
@@ -76,10 +83,15 @@ export function Account() {
         <p className="hint">
           <Link to="/fornada">Abrir minha fornada</Link>
         </p>
+        {g.rank?.on && (
+          <p className="hint">
+            Você está no ranking semanal anônimo como {g.rank.apelido}. <Link to="/fornada/ranking">Ver ou sair do ranking</Link>.
+          </p>
+        )}
         <Honest text={GAME_TEXT.privacidade} />
         {sure ? (
           <div role="alertdialog" aria-label="Confirmar apagar dados de jogo" className="confirm">
-            <p>Isso apaga pontos, selos, anotações, fotos e encomendas deste aparelho. Seus materiais comprados não mudam.</p>
+            <p>Isso apaga pontos, selos, anotações, fotos e encomendas deste aparelho e tira você do ranking (apaga o apelido e os PF no servidor). O Diário de vendas fica com a Conta da Fornada e se apaga em Seus dados. Seus materiais comprados não mudam.</p>
             <div className="two">
               <button
                 className="btn btn-open"

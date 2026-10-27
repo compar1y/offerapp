@@ -2,9 +2,9 @@
 // para a conta dela (sincronização: a versão mais recente de cada item vence). Nada de valores vai para os eventos de uso.
 import { useSyncExternalStore } from 'react'
 import { PREMISSAS, alertasDeAlta, calcular, contaDaReceita, contaVazia, novoId, type Alta, type Conta, type PrecoIng, type Precos } from '../../shared/calc'
-import { docVazio, mesclar, validarDoc, type CalcDoc, type Cenario, type Prefs } from '../../shared/calc-sync'
+import { SYNC_LIMITS, docVazio, mesclar, validarDoc, vendaValida, type CalcDoc, type Cenario, type Prefs, type Venda } from '../../shared/calc-sync'
 import { provider } from '../lib/access'
-import { gameContaFeita } from '../lib/game'
+import { gameContaFeita, gameVenda } from '../lib/game'
 import { getState, refreshSession } from '../lib/store'
 import { apiDelete, apiExport, apiPush, apiRound } from './api'
 import { META_PADRAO, eraseLocal, loadLocal, saveLocal, type Meta } from './local'
@@ -198,6 +198,20 @@ export function salvarCenario(c: Omit<Cenario, 'id' | 'atualizadaEm'>) {
 }
 export function apagarCenario(id: string) {
   mutate((d) => ({ ...d, cenarios: d.cenarios.filter((x) => x.id !== id), apagadas: { ...d.apagadas, [id]: now() } }))
+}
+
+// ---------------------------------------------------------------- Diário de vendas: só o que ela digitou
+export type VendaIn = { data: string; produto: string; qtd: number; valorCents: number }
+export function registrarVenda(v: VendaIn): { ok: true } | { ok: false; erro: string } {
+  const venda: Venda = { id: novoId('v'), data: v.data, produto: v.produto.trim().slice(0, 60), qtd: Math.round(v.qtd), valorCents: Math.round(v.valorCents), atualizadaEm: now() }
+  if (!vendaValida(venda)) return { ok: false, erro: 'Confira a data, o produto, a quantidade e o valor.' }
+  if (st.doc.vendas.length >= SYNC_LIMITS.maxVendas) return { ok: false, erro: 'O diário chegou ao limite. Apague vendas antigas para anotar novas.' }
+  mutate((d) => ({ ...d, vendas: [venda, ...d.vendas] }))
+  gameVenda() // primeira venda anotada: selo e PF uma vez (o app só conta a ação, nunca o valor)
+  return { ok: true }
+}
+export function apagarVenda(id: string) {
+  mutate((d) => ({ ...d, vendas: d.vendas.filter((x) => x.id !== id), apagadas: { ...d.apagadas, [id]: now() } }))
 }
 
 // ---------------------------------------------------------------- concluir (gasta a rodada grátis, no servidor)

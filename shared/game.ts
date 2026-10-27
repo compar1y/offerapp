@@ -1,6 +1,6 @@
 // Gamificação "Minha fornada": regras puras (sem tela, sem rede). Roda no aparelho da cliente e nos testes.
 // Regras de honestidade: ponto só por ação que a cliente marcou; teto de 60 PF por dia; nível nunca desce; sem sorteio,
-// sem prêmio em dinheiro, sem prazo punitivo, sem promessa de renda. Pontos não são gastos: extras abrem por nível.
+// sem prêmio em dinheiro, sem prazo punitivo, sem promessa de renda. Pontos não são gastos: extras abrem por progresso (nível, receitas feitas, dias, selos, contas).
 import type { ItemId } from './catalog'
 
 // ------------------------------------------------------------ textos fixos de aviso honesto (literais do GAMIFICACAO-GPT.md)
@@ -37,6 +37,11 @@ export const PF = {
   variedade: 10,
   contaReceita: 5, // Conta da Fornada: receita DIFERENTE com conta concluída (máx. 2 por dia)
   conta5: 10, // selo "Conta de 5 receitas", uma vez
+  missao: 4, // cada missão do dia marcada pela ação real
+  missaoTodas: 6, // as 3 missões do dia
+  secreto: 5, // selo surpresa (uma vez cada)
+  constancia: 10, // selo surpresa de 14 dias
+  venda1: 10, // primeira venda anotada no diário (uma vez)
 } as const
 export const CONTA_POR_DIA = 2
 export const DAILY_CAP = 60
@@ -175,7 +180,7 @@ export const GAME_ITEMS: Partial<Record<ItemId, { branch: Branch; cat: CatId }>>
 export const metaOf = (id: string): { branch: Branch; cat: CatId } => GAME_ITEMS[id as ItemId] ?? { branch: 'massa', cat: 'classico' }
 
 // ------------------------------------------------------------ selos
-export type SealIcon = 'aprendiz' | 'fornada' | 'confeiteira' | 'mestra' | 'receita' | 'casa' | 'sequencia' | 'desafio' | 'socorro' | 'encomenda' | 'conta' | 'presente' | 'variedade' | 'contas' | 'venda'
+export type SealIcon = 'aprendiz' | 'fornada' | 'confeiteira' | 'mestra' | 'receita' | 'casa' | 'sequencia' | 'desafio' | 'socorro' | 'encomenda' | 'conta' | 'presente' | 'variedade' | 'contas' | 'venda' | 'madrugadora' | 'lua' | 'domingo' | 'tarde' | 'album' | 'volta' | 'natal' | 'constancia' | 'cozinha'
 // nomes dos arquivos de imagem prontos para trocar o desenho simples (SVG) quando existirem em public/selos/<arquivo>.webp
 export const SEAL_FILES: Record<SealIcon, string | null> = {
   aprendiz: 's01-aprendiz',
@@ -192,7 +197,17 @@ export const SEAL_FILES: Record<SealIcon, string | null> = {
   presente: null,
   variedade: null,
   contas: 's11-conta-5-receitas', // arte pedida ao GPT (IMAGENS-FALTANDO.md); enquanto não existir, o desenho SVG funciona
-  venda: 's12-primeira-venda-anotada', // reservado para o diário de vendas (V1.5); ainda sem conquista no app
+  venda: 's12-primeira-venda-anotada', // conquista "Primeira venda anotada" do Diário de vendas
+  // selos surpresa: ainda sem arte; o desenho SVG funciona (pedidos ao GPT em IMAGENS-FALTANDO.md)
+  madrugadora: null,
+  lua: null,
+  domingo: null,
+  tarde: null,
+  album: null,
+  volta: null,
+  natal: null,
+  constancia: null,
+  cozinha: null,
 }
 export const SOCORRO_TIPOS = [
   { id: 'massa-nao-cresce', name: 'Massa que não cresce' },
@@ -208,7 +223,26 @@ export interface SealDef {
   how: string
   icon: SealIcon
   gold?: boolean
+  /** selo surpresa: só aparece na estante depois de conquistado */
+  hidden?: boolean
+  /** PF do selo surpresa */
+  pf?: number
 }
+// 10 selos surpresa: ninguém vê a lista antes. Aparecem só depois de conquistados por uma ação real (nada de sorteio ou de dia especial inventado).
+export const HIDDEN_SEALS: SealDef[] = [
+  { id: 'presente', name: 'Fornada de presente', how: 'Você marcou uma fornada que fez para presentear.', icon: 'presente', hidden: true, pf: PF.presente },
+  { id: 'h:madrugadora', name: 'Madrugadora', how: 'Você marcou uma receita antes das 7h da manhã.', icon: 'madrugadora', hidden: true, pf: PF.secreto },
+  { id: 'h:noite', name: 'Fornada da noite', how: 'Você marcou uma receita depois das 21h.', icon: 'lua', hidden: true, pf: PF.secreto },
+  { id: 'h:domingo', name: 'Fornada de domingo', how: 'Você marcou uma receita num domingo.', icon: 'domingo', hidden: true, pf: PF.secreto },
+  { id: 'h:constancia', name: 'Constância', how: 'Você chegou a 14 dias de sequência.', icon: 'constancia', hidden: true, pf: PF.constancia },
+  { id: 'h:cozinha-cheia', name: 'Cozinha cheia', how: 'Você marcou 10 fornadas no Livro de Fornadas.', icon: 'cozinha', hidden: true, pf: PF.secreto },
+  { id: 'h:tarde-cheia', name: 'Tarde cheia', how: 'Você fez 3 receitas diferentes no mesmo dia.', icon: 'tarde', hidden: true, pf: PF.secreto },
+  { id: 'h:album', name: 'Álbum de fornadas', how: 'Você guardou 5 fotos de fornadas.', icon: 'album', hidden: true, pf: PF.secreto },
+  { id: 'h:volta', name: 'Volta por cima', how: 'Você voltou a cozinhar depois de uma semana sem marcar receita.', icon: 'volta', hidden: true, pf: PF.secreto },
+  { id: 'h:natal', name: 'Fornada de Natal', how: 'Você marcou uma receita entre 20 e 25 de dezembro.', icon: 'natal', hidden: true, pf: PF.secreto },
+]
+export const hiddenSealIds = (): string[] => HIDDEN_SEALS.map((x) => x.id)
+
 export const STATIC_SEALS: SealDef[] = [
   { id: 'nivel:0', name: 'Aprendiz', how: 'Você começou. Já é um selo.', icon: 'aprendiz' },
   { id: 'nivel:1', name: 'Fornada', how: 'Chegue a 100 PF.', icon: 'fornada' },
@@ -222,7 +256,8 @@ export const STATIC_SEALS: SealDef[] = [
   { id: 'enc1', name: 'Minha primeira encomenda', how: 'Registre a primeira encomenda no caderno.', icon: 'encomenda' },
   { id: 'conta', name: 'Fiz minha conta', how: 'Marque no Bônus 07 que você calculou o custo da sua fornada.', icon: 'conta' },
   { id: 'conta5', name: 'Conta de 5 receitas', how: 'Termine a conta de 5 receitas diferentes na Conta da Fornada.', icon: 'contas' },
-  { id: 'presente', name: 'Fornada de presente', how: 'Marque uma fornada que você fez para presentear.', icon: 'presente' },
+  { id: 'venda1', name: 'Primeira venda anotada', how: 'Anote a primeira venda no Diário de vendas (só os números que você digitar).', icon: 'venda' },
+  ...HIDDEN_SEALS,
   { id: 'var3', name: 'Variedade: 3 tipos', how: 'Faça materiais de 3 categorias diferentes.', icon: 'variedade' },
   { id: 'var5', name: 'Variedade: 5 tipos', how: 'Faça materiais de 5 categorias diferentes.', icon: 'variedade' },
   { id: 'var8', name: 'Variedade: 8 tipos', how: 'Faça materiais de 8 categorias diferentes.', icon: 'variedade' },
@@ -289,9 +324,12 @@ export interface GameState {
   ingr: Record<string, { extra: string[]; marcados: string[] }>
   extrasVistos: string[]
   ack: string | null
-  config: { gamificacao: boolean; sequencia: boolean; avisos: boolean }
+  config: { gamificacao: boolean; sequencia: boolean; avisos: boolean; festa: boolean }
   semPressao: boolean
   contas?: Record<string, string> // Conta da Fornada: receita (número ou "livre") -> dia em que a primeira conta dela foi concluída
+  missoes?: { d: string; itens: string[]; feitos: string[]; todas: boolean } // missões do dia (lista fixa do app)
+  desbloqueados?: string[] // extras do app já liberados por progresso: nunca voltam a trancar
+  rank?: { on: boolean; apelido: string } // ranking anônimo semanal: só vale se a cliente entrou; o servidor guarda o resto
 }
 
 export const emptyGame = (today: string): GameState => ({
@@ -314,7 +352,7 @@ export const emptyGame = (today: string): GameState => ({
   ingr: {},
   extrasVistos: [],
   ack: null,
-  config: { gamificacao: true, sequencia: true, avisos: false },
+  config: { gamificacao: true, sequencia: true, avisos: false, festa: true },
   semPressao: false,
 })
 
@@ -355,12 +393,22 @@ const seal = (st: GameState, msgs: string[], id: string, d: string, name: string
   msgs.push(`Selo conquistado: ${name}.`)
 }
 
+const surprise = (st: GameState, msgs: string[], id: string, d: string): void => {
+  if (st.seals[id]) return
+  const def = HIDDEN_SEALS.find((x) => x.id === id)
+  if (!def) return
+  st.seals[id] = d
+  msgs.push(`Selo surpresa conquistado: ${def.name}.`)
+  award(st, msgs, d, id, def.pf ?? PF.secreto, `Selo surpresa: ${def.name}`)
+}
+
 // ------------------------------------------------------------ desafios semanais (lista FIXA do app, nunca inventada na hora)
 export interface ChallengeDef {
   id: string
   ev: string
   txt: string
   needsBump?: boolean
+  needsTool?: boolean // precisa da Conta da Fornada (comprada ou com a rodada grátis)
 }
 export const CHALLENGES: ChallengeDef[] = [
   { id: 'nova', ev: 'nova', txt: 'Faça uma receita nova' },
@@ -372,18 +420,20 @@ export const CHALLENGES: ChallengeDef[] = [
   { id: 'enc', ev: 'enc', txt: 'Registre uma encomenda no caderno' },
   { id: 'fav', ev: 'fav', txt: 'Marque uma receita como favorita' },
   { id: 'meta', ev: 'meta', txt: 'Cumpra a meta do dia' },
+  { id: 'conta', ev: 'conta', txt: 'Faça uma conta na Conta da Fornada', needsTool: true },
 ]
 export const challengeById = (id: string): ChallengeDef | undefined => CHALLENGES.find((c) => c.id === id)
-export function pickChallenges(week: string, hasBump: boolean): string[] {
-  const pool = CHALLENGES.filter((c) => !c.needsBump || hasBump)
+export function pickChallenges(week: string, hasBump: boolean, hasTool = false): string[] {
+  const pool = CHALLENGES.filter((c) => (!c.needsBump || hasBump) && (!c.needsTool || hasTool))
   const start = (weekIndex(week) * 3) % pool.length
   return [0, 1, 2].map((i) => pool[(start + i) % pool.length].id)
 }
-function ensureWeek(st: GameState, today: string, hasBump: boolean): void {
+function ensureWeek(st: GameState, today: string, hasBump: boolean, hasTool = false): void {
   const w = weekKey(today)
-  if (st.challenges.semana !== w) st.challenges = { semana: w, itens: pickChallenges(w, hasBump), feitos: [], todos: false }
+  if (st.challenges.semana !== w) st.challenges = { semana: w, itens: pickChallenges(w, hasBump, hasTool), feitos: [], todos: false }
 }
 function challengeEv(st: GameState, msgs: string[], d: string, ev: string): void {
+  missionEv(st, msgs, d, ev)
   const c = st.challenges
   for (const id of c.itens) {
     const def = challengeById(id)
@@ -434,6 +484,7 @@ function touchStreak(st: GameState, msgs: string[], d: string): void {
     award(st, msgs, d, `seq7:${d}`, PF.seq7, '7 dias de sequência')
     seal(st, msgs, 'seq7', d, 'Semana na cozinha')
   }
+  if (s.dias >= 14) surprise(st, msgs, 'h:constancia', d)
 }
 export interface StreakView {
   dias: number
@@ -452,6 +503,8 @@ export function streakView(st: GameState, today: string): StreakView {
 export interface BaseCtx {
   today: string
   hasBump?: boolean
+  contaOk?: boolean // pode fazer conta na Conta da Fornada (comprou ou ainda tem a rodada grátis)
+  hour?: number // hora local (0 a 23) de quando a cliente marcou; só os selos de horário usam
 }
 export interface DoneCtx extends BaseCtx {
   item: string
@@ -470,10 +523,12 @@ export const makesOf = (st: GameState, item: string): number => st.fornadas.filt
 export function onDone(inp: GameState, c: DoneCtx): Res {
   const st = clone(inp)
   const msgs: string[] = []
-  ensureWeek(st, c.today, !!c.hasBump)
+  ensureWeek(st, c.today, !!c.hasBump, !!c.contaOk)
+  ensureDay(st, c)
   // no mesmo dia, a mesma receita conta uma vez
   if (st.fornadas.some((f) => f.item === c.item && f.d === c.today)) return { st: inp, msgs }
   const before = makesOf(st, c.item)
+  const anterior = st.fornadas.length ? st.fornadas[st.fornadas.length - 1].d : null
   st.fornadas.push({ id: c.id, item: c.item, d: c.today })
   const m = metaOf(c.item)
   st.branch[m.branch] += 2
@@ -500,6 +555,7 @@ export function onDone(inp: GameState, c: DoneCtx): Res {
   }
   if (c.sugestao && c.sugestao === c.item && !hasOnce(st, `sug:${weekKey(c.today)}`)) award(st, msgs, c.today, `sug:${weekKey(c.today)}`, PF.sugestao, 'Sugestão da semana feita', c.item)
   touchStreak(st, msgs, c.today)
+  surprisesOnDone(st, msgs, c, anterior)
   const cats = categoriesDone(st)
   for (const n of [3, 5, 8]) if (cats >= n && !hasOnce(st, `var${n}`)) {
     award(st, msgs, c.today, `var${n}`, PF.variedade, `Variedade: ${n} tipos`)
@@ -512,7 +568,8 @@ export function onDone(inp: GameState, c: DoneCtx): Res {
 export function onNote(inp: GameState, c: BaseCtx & { id: string; nota?: number; texto?: string; foto?: boolean }): Res {
   const st = clone(inp)
   const msgs: string[] = []
-  ensureWeek(st, c.today, !!c.hasBump)
+  ensureWeek(st, c.today, !!c.hasBump, !!c.contaOk)
+  ensureDay(st, c)
   const f = st.fornadas.find((x) => x.id === c.id)
   if (!f) return { st: inp, msgs }
   if (c.nota !== undefined) f.nota = Math.max(1, Math.min(5, Math.round(c.nota)))
@@ -526,6 +583,7 @@ export function onNote(inp: GameState, c: BaseCtx & { id: string; nota?: number;
     award(st, msgs, c.today, `foto:${f.id}`, PF.foto, 'Foto da fornada', f.item)
     challengeEv(st, msgs, c.today, 'foto')
   }
+  if (st.fornadas.filter((x) => x.foto).length >= 5) surprise(st, msgs, 'h:album', c.today)
   return { st, msgs }
 }
 
@@ -536,8 +594,7 @@ export function onGift(inp: GameState, c: BaseCtx & { id: string; on: boolean })
   if (!f) return { st: inp, msgs }
   f.presente = c.on
   if (c.on && !hasOnce(st, 'presente')) {
-    award(st, msgs, c.today, 'presente', PF.presente, 'Fornada de presente')
-    seal(st, msgs, 'presente', c.today, 'Fornada de presente')
+    surprise(st, msgs, 'presente', c.today)
   }
   return { st, msgs }
 }
@@ -545,7 +602,8 @@ export function onGift(inp: GameState, c: BaseCtx & { id: string; on: boolean })
 export function onSocorro(inp: GameState, c: BaseCtx & { tipo: string; resolveu: boolean }): Res {
   const st = clone(inp)
   const msgs: string[] = []
-  ensureWeek(st, c.today, !!c.hasBump)
+  ensureWeek(st, c.today, !!c.hasBump, !!c.contaOk)
+  ensureDay(st, c)
   const t = SOCORRO_TIPOS.find((x) => x.id === c.tipo)
   if (!t) return { st: inp, msgs }
   if (!c.resolveu) {
@@ -580,7 +638,8 @@ export const dailyGoalOf = (today: string): string => DAILY_GOALS[dayNum(today) 
 export function onMetaDia(inp: GameState, c: BaseCtx): Res {
   const st = clone(inp)
   const msgs: string[] = []
-  ensureWeek(st, c.today, !!c.hasBump)
+  ensureWeek(st, c.today, !!c.hasBump, !!c.contaOk)
+  ensureDay(st, c)
   if (st.metaDia.d === c.today && st.metaDia.feita) return { st: inp, msgs }
   st.metaDia = { d: c.today, feita: true }
   award(st, msgs, c.today, `meta:${c.today}`, PF.metaDia, 'Meta do dia')
@@ -590,7 +649,8 @@ export function onMetaDia(inp: GameState, c: BaseCtx): Res {
 export function onFav(inp: GameState, c: BaseCtx & { item: string; title: string }): Res {
   const st = clone(inp)
   const msgs: string[] = []
-  ensureWeek(st, c.today, !!c.hasBump)
+  ensureWeek(st, c.today, !!c.hasBump, !!c.contaOk)
+  ensureDay(st, c)
   if (st.fav.includes(c.item)) {
     st.fav = st.fav.filter((x) => x !== c.item)
   } else {
@@ -611,10 +671,12 @@ export function onConta(inp: GameState, c: BaseCtx): Res {
 }
 
 // Conta da Fornada: ao CONCLUIR uma conta. "Fiz minha conta" (+15 PF, selo, uma vez, igual ao botão do Bônus 07), +5 PF por receita DIFERENTE
-// (no máximo 2 por dia, dentro do teto), selo "Conta de 5 receitas" (+10 PF) (o desafio semanal "calcule uma receita" ficou para depois: mexer no rodízio mudaria os desafios que as clientes já veem). Abrir, ver prévia ou mudar número: 0 PF.
+// (no máximo 2 por dia, dentro do teto), selo "Conta de 5 receitas" (+10 PF) Também cumpre o desafio da semana e a missão do dia "faça uma conta", se estiverem na lista. Abrir, ver prévia ou mudar número: 0 PF.
 export function onContaFeita(inp: GameState, c: BaseCtx & { receita: number | null }): Res {
   const st = clone(inp)
   const msgs: string[] = []
+  ensureWeek(st, c.today, !!c.hasBump, true)
+  ensureDay(st, { ...c, contaOk: true })
   if (!hasOnce(st, 'conta')) {
     award(st, msgs, c.today, 'conta', PF.conta, 'Fiz minha conta')
     seal(st, msgs, 'conta', c.today, 'Fiz minha conta')
@@ -634,7 +696,89 @@ export function onContaFeita(inp: GameState, c: BaseCtx & { receita: number | nu
       award(st, msgs, c.today, 'conta5', PF.conta5, 'Conta de 5 receitas')
     }
   }
+  challengeEv(st, msgs, c.today, 'conta') // desafio da semana e missão do dia "faça uma conta"
   return { st, msgs }
+}
+
+// ---- selos surpresa de ação real: hora, dia da semana, data, volume
+function surprisesOnDone(st: GameState, msgs: string[], c: DoneCtx, anterior: string | null): void {
+  if (c.hour !== undefined) {
+    if (c.hour < 7) surprise(st, msgs, 'h:madrugadora', c.today)
+    if (c.hour >= 21) surprise(st, msgs, 'h:noite', c.today)
+  }
+  const [y, m, d] = c.today.split('-').map(Number)
+  if (new Date(y, m - 1, d).getDay() === 0) surprise(st, msgs, 'h:domingo', c.today)
+  if (m === 12 && d >= 20 && d <= 25) surprise(st, msgs, 'h:natal', c.today)
+  if (new Set(st.fornadas.filter((f) => f.d === c.today).map((f) => f.item)).size >= 3) surprise(st, msgs, 'h:tarde-cheia', c.today)
+  if (st.fornadas.length >= 10) surprise(st, msgs, 'h:cozinha-cheia', c.today)
+  if (anterior && diffDays(anterior, c.today) >= 7) surprise(st, msgs, 'h:volta', c.today)
+}
+
+// ------------------------------------------------------------ missões do dia (3 por dia, de uma lista fixa, só por ação real)
+export interface MissionDef {
+  id: string
+  ev: string
+  txt: string
+  need?: 'conta' | 'bump' | 'extra'
+}
+export const MISSIONS: MissionDef[] = [
+  { id: 'feita', ev: 'feita', txt: 'Faça uma receita e marque "Fiz essa"' },
+  { id: 'nota', ev: 'nota', txt: 'Anote como ficou uma fornada' },
+  { id: 'conta', ev: 'conta', txt: 'Faça uma conta na Conta da Fornada', need: 'conta' },
+  { id: 'extra', ev: 'extra', txt: 'Abra um extra do app', need: 'extra' },
+  { id: 'foto', ev: 'foto', txt: 'Tire uma foto de uma fornada' },
+  { id: 'ingr', ev: 'ingr', txt: 'Separe os ingredientes antes de começar uma receita' },
+  { id: 'fav', ev: 'fav', txt: 'Marque uma receita como favorita' },
+  { id: 'socorro', ev: 'socorro', txt: 'Use uma Ficha de Socorro e conte se resolveu', need: 'bump' },
+]
+export const missionById = (id: string): MissionDef | undefined => MISSIONS.find((m) => m.id === id)
+export const MISSION_MAX = 3 * PF.missao + PF.missaoTodas // 18 PF por dia, sempre dentro do teto de 60
+export function pickMissions(today: string, can: { bump: boolean; conta: boolean; extra: boolean }): string[] {
+  const pool = MISSIONS.filter((m) => m.need !== 'bump' || can.bump).filter((m) => m.need !== 'conta' || can.conta).filter((m) => m.need !== 'extra' || can.extra)
+  const n = pool.length
+  const step = n <= 4 ? 1 : Math.ceil(n / 3)
+  const start = dayNum(today) % n
+  return [0, 1, 2].map((i) => pool[(start + i * step) % n].id)
+}
+const canMissions = (st: GameState, c: BaseCtx) => ({ bump: !!c.hasBump, conta: !!c.contaOk, extra: EXTRAS.some((e) => extraUnlocked(e, st)) })
+function ensureDay(st: GameState, c: BaseCtx): void {
+  if (st.missoes?.d === c.today) return
+  st.missoes = { d: c.today, itens: pickMissions(c.today, canMissions(st, c)), feitos: [], todas: false }
+}
+/** as missões de hoje; se o dia ainda não foi gravado, calcula a mesma lista (determinística) */
+export function missionsToday(st: GameState, c: BaseCtx): { itens: string[]; feitos: string[]; todas: boolean } {
+  if (st.missoes?.d === c.today) return st.missoes
+  return { itens: pickMissions(c.today, canMissions(st, c)), feitos: [], todas: false }
+}
+export function startDay(inp: GameState, c: BaseCtx): GameState {
+  if (inp.missoes?.d === c.today) return inp
+  const st = clone(inp)
+  ensureDay(st, c)
+  return st
+}
+function missionEv(st: GameState, msgs: string[], d: string, ev: string): void {
+  const m = st.missoes
+  if (!m || m.d !== d) return
+  const e = ev === 'nova' || ev === 'redo' ? 'feita' : ev
+  for (const id of m.itens) {
+    const def = missionById(id)
+    if (!def || def.ev !== e || m.feitos.includes(id)) continue
+    m.feitos.push(id)
+    award(st, msgs, d, `missao:${d}:${id}`, PF.missao, `Missão do dia: ${def.txt}`)
+    if (m.feitos.length === m.itens.length && !m.todas) {
+      m.todas = true
+      award(st, msgs, d, `missao-todas:${d}`, PF.missaoTodas, 'As 3 missões de hoje')
+      msgs.push('Missões de hoje completas. Descanse ou siga no seu ritmo.')
+    }
+  }
+}
+/** abrir um extra do app (leitura): vale como missão uma vez por dia */
+export function onExtraAberto(inp: GameState, c: BaseCtx): Res {
+  const st = clone(inp)
+  const msgs: string[] = []
+  ensureDay(st, c)
+  missionEv(st, msgs, c.today, 'extra')
+  return msgs.length ? { st, msgs } : { st: inp, msgs }
 }
 
 // ---- checklist de ingredientes
@@ -664,7 +808,8 @@ export function setChecklist(inp: GameState, item: string, patch: { toggle?: str
 export function onEncomenda(inp: GameState, c: BaseCtx & { id: string; nome: string; sabor: string; qtd: number; entrega: string }): Res {
   const st = clone(inp)
   const msgs: string[] = []
-  ensureWeek(st, c.today, !!c.hasBump)
+  ensureWeek(st, c.today, !!c.hasBump, !!c.contaOk)
+  ensureDay(st, c)
   const first = st.encomendas.length === 0
   st.encomendas.push({ id: c.id, nome: c.nome.trim().slice(0, 60), sabor: c.sabor.trim().slice(0, 60), qtd: Math.max(1, Math.min(999, Math.round(c.qtd) || 1)), entrega: c.entrega, entregue: false })
   if (first && !hasOnce(st, 'enc1')) {
@@ -678,7 +823,8 @@ export function onEncomenda(inp: GameState, c: BaseCtx & { id: string; nome: str
 export function onEntregue(inp: GameState, c: BaseCtx & { id: string }): Res {
   const st = clone(inp)
   const msgs: string[] = []
-  ensureWeek(st, c.today, !!c.hasBump)
+  ensureWeek(st, c.today, !!c.hasBump, !!c.contaOk)
+  ensureDay(st, c)
   const e = st.encomendas.find((x) => x.id === c.id)
   if (!e) return { st: inp, msgs }
   e.entregue = !e.entregue
@@ -710,12 +856,13 @@ export function suggestionOf(week: string, owned: string[]): { item: string; rea
   return { item, reason: CAT_REASON[metaOf(item).cat] }
 }
 
-// ------------------------------------------------------------ extras liberados por nível (nunca por gastar PF)
+// ------------------------------------------------------------ extras do app liberados por progresso (nunca por gastar PF, nunca no que a cliente comprou)
+export type ExtraReq = { t: 'level' | 'fornadas' | 'dias' | 'selos' | 'contas'; n: number }
 export interface Extra {
   id: string
   title: string
   kind: 'Ficha extra' | 'Mini-guia' | 'Guia final'
-  level: number
+  req: ExtraReq
   blocks: { h: string; p?: string; ul?: string[] }[]
 }
 export const EXTRAS: Extra[] = [
@@ -723,7 +870,7 @@ export const EXTRAS: Extra[] = [
     id: 'ficha-recheio-mole',
     title: 'Recheio que escorre ou fica mole',
     kind: 'Ficha extra',
-    level: 1,
+    req: { t: 'level', n: 1 },
     blocks: [
       { h: 'O que costuma acontecer', p: 'O recheio foi colocado quente ou muito mole, e a massa do panetone não segura. Ele escorre pelo corte, molha o miolo ou aparece no fundo da forma.' },
       { h: 'O que fazer antes de rechear', ul: ['Deixe o panetone esfriar por completo. Massa morna derrete o recheio.', 'Leve o creme, o brigadeiro ou a ganache ao ponto de pasta e, se precisar, descanse na geladeira por 15 a 20 minutos.', 'Recheie com saco de confeitar e bico fino, em pontos espaçados, sem encher até transbordar.'] },
@@ -735,7 +882,7 @@ export const EXTRAS: Extra[] = [
     id: 'guia-ponto-massa',
     title: 'Ponto da massa em 5 sinais',
     kind: 'Mini-guia',
-    level: 2,
+    req: { t: 'level', n: 2 },
     blocks: [
       { h: 'Por que olhar os sinais', p: 'Tempo e temperatura mudam de cozinha para cozinha. O relógio ajuda, mas quem manda é a massa.' },
       { h: 'Os 5 sinais', ul: ['Textura: lisa, elástica e que solta da tigela.', 'Véu: ao esticar um pedacinho, ele fica fino e quase transparente sem rasgar.', 'Volume: cresceu de forma visível, sem pressa e sem passar do ponto.', 'Toque: ao apertar de leve com o dedo, a marca volta devagar.', 'Cheiro: de fermentação suave, sem azedo forte.'] },
@@ -746,7 +893,7 @@ export const EXTRAS: Extra[] = [
     id: 'guia-separar-tudo',
     title: 'Separe tudo antes: o passo a passo',
     kind: 'Mini-guia',
-    level: 2,
+    req: { t: 'level', n: 2 },
     blocks: [
       { h: 'Antes de ligar o forno', ul: ['Leia a receita até o fim.', 'Pese tudo e separe em potinhos, na ordem de uso.', 'Deixe ovos e manteiga em temperatura ambiente, se a receita pedir.', 'Prepare forma, forminhas e a bancada.', 'Reserve o tempo inteiro da fornada, com as esperas.'] },
       { h: 'Durante', ul: ['Use um cronômetro para as esperas.', 'Anote qualquer ajuste que você fizer.'] },
@@ -757,7 +904,7 @@ export const EXTRAS: Extra[] = [
     id: 'guia-fornada-do-dia',
     title: 'Checklist da fornada de encomenda',
     kind: 'Guia final',
-    level: 3,
+    req: { t: 'level', n: 3 },
     blocks: [
       { h: 'Uma encomenda precisa de cuidado extra', p: 'Este guia é só organização. Ele não calcula nem promete ganho.' },
       { h: 'Antes', ul: ['Confirme sabor, quantidade, data e horário de entrega por mensagem.', 'Confira se você tem todos os ingredientes e embalagens.', 'Planeje a fornada com folga para a massa descansar.'] },
@@ -765,9 +912,172 @@ export const EXTRAS: Extra[] = [
       { h: 'Depois', p: 'Marque a entrega no Caderno de encomendas e anote o que você ajustaria na próxima.' },
     ],
   },
+  {
+    id: 'guia-anotar-fornada',
+    title: 'Como anotar uma fornada para aprender com ela',
+    kind: 'Mini-guia',
+    req: { t: 'fornadas', n: 1 },
+    blocks: [
+      { h: 'Por que anotar', p: 'A mesma receita muda de uma cozinha para outra, de um forno para outro, de um dia para outro. A anotação é o que transforma uma fornada em aprendizado.' },
+      { h: 'O que vale registrar em 1 minuto', ul: ['O que você mudou em relação à receita (marca da farinha, tempo de descanso, forma usada).', 'Como estava a massa nos pontos principais: lisa, elástica, cresceu bem?', 'Como ficou o resultado: miolo, casca, sabor. Dê uma nota de 1 a 5 só para você.', 'Uma coisa para repetir e uma para ajustar na próxima.'] },
+      { h: 'Foto ajuda', p: 'Uma foto do corte do panetone mostra o miolo melhor do que qualquer descrição. Ela fica só no seu aparelho.' },
+    ],
+  },
+  {
+    id: 'receita-creme-confeiteiro',
+    title: 'Receita extra: creme de confeiteiro para rechear',
+    kind: 'Ficha extra',
+    req: { t: 'fornadas', n: 3 },
+    blocks: [
+      { h: 'Ingredientes (rende o suficiente para rechear alguns panetones pequenos)', ul: ['500 ml de leite integral', '4 gemas', '100 g de açúcar', '40 g de amido de milho', '1 colher de chá de baunilha (ou raspas de casca de limão)', '1 colher de sopa de manteiga, no final'] },
+      { h: 'Modo de fazer', ul: ['Misture as gemas, o açúcar e o amido até ficar liso, sem grumos.', 'Aqueça o leite até soltar vapor, sem ferver. Despeje aos poucos sobre as gemas, mexendo sempre.', 'Volte tudo para a panela em fogo baixo e mexa sem parar até engrossar e dar uns borbulhos.', 'Desligue, junte a baunilha e a manteiga, e passe para uma tigela.', 'Cubra com filme tocando a superfície, para não criar película, e leve à geladeira até gelar por completo.'] },
+      { h: 'Para rechear', p: 'Use o creme bem gelado, em saco de confeitar com bico fino, e recheie só depois de o panetone esfriar. Guarde na geladeira e use no mesmo dia ou no dia seguinte. Siga sempre a ficha da sua receita para a quantidade por panetone.' },
+    ],
+  },
+  {
+    id: 'receita-ganache-cobertura',
+    title: 'Receita extra: ganache para cobertura e recheio',
+    kind: 'Ficha extra',
+    req: { t: 'fornadas', n: 5 },
+    blocks: [
+      { h: 'A ideia é só uma proporção', p: 'Ganache é chocolate picado derretido com creme de leite quente. Quem manda no ponto é a proporção entre os dois.' },
+      { h: 'Duas proporções para guardar', ul: ['Recheio macio: 1 parte de chocolate para 1 parte de creme de leite (por peso).', 'Cobertura que firma: 2 partes de chocolate para 1 parte de creme de leite (por peso).'] },
+      { h: 'Modo de fazer', ul: ['Pique o chocolate bem fininho (ou use gotas) e coloque em uma tigela.', 'Aqueça o creme de leite até começar a soltar vapor. Não deixe ferver forte.', 'Despeje sobre o chocolate, espere 1 minuto e mexa do centro para fora, devagar, até ficar liso e brilhante.', 'Para cobrir, use morna e fluida. Para rechear, deixe chegar ao ponto de pasta.'] },
+      { h: 'Se talhou ou ficou duro', p: 'Se separou, junte um fio de creme de leite morno e mexa com paciência. Se firmou demais, aqueça em banho-maria por poucos segundos. Teste sempre em pouca quantidade antes de usar no panetone.' },
+    ],
+  },
+  {
+    id: 'guia-conhecer-forno',
+    title: 'Conheça o seu forno em 3 testes simples',
+    kind: 'Mini-guia',
+    req: { t: 'fornadas', n: 10 },
+    blocks: [
+      { h: 'Cada forno tem seu jeito', p: 'O número no botão nem sempre é o calor real lá dentro. Conhecer o seu forno evita panetone cru no meio ou escuro demais por fora.' },
+      { h: 'Os 3 testes', ul: ['Termômetro de forno (se tiver): compare o que ele mostra com a temperatura que você pediu e anote a diferença.', 'Pontos quentes: asse algo simples e observe qual lado dourou primeiro. Gire a forma na metade do tempo, se for o caso.', 'Prateleira: teste a forma no meio do forno primeiro. Perto demais da resistência, a parte de cima escurece antes.'] },
+      { h: 'Anote', p: 'Escreva no Livro de Fornadas o que descobriu sobre o seu forno. Na próxima, você acerta mais rápido.' },
+    ],
+  },
+  {
+    id: 'guia-organizar-semana',
+    title: 'Organize a semana de fornadas em 4 passos',
+    kind: 'Mini-guia',
+    req: { t: 'dias', n: 3 },
+    blocks: [
+      { h: 'Sem exagerar', p: 'Cozinhar com constância é melhor do que fazer tudo num dia só. Este guia é só organização, não é meta.' },
+      { h: 'Os 4 passos', ul: ['Escolha o dia da semana em que você tem mais calma para a massa.', 'Na véspera, separe e pese os ingredientes e confira se a forma e o forno estão livres.', 'Reserve um dia diferente para embalar e outro para entregar, se houver encomenda.', 'No fim da semana, olhe o Livro de Fornadas e escolha uma coisa para ajustar.'] },
+      { h: 'Lembrete', p: 'Se a semana apertar, tudo bem. A sua sequência tem um dia de descanso e o app não cobra nada de você.' },
+    ],
+  },
+  {
+    id: 'guia-conservar-panetone',
+    title: 'Guardar o panetone: do forno ao dia seguinte',
+    kind: 'Mini-guia',
+    req: { t: 'selos', n: 4 },
+    blocks: [
+      { h: 'Esfriar primeiro', p: 'Embalar quente cria vapor, e o vapor deixa a casca mole e favorece mofo. Deixe esfriar por completo, em local arejado.' },
+      { h: 'Para guardar', ul: ['Embale em saco próprio para alimento ou filme, bem fechado, e proteja da luz e do calor.', 'Panetone recheado com creme precisa de geladeira. Sem recheio perecível, ele fica bem em lugar fresco e seco.', 'Escreva a data e o sabor na embalagem.'] },
+      { h: 'Na hora de servir', p: 'Se tirar da geladeira, espere chegar perto da temperatura ambiente. Para quem faz para vender ou presentear, informe sempre sabor, data e, em caso de dúvida, os ingredientes que podem causar alergia.' },
+    ],
+  },
+  {
+    id: 'guia-ler-custo',
+    title: 'Como ler o custo da sua fornada, sem achismo',
+    kind: 'Mini-guia',
+    req: { t: 'contas', n: 1 },
+    blocks: [
+      { h: 'O que a conta mostra', p: 'A Conta da Fornada soma o que você digitou: ingredientes, embalagem e outros gastos. O app não sabe o preço da sua cidade e não sugere quanto cobrar.' },
+      { h: 'Como ler', ul: ['Custo total: tudo o que você gastou com a fornada, com os números que você colocou.', 'Custo por unidade: o custo total dividido pelas unidades que saíram boas.', 'Se um número estiver velho, atualize o preço do ingrediente e refaça a conta.'] },
+      { h: 'O preço é decisão sua', p: 'O app não promete ganho. Olhe o custo, pense no seu tempo e no que as pessoas da sua região pagam, e decida com calma. Anote no seu diário o que realmente vendeu.' },
+    ],
+  },
+  {
+    id: 'guia-ritmo-leve',
+    title: 'Cozinhar sem pressa: um ritmo que cabe na sua semana',
+    kind: 'Guia final',
+    req: { t: 'dias', n: 7 },
+    blocks: [
+      { h: 'Constância não é correria', p: 'Quem chega a uma semana na cozinha já sabe: o que sustenta o hábito é um ritmo que cabe na vida, não a pressa.' },
+      { h: 'Três ideias', ul: ['Faça menos, mas faça: uma receita bem feita vale mais do que três apressadas.', 'Deixe o app trabalhar para você: use o checklist e as anotações para não depender da memória.', 'Se um dia não deu, volte no seguinte. Pausa faz parte e ninguém cobra.'] },
+      { h: 'Se quiser descansar', p: 'Em Minha conta você liga o modo sem pressão: pontos, ranking e placar saem da tela, e seus selos e o Livro de Fornadas continuam.' },
+    ],
+  },
 ]
-export const extraReason = (e: Extra): string => `Extra do app, liberado por progresso. Você chegou a ${LEVELS[e.level].name}.`
-export const extraUnlocked = (e: Extra, level: number, semPressao = false): boolean => semPressao || level >= e.level
+
+/** números de progresso que abrem os extras (todos vêm de ações marcadas pela cliente) */
+export interface Progress {
+  level: number
+  pf: number
+  fornadas: number
+  dias: number
+  selos: number
+  contas: number
+}
+export const progressOf = (st: GameState): Progress => ({
+  level: st.level,
+  pf: st.pf,
+  fornadas: st.fornadas.length,
+  dias: st.streak.melhor,
+  selos: Object.keys(st.seals).filter((k) => !k.startsWith('nivel:')).length,
+  contas: Object.keys(st.contas ?? {}).length,
+})
+const reqNow = (r: ExtraReq, p: Progress): number => (r.t === 'level' ? p.level : r.t === 'fornadas' ? p.fornadas : r.t === 'dias' ? p.dias : r.t === 'selos' ? p.selos : p.contas)
+const reqMet = (e: Extra, p: Progress): boolean => reqNow(e.req, p) >= e.req.n
+const reqPct = (e: Extra, p: Progress): number => {
+  if (e.req.t === 'level') {
+    const lv = LEVELS[e.req.n]
+    return Math.max(0, Math.min(100, Math.round((p.pf / lv.min) * 100)))
+  }
+  return Math.max(0, Math.min(100, Math.round((reqNow(e.req, p) / e.req.n) * 100)))
+}
+const plr = (n: number, a: string, b: string): string => `${n} ${n === 1 ? a : b}`
+/** o que falta, em palavras da cliente */
+export function reqMissing(e: Extra, p: Progress): string {
+  const r = e.req
+  if (r.t === 'level') return `Faltam ${Math.max(0, LEVELS[r.n].min - p.pf)} PF para chegar a ${LEVELS[r.n].name}.`
+  const f = Math.max(0, r.n - reqNow(r, p))
+  if (r.t === 'fornadas') return `${f === 1 ? 'Falta' : 'Faltam'} ${plr(f, 'receita marcada', 'receitas marcadas')}.`
+  if (r.t === 'dias') return `${f === 1 ? 'Falta' : 'Faltam'} ${plr(f, 'dia', 'dias')} para a sua sequência chegar a ${r.n} dias.`
+  if (r.t === 'selos') return `${f === 1 ? 'Falta' : 'Faltam'} ${plr(f, 'selo', 'selos')} na sua estante.`
+  return `${f === 1 ? 'Falta' : 'Faltam'} ${plr(f, 'conta feita', 'contas feitas')} na Conta da Fornada.`
+}
+/** como se libera, a regra completa (para a lista de extras) */
+export function reqRule(e: Extra): string {
+  const r = e.req
+  if (r.t === 'level') return `Libera quando você chegar a ${LEVELS[r.n].name}.`
+  if (r.t === 'fornadas') return `Libera com ${plr(r.n, 'receita marcada', 'receitas marcadas')} no Livro de Fornadas.`
+  if (r.t === 'dias') return `Libera quando a sua sequência chegar a ${r.n} dias (o dia de descanso vale).`
+  if (r.t === 'selos') return `Libera com ${plr(r.n, 'selo conquistado', 'selos conquistados')}.`
+  return `Libera depois de ${plr(r.n, 'conta feita', 'contas feitas')} na Conta da Fornada.`
+}
+export const extraReason = (e: Extra): string => `Extra do app, liberado por progresso. ${reqRule(e).replace(/^Libera/, 'Liberou')}`
+/** liberado: já gravado, ou o progresso de agora atingiu a regra. No modo sem pressão tudo fica aberto (não há placar). */
+export const extraUnlocked = (e: Extra, st: GameState, semPressao = false): boolean => semPressao || st.semPressao || !!st.desbloqueados?.includes(e.id) || reqMet(e, progressOf(st))
+export const extrasUnlockedIds = (st: GameState): string[] => EXTRAS.filter((e) => extraUnlocked(e, st)).map((e) => e.id)
+
+/** o próximo extra a liberar: o que já está mais perto de abrir. Nada que a cliente comprou depende disto. */
+export interface NextUnlock {
+  extra: Extra
+  missing: string
+  pct: number
+}
+export function nextUnlock(st: GameState): NextUnlock | null {
+  const p = progressOf(st)
+  const locked = EXTRAS.filter((e) => !st.desbloqueados?.includes(e.id) && !reqMet(e, p))
+  if (locked.length === 0) return null
+  const best = [...locked].sort((a, b) => reqPct(b, p) - reqPct(a, p))[0]
+  return { extra: best, missing: reqMissing(best, p), pct: reqPct(best, p) }
+}
+
+/** grava o que acabou de liberar (nunca volta a trancar) e avisa só do que é novo */
+export function withUnlocks(before: GameState, res: Res): Res {
+  const was = new Set(extrasUnlockedIds({ ...before, semPressao: false }))
+  const st = res.st
+  const now = EXTRAS.filter((e) => !st.desbloqueados?.includes(e.id) && (reqMet(e, progressOf(st)) || was.has(e.id))).map((e) => e.id)
+  if (now.length === 0) return res
+  const msgs = [...res.msgs]
+  for (const id of now) if (!was.has(id)) msgs.push(`Extra liberado: ${EXTRAS.find((e) => e.id === id)!.title}.`)
+  return { st: { ...st, desbloqueados: [...(st.desbloqueados ?? []), ...now] }, msgs }
+}
 
 // ------------------------------------------------------------ próximo passo (a bolinha vermelha: no máximo UM, nunca por venda)
 export interface NextStep {
@@ -779,7 +1089,7 @@ export function nextStepOf(st: GameState, c: { today: string; titleOf: (item: st
   const recent = [...st.fornadas].reverse().find((f) => !f.texto && !f.nota && !f.foto && diffDays(f.d, c.today) >= 1 && diffDays(f.d, c.today) <= 3)
   if (recent) return { key: `nota:${recent.id}`, text: `Anote como ficou: ${c.titleOf(recent.item)}`, to: '/fornada/livro' }
   if (!st.semPressao) {
-    const ex = EXTRAS.find((e) => st.level >= e.level && !st.extrasVistos.includes(e.id))
+    const ex = EXTRAS.find((e) => extraUnlocked(e, st) && !st.extrasVistos.includes(e.id))
     if (ex) return { key: `extra:${ex.id}`, text: `Extra liberado: ${ex.title}`, to: `/fornada/extras/${ex.id}` }
   }
   const cont = c.seenNotDone[0]
@@ -928,3 +1238,70 @@ export function visit(inp: GameState, today: string, item?: string): GameState {
   if (inp.ultimaVisita === today && (!item || inp.ultimoItem === item)) return inp
   return { ...inp, ultimaVisita: today, ultimoItem: item ?? inp.ultimoItem }
 }
+
+// ------------------------------------------------------------ comemoração (só um cartão e, se a cliente deixar, um confete leve; sem som)
+export interface Celebration {
+  kind: 'nivel' | 'selo' | 'extra' | 'receita' | 'missoes'
+  title: string
+  text: string
+  icon: SealIcon
+}
+/** lê as mensagens de uma ação e escolhe UMA comemoração, a mais importante: nível > selo > extra > missões > receita */
+export function celebrationOf(msgs: string[]): Celebration | null {
+  const lvl = msgs.find((m) => m.startsWith('Você agora é '))
+  if (lvl) {
+    const idx = LEVELS.findIndex((l) => lvl.startsWith(`Você agora é ${l.name}!`))
+    return { kind: 'nivel', title: 'Novo nível!', text: lvl, icon: LEVELS[Math.max(0, idx)].id }
+  }
+  const sel = msgs.find((m) => m.startsWith('Selo surpresa conquistado: ')) ?? msgs.find((m) => /^Selo conquistado: /.test(m))
+  if (sel) {
+    const name = sel.replace(/^Selo (surpresa )?conquistado: /, '').replace(/\.$/, '')
+    return { kind: 'selo', title: /surpresa/.test(sel) ? 'Selo surpresa!' : 'Selo novo!', text: name, icon: [...STATIC_SEALS, ...HIDDEN_SEALS].find((x) => x.name === name)?.icon ?? 'receita' }
+  }
+  const ext = msgs.find((m) => m.startsWith('Extra liberado: '))
+  if (ext) return { kind: 'extra', title: 'Extra liberado', text: ext.replace('Extra liberado: ', 'Extra do app, liberado por progresso: '), icon: 'presente' }
+  if (msgs.some((m) => m.startsWith('Missões de hoje completas'))) return { kind: 'missoes', title: 'Missões de hoje feitas', text: 'Você completou as 3 missões. Descanse ou siga no seu ritmo.', icon: 'desafio' }
+  const rec = msgs.find((m) => /^\+\d+ PF: Fiz /.test(m))
+  if (rec) return { kind: 'receita', title: 'Receita feita!', text: rec.replace(/^\+\d+ PF: /, ''), icon: 'receita' }
+  return null
+}
+
+// ------------------------------------------------------------ PF da semana (para o ranking anônimo)
+export const weeklyPf = (st: GameState, today: string): number => {
+  const w = weekKey(today)
+  return st.pfLog.filter((e) => weekKey(e.d) === w).reduce((t, e) => t + e.pf, 0)
+}
+
+// ------------------------------------------------------------ metas ligadas à Conta da Fornada e ao Diário de vendas
+export interface ContaMeta {
+  id: 'conta1' | 'conta5' | 'venda1'
+  txt: string
+  feita: boolean
+  now: number
+  de: number
+}
+export function contaMetas(st: GameState): ContaMeta[] {
+  const n = Object.keys(st.contas ?? {}).length
+  return [
+    { id: 'conta1', txt: 'Primeira conta feita', feita: !!st.seals.conta, now: st.seals.conta ? 1 : 0, de: 1 },
+    { id: 'conta5', txt: 'Conta de 5 receitas diferentes', feita: !!st.seals.conta5, now: Math.min(5, n), de: 5 },
+    { id: 'venda1', txt: 'Primeira venda anotada no diário', feita: !!st.seals.venda1, now: st.seals.venda1 ? 1 : 0, de: 1 },
+  ]
+}
+/** primeira venda anotada no Diário de vendas: selo s12 e +10 PF, uma vez (só a ação de anotar, nunca o valor) */
+export function onVendaAnotada(inp: GameState, c: BaseCtx): Res {
+  const st = clone(inp)
+  const msgs: string[] = []
+  ensureWeek(st, c.today, !!c.hasBump, !!c.contaOk)
+  ensureDay(st, c)
+  if (hasOnce(st, 'venda1')) return { st: inp, msgs }
+  award(st, msgs, c.today, 'venda1', PF.venda1, 'Primeira venda anotada')
+  seal(st, msgs, 'venda1', c.today, 'Primeira venda anotada')
+  return { st, msgs }
+}
+
+// ------------------------------------------------------------ o que aparece com o jogo ligado, desligado ou no modo sem pressão
+export const showGame = (st: GameState): boolean => st.config.gamificacao && !st.semPressao
+/** ranking e diário de vendas: fora do modo sem pressão e fora do jogo desligado */
+export const showRank = (st: GameState): boolean => showGame(st)
+export const showDiary = (st: GameState): boolean => showGame(st)

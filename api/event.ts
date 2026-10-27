@@ -1,14 +1,18 @@
 // POST /api/event  { name, offerId?, itemId?, from? }  (sessão obrigatória)
+// /api/event?r=board|join|score|leave: ranking semanal anônimo (mesma função, para não passar do limite de 12 da Vercel Hobby)
 // Eventos do sistema de catálogo: journey.view, hook.click, (sem coleções).
 // Grava eventos simples do app para medir interesse: clique numa oferta, "agora não", "fiz essa", interesse na oferta sazonal.
 import { fail, json, methodNotAllowed, readJson, sessionEmail } from '../server/http.js'
 import { logEvent } from '../server/purchases.js'
 import { ITEM_BY_ID, isOfferId, type ItemId } from '../shared/catalog.js'
+import { rankHandle } from '../server/rank.js'
 
 // só estes nomes são aceitos (o cliente não escolhe nomes livres)
 const NAMES = ['offer.click', 'offer.dismiss', 'offer.interest', 'offer.view', 'catalog.view', 'combo.view', 'combo.spin', 'combo.click', 'combo.interest', 'journey.view', 'hook.click', 'item.done', 'item.undone', 'calc.open', 'calc.unlock.click', 'calc.round.start', 'calc.conta.done', 'calc.export', 'calc.import'] as const
 
 export async function POST(request: Request): Promise<Response> {
+  const r = new URL(request.url).searchParams.get('r')
+  if (r) return rankHandle(request, r)
   try {
     const email = sessionEmail(request)
     if (!email) return json({ error: 'Sessão inválida.' }, 401)
@@ -48,4 +52,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 }
 
-export const GET = () => methodNotAllowed('POST')
+export const GET = (request: Request) => {
+  const r = new URL(request.url).searchParams.get('r')
+  return r ? rankHandle(request, r) : methodNotAllowed('POST')
+}

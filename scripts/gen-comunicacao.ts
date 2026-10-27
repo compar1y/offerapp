@@ -2,7 +2,8 @@
 // e este documento é só a leitura deles. Sem dados reais de clientes e sem segredos.
 //   npm run comunicacao:gen   (grava COMUNICACAO-OFERTAS.md na raiz do app; copie para app-cliente/)
 import { writeFile } from 'node:fs/promises'
-import { BRANCHES, CHALLENGES, DAILY_GOALS, EXTRAS, GAME_TEXT, LEVELS, PF, PHRASES, SOCORRO_TIPOS, STATIC_SEALS, emptyGame, statsOf } from '../shared/game.js'
+import { BRANCHES, CHALLENGES, DAILY_GOALS, EXTRAS, GAME_TEXT, HIDDEN_SEALS, LEVELS, MISSIONS, PF, PHRASES, SOCORRO_TIPOS, STATIC_SEALS, emptyGame, reqRule, statsOf } from '../shared/game.js'
+import { RANK, rankText } from '../shared/rank.js'
 import { BUMP, COMBO, COPY, HOOKS, OFFERS, TRACKS, brl, unlockPrice, comboSumCents, offerCopy } from '../shared/catalog.js'
 
 const nb = (s: string) => s.replace(/\u00a0/g, ' ')
@@ -96,11 +97,25 @@ for (const c of CHALLENGES) w(`- ${c.txt}${c.needsBump ? ' (só com as Fichas de
 w('', '**Meta do dia (lista fixa):**', '')
 for (const g of DAILY_GOALS) w(`- ${g}`)
 w('', '**Selos:**', '', '| Selo | Como ganha |', '|---|---|')
-for (const sd of STATIC_SEALS) w(`| ${esc(sd.name)} | ${esc(sd.how)} |`)
+for (const sd of STATIC_SEALS.filter((x) => !x.hidden)) w(`| ${esc(sd.name)} | ${esc(sd.how)} |`)
 w(`| (um por receita) | Toque em "Fiz essa" no material |`, `| Receita de casa (dourado) | Faça a mesma receita 3 vezes |`)
 w('', '**Salvei a fornada (Fichas de Socorro):** ' + SOCORRO_TIPOS.map((t) => t.name).join(', ') + '.', '')
 w('**Extras liberados por progresso** (nunca por gastar PF; nada do que foi comprado fica trancado):', '')
-for (const e of EXTRAS) w(`- ${e.kind}: ${e.title} (libera em ${LEVELS[e.level].name})`)
+for (const e of EXTRAS) w(`- ${e.kind}: ${e.title}. ${reqRule(e)}`)
+w('', '## Gamificação v3: visível na tela inicial', '')
+w('Tudo abaixo aparece só para quem tem o kit, com o jogo ligado e FORA do modo sem pressão. O texto rotulado "Extra do app, liberado por progresso" nunca tranca algo comprado.', '')
+w('- **Barra fixa no topo:** nível, barra até o próximo nível e PF, sempre à vista (Início, Meus produtos, Caminho, Fornada, Conta). Toque abre a Minha fornada.')
+w(`- **Missões do dia:** 3 por dia, de uma lista fixa, ${PF.missao} PF cada e +${PF.missaoTodas} PF pelas 3 (no máximo 18 PF/dia, dentro do teto de ${60}). A caixinha marca sozinha quando a ação acontece no app. Sem prazo e sem punição.`, '')
+for (const m of MISSIONS) w(`  - ${m.txt}${m.need === 'bump' ? ' (só com as Fichas de Socorro)' : m.need === 'conta' ? ' (só com a Conta da Fornada ou a rodada grátis)' : m.need === 'extra' ? ' (só quando já há extra liberado)' : ''}`)
+w('', '- **Próxima recompensa:** o próximo extra do app, "Extra do app, liberado por progresso", com quanto falta e uma barra. Extras já abertos nunca voltam a trancar.')
+w('- **Comemoração:** cartão com confete leve em CSS ao concluir uma receita, ganhar selo ou extra, completar as missões e subir de nível. Com "reduzir movimento" no aparelho, sem confete (só o cartão). Sem som. Dá para desligar em Minha conta.')
+w('- **Metas da conta:** primeira conta, 5 contas (selo "Conta de 5 receitas") e primeira venda anotada (selo "Primeira venda anotada").')
+w('- **Diário de vendas:** a cliente digita produto, quantidade, valor e data. O total do mês é só a soma do que ela digitou. Sem estimativa, comparação ou promessa. Fica no aparelho; com a Conta da Fornada, sincroniza pela conta. Escondido no modo sem pressão (os dados continuam guardados).')
+w('')
+w('**Ranking semanal anônimo e opcional:**', '')
+w(`- ${rankText.explica}`, `- ${rankText.guardado}`, `- ${rankText.esperaTxt} Mínimo padrão: ${RANK.minDefault} participantes (configurável no servidor por RANK_MIN_PARTICIPANTS). Mostra o top ${RANK.top} e a posição da cliente. Botão "${rankText.sair}". Escondido no modo sem pressão e com o jogo desligado.`, '')
+w('**Selos surpresa (interno: não anunciar nem dar dicas no app; aparecem só quando conquistados por ação real):**', '')
+for (const h of HIDDEN_SEALS) w(`- ${h.name}: ${h.how}`)
 w('', '**30 frases de incentivo (cada uma só aparece com um fato real do uso da cliente):**', '')
 const sample = { ...statsOf(emptyGame('2026-01-05'), '2026-01-05'), semana: 3, hoje: 1, total: 10, dias: 3, fotos: 2, notas: 2, selos: 5, socorros: 1, encomendas: 2, entregues: 2, nivel: 1 }
 for (const ph of PHRASES) w(`- ${ph.text(sample)}`)

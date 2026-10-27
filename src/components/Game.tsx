@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { type ItemId } from '../../shared/catalog'
 import * as G from '../../shared/game'
 import { owns, useStore } from '../lib/store'
-import { clearToast, gameAck, gameChecklist, gameCloseLevel, gameConta, gameDeletePhoto, gameDone, gameFav, gameGift, gameMeta, gameNote, gameSocorro, titleOf, useGame, useNextStep, useToast, useVisit, weekSuggestion } from '../lib/game'
+import { CALC_ENABLED } from '../data/config'
+import { clearToast, closeCelebration, gameAck, gameChecklist, gameCloseLevel, gameConta, gameDeletePhoto, gameDone, gameFav, gameGift, gameMeta, gameNote, gameSocorro, titleOf, useCelebration, useGame, useMissions, useNextStep, useToast, useVisit, weekSuggestion } from '../lib/game'
 import { usePhotoUrl } from '../lib/photos'
 import { Seal } from './Seal'
 
@@ -59,7 +60,7 @@ export function GameToast() {
     const id = setTimeout(clearToast, 7000)
     return () => clearTimeout(id)
   }, [t.id, t.msgs.length])
-  const msgs = st.semPressao ? t.msgs.filter((m) => /^(Selo conquistado|Salva|Primeira|Fornada|Anotado|Você calculou|Seus dados|Não consegui)/.test(m)) : t.msgs
+  const msgs = st.semPressao ? t.msgs.filter((m) => /^(Selo (surpresa )?conquistado|Salva|Primeira|Fornada|Anotado|Você calculou|Seus dados|Não consegui)/.test(m)) : t.msgs
   if (!msgs.length) return null
   return (
     <div className="toast" role="status" aria-live="polite">
@@ -480,4 +481,194 @@ export function GameEntry() {
 export function VisitTracker() {
   useVisit()
   return null
+}
+
+// ---------------------------------------------------------------- v3: barra fixa, missões, próxima recompensa, comemoração, metas da conta
+const LEVEL_ICONS = ['aprendiz', 'fornada', 'confeiteira', 'mestra'] as const
+
+/** barra compacta que fica sempre à vista: nível, barra até o próximo nível e PF. Só para quem tem o kit, com o jogo ligado e fora do modo sem pressão. */
+export function GameBar() {
+  const st = useGame()
+  const store = useStore()
+  if (!owns(store, 'main') || !G.showGame(st)) return null
+  const v = G.levelView(st.pf, st.level)
+  const falta = v.next ? `faltam ${v.next.faltam} PF para ${v.next.name}` : 'último nível'
+  return (
+    <Link to="/fornada" className="gamebar" aria-label={`Minha fornada: nível ${v.name}, ${st.pf} Pontos de Fornada, ${falta}`}>
+      <Seal icon={LEVEL_ICONS[v.idx]} size={34} />
+      <span className="gb-body">
+        <span className="gb-top">
+          <strong>{v.name}</strong>
+          <span className="gb-pf">{st.pf} PF</span>
+        </span>
+        <span className="gb-track" role="progressbar" aria-hidden="true">
+          <span className="gb-fill" style={{ width: `${v.pct}%` }} />
+        </span>
+        <span className="gb-next">{falta}</span>
+      </span>
+    </Link>
+  )
+}
+
+// para onde cada missão leva (a ação acontece lá; a caixinha marca sozinha quando ela faz)
+const MISSION_TO: Record<string, string> = {
+  feita: '/produto/main',
+  nota: '/fornada/livro',
+  conta: '/conta-da-fornada',
+  extra: '/fornada/extras',
+  foto: '/fornada/livro',
+  ingr: '/produto/main',
+  fav: '/produto/main',
+  socorro: '/produto/bump',
+}
+export function MissionsCard() {
+  const st = useGame()
+  const store = useStore()
+  const m = useMissions()
+  if (!owns(store, 'main') || !G.showGame(st)) return null
+  const done = m.feitos.length
+  return (
+    <section className="game-card missions" aria-label="Missões do dia">
+      <div className="mi-head">
+        <h2>Missões do dia</h2>
+        <span className="mi-count" aria-label={`${done} de 3 feitas`}>
+          {done}/3
+        </span>
+      </div>
+      <ul className="miss">
+        {m.itens.map((id) => {
+          const def = G.missionById(id)
+          if (!def) return null
+          const on = m.feitos.includes(id)
+          return (
+            <li key={id} className={on ? 'miss-on' : ''}>
+              <span className="chk" aria-hidden="true">
+                {on ? '✓' : ''}
+              </span>
+              <span className="miss-txt">
+                {def.txt}
+                <small>
+                  +{G.PF.missao} PF
+                  <span className="sr-only">{on ? ' (feita)' : ' (ainda não feita)'}</span>
+                </small>
+              </span>
+              {!on && (
+                <Link className="miss-go" to={MISSION_TO[id] ?? '/'}>
+                  Ir
+                  <span className="sr-only"> para: {def.txt}</span>
+                </Link>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+      <p className="hint">{m.todas ? `As 3 de hoje estão feitas (+${G.PF.missaoTodas} PF de bônus). Amanhã tem outras.` : `A caixinha marca sozinha quando você faz a ação no app. As 3 juntas dão +${G.PF.missaoTodas} PF. Sem prazo: o que não deu, o dia seguinte troca.`}</p>
+    </section>
+  )
+}
+
+export function NextUnlockCard() {
+  const st = useGame()
+  const store = useStore()
+  if (!owns(store, 'main') || !G.showGame(st)) return null
+  const nu = G.nextUnlock(st)
+  return (
+    <section className="game-card unlock" aria-label="Próxima recompensa">
+      <p className="next-k">Próxima recompensa</p>
+      {nu ? (
+        <>
+          <h3>{nu.extra.title}</h3>
+          <span className="tag">Extra do app, liberado por progresso</span>
+          <div className="un-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={nu.pct} aria-label="Quanto já foi andado até este extra">
+            <div className="un-fill" style={{ width: `${nu.pct}%` }} />
+          </div>
+          <p>
+            {nu.missing} <span className="hint">Nada do que você comprou fica trancado.</span>
+          </p>
+        </>
+      ) : (
+        <p>Você abriu todos os extras do app. Continue cozinhando no seu ritmo.</p>
+      )}
+      <Link className="btn btn-secondary btn-block" to="/fornada/extras">
+        Ver todos os extras
+      </Link>
+    </section>
+  )
+}
+
+export function ContaMetasCard() {
+  const st = useGame()
+  const store = useStore()
+  if (!CALC_ENABLED || !owns(store, 'main') || !G.showGame(st)) return null
+  const metas = G.contaMetas(st)
+  return (
+    <section className="game-card" aria-label="Metas da conta">
+      <h3>Metas da conta</h3>
+      <ul className="chal">
+        {metas.map((m) => (
+          <li key={m.id} className={m.feita ? 'chal-on' : ''}>
+            <span className="chk" aria-hidden="true">
+              {m.feita ? '✓' : ''}
+            </span>
+            <span>
+              {m.txt}
+              {m.de > 1 && !m.feita && <small className="meta-n"> ({m.now} de {m.de})</small>}
+              <small className="sr-only">{m.feita ? ' (feita)' : ' (ainda não feita)'}</small>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="two">
+        <Link className="btn btn-secondary" to="/conta-da-fornada">
+          Fazer uma conta
+        </Link>
+        <Link className="btn btn-secondary" to="/fornada/vendas">
+          Diário de vendas
+        </Link>
+      </div>
+      <p className="hint">Só conta o que você digita. O app não sugere preço nem promete ganho.</p>
+    </section>
+  )
+}
+
+// confete leve só em CSS (28 pedacinhos, ~3 s). Com "reduzir movimento" no aparelho, não anima e nem aparece: fica só o cartão. Sem som.
+const reduced = (): boolean => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+function Confetti() {
+  const bits = Array.from({ length: 28 }, (_, i) => i)
+  return (
+    <div className="confetti" aria-hidden="true">
+      {bits.map((i) => (
+        <span key={i} className={`cf cf-${i % 5}`} style={{ left: `${(i * 37) % 100}%`, animationDelay: `${(i % 7) * 0.12}s`, ['--drift' as string]: `${((i * 13) % 60) - 30}px` }} />
+      ))}
+    </div>
+  )
+}
+export function CelebrationLayer() {
+  const { id, c } = useCelebration()
+  const [seen, setSeen] = useState(0)
+  useEffect(() => {
+    if (!c) return
+    setSeen(id)
+    const t = setTimeout(closeCelebration, c.kind === 'nivel' ? 3500 : 6500)
+    return () => clearTimeout(t)
+  }, [id, c])
+  if (!c || seen !== id) return null
+  const motion = !reduced()
+  return (
+    <>
+      {motion && <Confetti key={id} />}
+      {c.kind !== 'nivel' && (
+        <section className="celebrate" role="status" aria-live="polite" aria-label={c.title}>
+          <Seal icon={c.icon} size={48} />
+          <div>
+            <p className="cel-t">{c.title}</p>
+            <p className="cel-x">{c.text}</p>
+          </div>
+          <button className="toast-x" onClick={closeCelebration} aria-label="Fechar">
+            ×
+          </button>
+        </section>
+      )}
+    </>
+  )
 }

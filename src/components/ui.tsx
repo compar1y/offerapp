@@ -6,7 +6,7 @@ import { catalogImage, offerCover } from '../data/images'
 import { COPY, brl, offerCopy, unlockPrice, type DeliverableIcon, type Offer, type OfferContext, shortTitle } from '../../shared/catalog'
 import { buyUrl, pendingFromBundles } from '../lib/offers'
 import { useNextStep } from '../lib/game'
-import { GameToast, LevelUpCard, VisitTracker } from './Game'
+import { CelebrationLayer, GameBar, GameToast, LevelUpCard, VisitTracker } from './Game'
 import { changeDemo, dismissOffer, owns, trackOffer, useStore } from '../lib/store'
 import { themeStyle } from '../lib/theme'
 import { contextOf } from '../lib/context'
@@ -15,6 +15,7 @@ export function Layout({ title, back, children }: { title?: string; back?: strin
   const navigate = useNavigate()
   return (
     <div className={`page${CATALOG_ENABLED ? ' with-nav' : ''}`}>
+      <div className="top-stack">
       <header className="topbar">
         {back ? (
           <button className="icon-btn" aria-label="Voltar" onClick={() => navigate(back)}>
@@ -28,11 +29,14 @@ export function Layout({ title, back, children }: { title?: string; back?: strin
           ☰
         </Link>
       </header>
+      <GameBar />
+      </div>
       <main className="content">
         <LevelUpCard />
         {children}
       </main>
       <GameToast />
+      <CelebrationLayer />
       <VisitTracker />
       <SupportButton />
       <BottomNav />
