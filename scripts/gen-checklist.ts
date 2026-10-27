@@ -13,7 +13,7 @@ L.push('Como ligar um botão de compra: criar o checkout na Wiapy, colar o link 
 L.push('## 1. Checkouts da Wiapy a criar', '')
 L.push('### 1.1 Order bump', '', '| id em `checkouts.json` | Produto | Preço | Feito (link colado) | `ready` |', '|---|---|---|---|---|')
 L.push(`| \`bump\` | +20 Fichas de Socorro do Panetone (id Wiapy do produto: ver README) | ${nb(brl(BUMP.priceCents))} | [ ] | [ ] |`, '')
-L.push('### 1.2 Combo "Leve tudo"', '', '| id | Produto | Preço | Soma riscada (calculada) | Regra do botão | Feito | `ready` |', '|---|---|---|---|---|---|---|')
+L.push('### 1.2 Combo "Biblioteca completa" (antes "Leve tudo")', '', '| id | Produto | Preço | Soma riscada (calculada) | Regra do botão | Feito | `ready` |', '|---|---|---|---|---|---|---|')
 L.push(`| \`combo\` | ${COMBO.title} (${offers.length} materiais) | ${nb(brl(COMBO.comboPriceCents ?? 0))} | ${nb(brl(sum))} | link + pelo menos ${DEFAULT_COMBO_MIN_AVAILABLE} itens prontos | [ ] | [ ] |`, '')
 L.push('"ou 12x" só aparece se `COMBO.comboInstallments = 12`; ligar depois que o Caixa confirmar o parcelamento na Wiapy.', '')
 L.push('### 1.3 Coleções (preço = soma dos itens x 0,65, arredondado para o valor mais próximo terminado em ,00 ou ,90)', '', '| id | Coleção | Itens | Soma dos itens | Preço | Regra do botão | Feito | `ready` |', '|---|---|---|---|---|---|---|---|')
@@ -36,7 +36,7 @@ const todo = [
   'WhatsApp de suporte: trocar o placeholder em `src/data/config.ts` (campo `whatsapp`) pelo número real (DDI + DDD + número, só dígitos).',
   'Garantia de 7 dias: conferir o texto exibido no app contra o que está configurado em cada checkout da Wiapy.',
   'Checkout das +20 Fichas de Socorro (R$ 7,90) como order bump do kit e/ou avulso (id `bump`).',
-  'Ligar o catálogo: `VITE_CATALOG_ENABLED=true` no build de produção e `COMBO.enabled` para o Leve tudo, SÓ quando o Levi mandar. Mínimos opcionais: `VITE_COMBO_MIN_AVAILABLE`, `VITE_COLLECTION_MIN_AVAILABLE`.',
+  'Ligar o catálogo: `VITE_CATALOG_ENABLED=true` no build de produção e `COMBO.enabled` para a Biblioteca completa, SÓ quando o Levi mandar. Mínimos opcionais: `VITE_COMBO_MIN_AVAILABLE`, `VITE_COLLECTION_MIN_AVAILABLE`.',
   'Importar os clientes antigos (`POST /api/admin/import-csv`) e validar login, liberação e estorno com um pedido de teste real.',
   'Vercel: produção usa o Build Command padrão (`npm run build`). Uma prévia de demonstração precisa de `npm run build:preview`. Atenção: editar `public/checkouts.json` na Vercel exige um novo deploy estático (sem rebuild de lógica).',
   'Validar o primeiro deploy das funções da Vercel (limite de 12 funções no plano Hobby: já há 12).',

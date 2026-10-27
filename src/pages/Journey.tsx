@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { OFFER_BY_ID, shortTitle } from '../../shared/catalog'
+import { COPY, OFFER_BY_ID, shortTitle } from '../../shared/catalog'
 import { ComboSlot } from '../components/Combo'
 import { Collections } from '../components/System'
 import { Carousel, Layout, OfferMedia, Section } from '../components/ui'
@@ -11,12 +11,12 @@ import { leveTudoProminent, ownedOfferCount, trackViews, type StepView } from '.
 
 const MARK: Record<StepView['state'], { sym: string; label: string }> = {
   owned: { sym: '✓', label: 'Liberado' },
-  next: { sym: '●', label: 'Próximo passo' },
-  locked: { sym: '🔒', label: 'Ainda não tenho' },
+  next: { sym: '●', label: COPY.context.nextStep },
+  locked: { sym: '○', label: 'Mais adiante' },
 }
 
-// Tela "Seu caminho": Trilhas (um carrossel por trilha, uma peça por produto), Coleções e Leve tudo.
-// A compra nunca é bloqueada: "ainda não tenho" só quer dizer que o material não está no seu acesso.
+// Tela "Seu caminho": Trilhas (um carrossel por trilha, uma peça por produto), Para o seu caminho (coleções) e Biblioteca completa.
+// Nada é bloqueado: "mais adiante" só quer dizer que o material não está no seu acesso.
 export function Journey() {
   const s = useStore()
   const views = trackViews(s)
@@ -30,7 +30,7 @@ export function Journey() {
     <Layout title="Seu caminho">
       <header className="screen-head">
         <h1>Seu caminho</h1>
-        <p className="lead">Cada material resolve o próximo passo. Compre na ordem que quiser: nada fica travado.</p>
+        <p className="lead">Cada material resolve um próximo passo. Siga na ordem que fizer sentido para você: nada fica travado.</p>
       </header>
       <Section title="Trilhas">
         <div className="journey">
@@ -55,7 +55,7 @@ export function Journey() {
                         </span>
                       </span>
                       <strong className="tile-title">{shortTitle(o.id)}</strong>
-                      <span className={`tile-state ${st.state === 'owned' ? 'tile-open' : 'tile-soon'}`}>{st.state === 'owned' ? 'Acessar' : soon ? 'Disponível em breve' : m.label}</span>
+                      <span className={`tile-state ${st.state === 'owned' ? 'tile-open' : 'tile-soon'}`}>{st.state === 'owned' ? COPY.button.open : soon ? COPY.button.soon : m.label}</span>
                     </>
                   )
                   return (

@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
-import { ITEM_BY_ID, OFFER_BY_ID, fileKey, type FileEntry, type ItemId } from '../../shared/catalog'
+import { COPY, ITEM_BY_ID, OFFER_BY_ID, fileKey, offerCopy, type FileEntry, type ItemId } from '../../shared/catalog'
 import { MOCKUPS } from '../data/images'
 import { PREVIEW } from '../data/config'
 import { openFile, owns, toggleDone, toggleSeen, trackOffer, useStore } from '../lib/store'
-import { DeliverableChip, Layout, OfferAction, OfferBlock, OfferMedia, Picture, Price } from '../components/ui'
+import { Context, DeliverableChip, Layout, OfferAction, OfferBlock, OfferMedia, Picture, Price } from '../components/ui'
 import { buyUrl, visibleOffers } from '../lib/offers'
 import { lockInfo, noKitInfo } from '../lib/lock'
 import { themeStyle } from '../lib/theme'
+import { bumpContextOf, contextOf } from '../lib/context'
 import { Section } from '../components/ui'
 import { HookBox, OfferBullets, OfferStack, Testimonials, TrackLine } from '../components/System'
 
@@ -49,12 +50,20 @@ export function Item() {
           )}
         </div>
         <div className="block-info">
-          <span className={unlocked || inKit ? 'tag' : 'tag tag-buy'}>{unlocked ? `${item.badge} · NO SEU KIT` : inKit ? item.badge : offer ? item.badge : `${item.badge} · ADICIONAL`}</span>
+          <span className={unlocked || inKit ? 'tag' : 'tag tag-buy'}>{unlocked ? `${item.badge} · NO SEU KIT` : item.badge}</span>
           {offer && <DeliverableChip offer={offer} />}
           <h1>{item.title}</h1>
-          <p className="lead">{offer && !unlocked ? offer.promise : item.description}</p>
-          {offer && !unlocked && <Price offer={offer} soon={!buyUrl(offer.id)} />}
-          {offer && !unlocked && <OfferAction offer={offer} from="detail" />}
+          {offer && !unlocked && (
+            <>
+              {offerCopy(offer.id).question && <p className="ask">{offerCopy(offer.id).question}</p>}
+              <Context ctx={contextOf(s, offer.id)} />
+              <p className="lead">{offerCopy(offer.id).cardLine}</p>
+              <Price offer={offer} soon={!buyUrl(offer.id)} big />
+              <OfferAction offer={offer} from="detail" variant="detail" />
+            </>
+          )}
+          {offer && unlocked && <p className="lead">{item.description}</p>}
+          {!offer && <p className="lead">{item.description}</p>}
           {(!offer || unlocked) && (
             <>
               {offer && <OfferBullets offer={offer} />}
@@ -135,21 +144,25 @@ export function Item() {
             <TrackLine id={offer.id} />
             <HookBox id={offer.id} where="detail" />
           </section>
-          <section className="sec" aria-label="Comprar">
-            <OfferAction offer={offer} from="detail-end" />
+          <section className="sec" aria-label="Quero isso">
+            <OfferAction offer={offer} from="detail-end" variant="detail" />
             <p className="hint">Pagamento único no checkout da Wiapy. Nada é cobrado ao tocar em outros botões do app.</p>
           </section>
         </>
       ) : (
         <section className="block block-info">
           <div className="upsell">
-            <span className="tag tag-buy">COMPRA ADICIONAL</span>
-            <p>
-              <strong>Este material não está no seu kit.</strong> As Fichas de Socorro são vendidas à parte, por {lock.price}.
+            <span className="tag tag-buy">MATERIAL ADICIONAL</span>
+            <p className="ask">{COPY.bump.question}</p>
+            <Context ctx={bumpContextOf(s)} />
+            <p>{COPY.bump.cardLine}</p>
+            <p className="v-price v-price-big">
+              <strong>{lock.price}</strong>
+              <span>{lock.buyable ? COPY.price.once : COPY.price.planned}</span>
             </p>
             {lock.buyable ? (
-              <a className="btn btn-buy btn-block" href={lock.href} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', 'bump', 'detail')}>
-                <span aria-hidden>🛒</span> Comprar · {lock.price}
+              <a className="btn btn-buy btn-block btn-want" href={lock.href} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', 'bump', 'detail')}>
+                {COPY.button.detail} · {lock.price}
               </a>
             ) : s.interested.bump ? (
               <p className="demo-note" role="status">
@@ -157,7 +170,7 @@ export function Item() {
               </p>
             ) : (
               <button className="btn btn-secondary btn-block" onClick={() => trackOffer('offer.interest', 'bump', 'detail')}>
-                Quero ser avisada
+                {COPY.button.notify}
               </button>
             )}
             {lock.note && <p className="hint">{lock.note}</p>}

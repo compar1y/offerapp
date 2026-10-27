@@ -1037,7 +1037,7 @@ export const COMBO: {
   minAvailable: number
   // TODO: id do produto/checkout do combo na Wiapy (a compra grava o direito "combo", ver bundleItems)
   wiapyProductId: string
-} = { enabled: false, title: 'Leve tudo', comboPriceCents: COMBO_PRICE_CENTS, comboInstallments: null, minAvailable: DEFAULT_COMBO_MIN_AVAILABLE, wiapyProductId: '' }
+} = { enabled: false, title: 'Biblioteca completa', comboPriceCents: COMBO_PRICE_CENTS, comboInstallments: null, minAvailable: DEFAULT_COMBO_MIN_AVAILABLE, wiapyProductId: '' }
 
 // soma dos preços individuais (calculada, nunca digitada)
 export const comboSumCents = (offers: { priceCents: number }[]): number => offers.reduce((t, o) => t + o.priceCents, 0)
@@ -1055,7 +1055,7 @@ export const isOfferId = (id: unknown): id is OfferId => typeof id === 'string' 
 const offerItems: Item[] = OFFERS.map((o) => ({
   id: o.id,
   kind: 'offer' as const,
-  badge: 'COMPRA ADICIONAL',
+  badge: 'MATERIAL ADICIONAL',
   get title() {
     return o.title
   },
@@ -1217,18 +1217,18 @@ export interface Hook {
 
 // "Depois de X, o próximo passo é Y". Aparece no rodapé do produto e no mapa; o clique leva ao card do próximo.
 export const HOOKS: Hook[] = [
-  { from: 'panetones-vulcao', to: 'segredo-recheios', kind: 'track', text: 'Fez o vulcão? O próximo passo é dominar a técnica por trás do recheio, para nunca desandar.' },
-  { from: 'segredo-recheios', to: 'panetones-vitrine', kind: 'track', text: 'Recheio perfeito pede acabamento e foto à altura.' },
-  { from: 'panetones-vitrine', to: 'mini-panetones', kind: 'track', text: 'Panetone bonito pronto? Agora em tamanho presente.' },
-  { from: 'panetones-vitrine', to: 'ceia-doce', kind: 'bridge', text: 'Mesa bonita pede doces à altura: a Ceia Doce completa o cenário.' },
-  { from: 'mini-panetones', to: 'caixas-doces-natal', kind: 'bridge', text: 'Mini panetones prontos? Uma caixa de presente com doces acompanha bem.' },
-  { from: 'sobremesas-natal', to: 'ceia-doce', kind: 'track', text: 'A mesa de Natal pede mais variedade, sem panetone.' },
-  { from: 'ceia-doce', to: 'rabanada-padaria', kind: 'track', text: 'Fechando a mesa: a rabanada que não pode faltar.' },
-  { from: 'receitas-explodir-vendas', to: 'caixas-doces-natal', kind: 'track', text: 'Já escolheu as receitas do mês? Agora transforme em caixa de presente.' },
-  { from: 'caixas-doces-natal', to: 'doces-para-revender', kind: 'track', text: 'Caixa montada: kit de artes e textos para oferecer e fechar encomenda.' },
-  { from: 'mesa-doce-ano-novo', to: 'janeiro-panetone', kind: 'track', text: 'Passou a virada? Janeiro também tem panetone.' },
-  { from: 'janeiro-panetone', to: 'fornada-pascoa', kind: 'track', text: 'Próxima estação: a Páscoa.' },
-  { from: 'fornada-pascoa', to: 'ano-inteiro-encomendas', kind: 'track', text: 'Fechando o ano: o pacote com tudo.' },
+  { from: 'panetones-vulcao', to: 'segredo-recheios', kind: 'track', text: 'O próximo passo natural depois do Vulcão: entender o recheio por dentro, para ele não desandar.' },
+  { from: 'segredo-recheios', to: 'panetones-vitrine', kind: 'track', text: 'Recheio no ponto combina com um acabamento à altura, e uma foto que mostre isso.' },
+  { from: 'panetones-vitrine', to: 'mini-panetones', kind: 'track', text: 'Com o panetone bonito pronto, o próximo passo natural é a versão pequena, que dá para presentear.' },
+  { from: 'panetones-vitrine', to: 'ceia-doce', kind: 'bridge', text: 'Se a mesa vai ser a sua vitrine, os doces da Ceia Doce combinam com ela.' },
+  { from: 'mini-panetones', to: 'caixas-doces-natal', kind: 'bridge', text: 'Mini panetones prontos pedem uma caixa de presente. As Caixas de Doces ajudam a montar.' },
+  { from: 'sobremesas-natal', to: 'ceia-doce', kind: 'track', text: 'Se a mesa de Natal pede mais variedade, sem panetone, este é o próximo passo.' },
+  { from: 'ceia-doce', to: 'rabanada-padaria', kind: 'track', text: 'Para fechar a mesa: a rabanada, que dá sensação de ceia completa.' },
+  { from: 'receitas-explodir-vendas', to: 'caixas-doces-natal', kind: 'track', text: 'Com as receitas do mês escolhidas, o próximo passo é pensar na caixa de presente.' },
+  { from: 'caixas-doces-natal', to: 'doces-para-revender', kind: 'track', text: 'Caixa montada? Falta contar para as pessoas. Aqui estão as artes e os textos para isso.' },
+  { from: 'mesa-doce-ano-novo', to: 'janeiro-panetone', kind: 'track', text: 'Passou a virada? Janeiro também pode ter panetone.' },
+  { from: 'janeiro-panetone', to: 'fornada-pascoa', kind: 'track', text: 'A próxima estação é a Páscoa.' },
+  { from: 'fornada-pascoa', to: 'ano-inteiro-encomendas', kind: 'track', text: 'Para fechar o ano: o pacote com tudo.' },
 ]
 
 export const hooksFrom = (id: ItemId): Hook[] => HOOKS.filter((h) => h.from === id)
@@ -1508,4 +1508,290 @@ export interface MeResponse {
   // o que a cliente pode abrir agora (mesma lista de items): cada produto fica 'liberado' se o id está aqui, senão 'bloqueado'
   entitlements: ItemId[]
   purchases: PurchaseView[]
+}
+
+
+// =====================================================================================================
+// COMUNICAÇÃO DAS OFERTAS (tom: próximo passo e necessidade, não "compre isso aqui")
+// UMA fonte: o app, o teste e o documento app-cliente/COMUNICACAO-OFERTAS.md (npm run comunicacao:gen) leem daqui.
+// Regras: sem depoimento inventado, sem estatística ("90% das alunas"), sem promessa de renda, sem escassez falsa,
+// sem "compre", "oferta" ou "desconto" nos textos de destaque. O preço aparece depois, e com clareza no detalhe.
+// =====================================================================================================
+export interface OfferCopy {
+  // gancho de necessidade: a frase do card quando não há contexto ("Para quando...")
+  need: string
+  // como ajuda, uma frase curta (segunda linha do card)
+  cardLine: string
+  // pergunta ou situação real da cozinha, abre o detalhe
+  question: string
+  // materiais (receita/bônus do kit ou compras) que dão contexto a este card
+  relatesTo: ItemId[]
+  // depois de "Fiz essa" em um dos relacionados (continua "Você marcou “X” como feita.")
+  afterDone: string
+  // depois de marcar um dos relacionados como visto
+  afterOpened: string
+}
+
+export const COPY = {
+  nav: { home: 'Início', library: 'Biblioteca', journey: 'Seu caminho', account: 'Conta' },
+  library: {
+    title: 'Biblioteca',
+    lead: 'Materiais para o seu próximo passo na cozinha. Você escolhe quando. Nada é cobrado ao abrir.',
+  },
+  sections: {
+    forYou: 'Para você',
+    collections: 'Para o seu caminho',
+    collectionsLead: 'Materiais que andam juntos. Pegue um por um ou a coleção inteira, como fizer mais sentido.',
+    all: 'Todos os materiais',
+    allLead: 'A biblioteca inteira, na ordem em que costuma fazer sentido.',
+    rescue: 'Para quando a massa não crescer',
+    rescueLead: 'Se o panetone murchou, solou ou o recheio desandou, comece por aqui.',
+    mine: 'Meus produtos',
+  },
+  button: {
+    card: 'Ver como ajuda', // cards e lista: leva ao detalhe, sem checkout
+    detail: 'Quero isso', // detalhe: leva ao checkout (com o preço ao lado)
+    collection: 'Quero esta coleção',
+    combo: 'Quero a biblioteca completa',
+    comboSee: 'Ver a biblioteca completa',
+    open: 'Acessar',
+    soon: 'Disponível em breve',
+    notify: 'Quero ser avisada',
+    notified: 'Anotado ✓ Avisamos você',
+  },
+  price: { once: 'pagamento único', planned: 'preço previsto', sum: 'valor somado dos itens' },
+  context: {
+    done: (title: string) => `Você marcou “${title}” como feita`,
+    opened: (title: string) => `Você marcou “${title}” como visto`,
+    trail: (track: string, n: number, total: number) => `Sua trilha “${track}”: ${n} de ${total}`,
+    collectionHave: (n: number, total: number) => `Você já tem ${n} de ${total} desta coleção`,
+    nextStep: 'Seu próximo passo',
+  },
+  combo: {
+    title: 'Biblioteca completa',
+    need: 'Para quem já sabe que quer seguir o caminho inteiro, sem escolher item por item.',
+    short: 'Todos os materiais da biblioteca num só acesso.',
+    detailsOpen: (n: number) => `Ver os ${n} materiais`,
+    spin: 'Girar a roleta',
+    wheelNote: 'Todas as fatias levam ao mesmo valor.',
+  },
+  hookLabel: 'O próximo passo natural',
+  bump: {
+    need: 'Para quando a massa não crescer, o panetone murchar ou o recheio desandar.',
+    cardLine: 'Ache o problema pelo que você está vendo, saiba se ainda dá para salvar e o que mudar na próxima fornada.',
+    question: 'A massa não cresceu, o panetone murchou ou ficou duro. E agora?',
+    afterDone: 'Fez a receita e ela não saiu como você esperava? As fichas ajudam a entender o que aconteceu.',
+    afterOpened: 'Se a massa deu trabalho, as fichas mostram por onde começar a corrigir.',
+  },
+} as const
+
+export interface CollectionCopy {
+  need: string
+}
+export const COLLECTION_COPY: Record<CollectionId, CollectionCopy> = {
+  'primeira-fornada': { need: 'Para começar com o pé direito: um panetone de recheio marcante e uma rabanada de padaria.' },
+  'panetone-confeitaria': { need: 'Para quando você quer o panetone com cara de confeitaria, do recheio ao acabamento.' },
+  'ceia-completa': { need: 'Antes da ceia de Natal, a mesa doce pensada do começo ao fim.' },
+  'presentes-que-vendem': { need: 'Para quem quer presentear com caixas e minis, e depois contar isso para as pessoas.' },
+  'encomendas-dezembro': { need: 'Para quando as encomendas começarem a chegar e você quiser tudo no lugar.' },
+}
+
+export const OFFER_COPY: Partial<Record<OfferId, OfferCopy>> = {
+  'panetones-vulcao': {
+    need: 'Para quando você quer um panetone que faça todo mundo parar para olhar.',
+    cardLine: 'Recheio e cobertura que escorrem, com a montagem explicada para dar certo na sua cozinha.',
+    question: 'Já viu aquele panetone com o recheio escorrendo e pensou: como será que fazem?',
+    relatesTo: ['main', 'bonus-06'],
+    afterDone: 'O próximo passo é dar ao seu panetone o recheio que escorre.',
+    afterOpened: 'Se o panetone básico já está na sua mão, o Vulcão mostra como montar o recheio que escorre.',
+  },
+  'panetones-vitrine': {
+    need: 'Para quando o panetone já sai bom, mas você quer que ele fique bonito na foto e na mesa.',
+    cardLine: 'Acabamentos para o panetone ficar com cara de vitrine, e o jeito de fotografar.',
+    question: 'Seu panetone cresce bem, mas na hora de mostrar parece comum?',
+    relatesTo: ['main', 'bonus-03', 'bonus-01'],
+    afterDone: 'O próximo passo é caprichar no acabamento e na foto.',
+    afterOpened: 'Se você está olhando o cardápio e as fotos, aqui estão acabamentos para o panetone ter o que mostrar.',
+  },
+  'caixas-doces-natal': {
+    need: 'Antes do Natal, você vai querer algo bonito para acompanhar o panetone na caixa.',
+    cardLine: 'Brigadeiros e trufas gourmet para montar caixas de presente.',
+    question: 'Quando alguém pede um presente, o que vai na caixa junto com o panetone?',
+    relatesTo: ['bonus-01', 'bonus-02'],
+    afterDone: 'O próximo passo é pensar no que vai dentro da caixa.',
+    afterOpened: 'Se você olhou embalagem e kits, aqui estão os doces que completam a caixa.',
+  },
+  'segredo-recheios': {
+    need: 'Para quando o recheio desanda, vaza ou fica sem graça.',
+    cardLine: 'A técnica por trás de cada recheio, para ele ficar no ponto e dar certo toda vez.',
+    question: 'O recheio escorreu para o fundo ou ficou seco demais? Acontece com quase todo mundo no começo.',
+    relatesTo: ['main', 'bonus-06', 'panetones-vulcao'],
+    afterDone: 'O próximo passo é entender o recheio por dentro, para ele não desandar.',
+    afterOpened: 'Se o recheio é a parte que mais te preocupa, esta é a técnica que sustenta todos eles.',
+  },
+  'receitas-explodir-vendas': {
+    need: 'Para quando dezembro está chegando e você ainda não sabe o que vai fazer.',
+    cardLine: 'Receitas pensadas para o movimento de fim de ano, para você decidir o cardápio com calma.',
+    question: 'Já sabe o que vai oferecer em dezembro, ou ainda está decidindo?',
+    relatesTo: ['bonus-08', 'bonus-05', 'bonus-03'],
+    afterDone: 'O próximo passo é escolher as receitas que vão entrar no seu cardápio.',
+    afterOpened: 'Se você está montando o cardápio ou o planejamento, estas receitas ajudam a decidir.',
+  },
+  'sobremesas-natal': {
+    need: 'Antes da ceia de Natal, você vai querer sobremesas que usam o panetone que já sabe fazer.',
+    cardLine: 'Sobremesas de Natal com panetone, para variar a mesa sem aprender tudo do zero.',
+    question: 'Sobrou panetone, ou você quer uma sobremesa que não pareça repetida na mesa?',
+    relatesTo: ['main', 'bonus-08'],
+    afterDone: 'O próximo passo é levar o panetone para além da fatia.',
+    afterOpened: 'Se você olhou as receitas de Natal, aqui estão sobremesas que usam o panetone.',
+  },
+  'ceia-doce': {
+    need: 'Para quando a mesa de Natal pede mais variedade, e nem tudo precisa ser panetone.',
+    cardLine: 'Sobremesas de Natal e Ano Novo para completar a mesa.',
+    question: 'A ceia está quase pronta, mas faltam sobremesas além do panetone?',
+    relatesTo: ['bonus-08', 'sobremesas-natal', 'panetones-vitrine'],
+    afterDone: 'O próximo passo é pensar na mesa inteira, não só no panetone.',
+    afterOpened: 'Se o cardápio de Natal está tomando forma, estas sobremesas completam a mesa.',
+  },
+  'mini-panetones': {
+    need: 'Para quando você quer presentear, ou vender, em um tamanho pequeno.',
+    cardLine: 'Panetones pequenos, que cabem na caixa e na lembrancinha.',
+    question: 'Precisa de algo menor, que dê para entregar sem cortar uma fatia?',
+    relatesTo: ['bonus-01', 'bonus-02', 'panetones-vitrine'],
+    afterDone: 'O próximo passo é a versão pequena, que dá para presentear.',
+    afterOpened: 'Se você olhou embalagem e kits, os minis cabem direto nas ideias que viu.',
+  },
+  'rabanada-padaria': {
+    need: 'Antes da ceia de Natal, você vai querer a rabanada que dá sensação de mesa completa.',
+    cardLine: '12 versões de rabanada de padaria, da clássica às recheadas.',
+    question: 'Falta aquele doce quentinho que lembra a casa da família?',
+    relatesTo: ['ceia-doce', 'sobremesas-natal', 'main'],
+    afterDone: 'O próximo passo é fechar a mesa com a rabanada.',
+    afterOpened: 'Se a mesa de Natal está sendo montada, a rabanada costuma ser o doce que lembram de pedir.',
+  },
+  'doces-para-revender': {
+    need: 'Para quando você quer oferecer os doces para outras pessoas, sem inventar tudo do zero.',
+    cardLine: 'Pacote de caixas e lembrancinhas, com o que precisa para oferecer e organizar.',
+    question: 'Já tem a caixa pronta, mas falta o jeito de oferecer para quem não conhece o seu trabalho?',
+    relatesTo: ['caixas-doces-natal', 'bonus-04', 'bonus-03'],
+    afterDone: 'O próximo passo é contar para as pessoas o que você faz.',
+    afterOpened: 'Se você olhou mensagens e cardápio, aqui estão caixas e lembrancinhas para oferecer.',
+  },
+  'cesta-natal-caseira': {
+    need: 'Antes do Natal, você vai querer uma cesta pronta para dar de presente, feita em casa.',
+    cardLine: 'Uma cesta de Natal caseira, com o que montar e como apresentar.',
+    question: 'Quer presentear alguém com algo feito por você, mas não sabe o que juntar na cesta?',
+    relatesTo: ['bonus-02', 'bonus-01', 'caixas-doces-natal'],
+    afterDone: 'O próximo passo é montar uma cesta inteira.',
+    afterOpened: 'Se os kits de Natal te chamaram a atenção, aqui está uma cesta para montar em casa.',
+  },
+  'biscoitos-natal-decorados': {
+    need: 'Para quando você quer biscoitos bonitos de Natal, sem passar a noite decorando.',
+    cardLine: 'Do cortador ao saquinho: biscoitos decorados com passo a passo.',
+    question: 'Quer biscoitos de Natal com cara de loja, mas tem receio da decoração?',
+    relatesTo: ['bonus-02', 'bonus-01'],
+    afterDone: 'O próximo passo é ocupar o forno com algo além do panetone.',
+    afterOpened: 'Se você olhou os kits de Natal, os biscoitos decorados entram bem em qualquer um.',
+  },
+  'dia-producao-escala': {
+    need: 'Para quando as encomendas passam de uma e a cozinha começa a ficar apertada.',
+    cardLine: 'Planilha e passo a passo para organizar um dia de produção.',
+    question: 'Quando chegam várias encomendas, você sabe o que fazer primeiro?',
+    relatesTo: ['bonus-05', 'bonus-07'],
+    afterDone: 'O próximo passo é organizar o dia da produção.',
+    afterOpened: 'Se você olhou o planejador ou a tabela de custos, aqui está o dia de produção, passo a passo.',
+  },
+  'mesa-doce-ano-novo': {
+    need: 'Depois do Natal, a virada também pede mesa doce.',
+    cardLine: 'Sobremesas para a virada, para aproveitar o que você já sabe fazer.',
+    question: 'O Natal passou. E a mesa da virada, já está pensada?',
+    relatesTo: ['ceia-doce', 'sobremesas-natal'],
+    afterDone: 'O próximo passo é pensar na mesa da virada.',
+    afterOpened: 'Se você já olhou as sobremesas de Natal, a virada pode ter as suas também.',
+  },
+  'chocotone-colher': {
+    need: 'Para quando você quer uma sobremesa de panetone que fica pronta sem forno.',
+    cardLine: '12 sobremesas de chocotone e panetone de colher, de preparo rápido.',
+    question: 'Visita chegando e pouco tempo? Dá para servir uma sobremesa de panetone sem assar?',
+    relatesTo: ['main', 'bonus-06'],
+    afterDone: 'O próximo passo é uma sobremesa de panetone que não pede forno.',
+    afterOpened: 'Se o Plano B já te interessou, estas sobremesas seguem a mesma ideia: rápidas.',
+  },
+  'natal-criancas': {
+    need: 'Antes do Natal, você vai querer algo que as crianças da família reconheçam e peçam.',
+    cardLine: '20 panetones pensados para as crianças, com ideias de apresentação.',
+    question: 'As crianças da casa já pediram o que querem encontrar na mesa de Natal?',
+    relatesTo: ['bonus-02', 'mini-panetones'],
+    afterDone: 'O próximo passo é fazer um panetone para o gosto dos pequenos.',
+    afterOpened: 'Se você olhou os kits e a versão mini, aqui estão panetones para as crianças.',
+  },
+  'janeiro-panetone': {
+    need: 'Para quando o Natal passou e você ainda tem vontade de fazer panetone.',
+    cardLine: '15 sabores para fazer panetone fora do Natal.',
+    question: 'Passou o Natal. Dá para continuar fazendo panetone em janeiro?',
+    relatesTo: ['mesa-doce-ano-novo', 'main'],
+    afterDone: 'O próximo passo é mostrar que panetone também serve para janeiro.',
+    afterOpened: 'Se você já olhou a mesa da virada, aqui está o que vem depois.',
+  },
+}
+
+// o que cada card mostra quando um offer ainda não tem texto próprio: nunca deixa vazio
+export const offerCopy = (id: OfferId): OfferCopy => {
+  const c = OFFER_COPY[id]
+  if (c) return c
+  const o = OFFER_BY_ID[id]
+  return { need: o.promise, cardLine: o.subtitle, question: '', relatesTo: [], afterDone: '', afterOpened: '' }
+}
+
+// ---- contexto do card: o que a pessoa acabou de fazer no app. Função pura, usada pelo app e pelo teste.
+export interface ContextInput {
+  done: Partial<Record<string, boolean>> // "Fiz essa"
+  seen: Partial<Record<string, boolean>> // abriu
+  owned: readonly string[] // entitlements (compras)
+  inCatalog?: ReadonlySet<string> // ids que existem no catálogo ligado (trilhas só contam esses)
+}
+export type ContextKind = 'done' | 'trail' | 'opened' | 'need'
+export interface OfferContext {
+  kind: ContextKind
+  label: string // vazio quando kind = "need"
+  text: string
+}
+const titleOfItem = (id: string): string => {
+  const it = ITEM_BY_ID[id as ItemId]
+  if (!it) return id
+  return it.kind === 'offer' ? shortTitle(id as OfferId) : it.title
+}
+
+export function offerContextFor(id: OfferId, inp: ContextInput): OfferContext {
+  const copy = offerCopy(id)
+  // (a) fez uma receita/produto relacionado
+  const done = copy.relatesTo.find((r) => inp.done[r] && !inp.owned.includes(id))
+  if (done && copy.afterDone) return { kind: 'done', label: COPY.context.done(titleOfItem(done)), text: copy.afterDone }
+  // (b) trilha em andamento: o passo anterior é seu e este é o próximo
+  const track = TRACKS.find((t) => t.steps.some((s) => s.offer === id))
+  if (track && !inp.owned.includes(id)) {
+    const steps = track.steps.map((s) => s.offer).filter((o) => !inp.inCatalog || inp.inCatalog.has(o))
+    const idx = steps.indexOf(id)
+    const have = steps.filter((o) => inp.owned.includes(o)).length
+    const prev = idx > 0 ? steps[idx - 1] : undefined
+    if (have > 0 && prev && inp.owned.includes(prev)) {
+      const hook = hookBetween(prev, id)
+      return { kind: 'trail', label: COPY.context.trail(track.title, have, steps.length), text: hook ? hook.text : COPY.context.nextStep }
+    }
+  }
+  // (c) abriu um relacionado
+  const opened = copy.relatesTo.find((r) => inp.seen[r] && !inp.done[r])
+  if (opened && copy.afterOpened) return { kind: 'opened', label: COPY.context.opened(titleOfItem(opened)), text: copy.afterOpened }
+  // (d) sem contexto: a frase de necessidade
+  return { kind: 'need', label: '', text: copy.need }
+}
+
+// contexto das Fichas de Socorro: fez ou marcou como visto algo do kit; sem isso, a frase de necessidade
+export function bumpContextFor(inp: Pick<ContextInput, 'done' | 'seen'>): OfferContext {
+  const kit = ITEMS.filter((i) => i.kind === 'main' || i.kind === 'bonus').map((i) => i.id as string)
+  const d = kit.find((k) => inp.done[k])
+  if (d) return { kind: 'done', label: COPY.context.done(titleOfItem(d)), text: COPY.bump.afterDone }
+  const o = kit.find((k) => inp.seen[k])
+  if (o) return { kind: 'opened', label: COPY.context.opened(titleOfItem(o)), text: COPY.bump.afterOpened }
+  return { kind: 'need', label: '', text: COPY.bump.need }
 }

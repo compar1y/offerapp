@@ -1,4 +1,4 @@
-import { BUMP, brl, type Item } from '../../shared/catalog'
+import { BUMP, COPY, brl, type Item } from '../../shared/catalog'
 import { supportUrl } from '../data/config'
 import { buyUrl } from './checkouts'
 
@@ -8,11 +8,11 @@ export function lockInfo(): { label: string; buy: string; price: string; href: s
   const href = buyUrl('bump') ?? ''
   return {
     buyable: !!href,
-    label: href ? `Adicionar as Fichas de Socorro por ${brl(BUMP.priceCents)}` : `Fichas de Socorro · ${brl(BUMP.priceCents)} · disponível em breve`,
-    buy: 'Comprar as Fichas de Socorro',
+    label: href ? `${COPY.button.detail} · ${brl(BUMP.priceCents)}` : `Fichas de Socorro · ${brl(BUMP.priceCents)} · ${COPY.button.soon.toLowerCase()}`,
+    buy: COPY.button.detail,
     price: brl(BUMP.priceCents),
     href,
-    note: href ? '' : 'A compra pelo app abre em breve. Toque em "Quero ser avisada" e avisamos você.',
+    note: href ? '' : `A compra pelo app abre em breve. Toque em "${COPY.button.notify}" e avisamos você.`,
   }
 }
 

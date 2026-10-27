@@ -1,8 +1,8 @@
 // Peças do catálogo como sistema: bullets, "O que você recebe", bônus com valor, valor somado, ganchos de trilha e coleções.
-// Sem relógio, sem escassez, sem preço antigo: o valor riscado é só a "soma dos itens".
+// Sem relógio, sem escassez, sem preço antigo: o valor riscado é só o "valor somado dos itens", dentro do detalhe.
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { OFFER_BY_ID, brl, shortTitle, hooksFrom, offerValueFromCents, type ItemId, type Offer, type OfferId } from '../../shared/catalog'
+import { COLLECTION_COPY, COPY, OFFER_BY_ID, brl, shortTitle, hooksFrom, offerValueFromCents, type ItemId, type Offer, type OfferId } from '../../shared/catalog'
 import { catalogBonusImage } from '../data/images'
 import { PREVIEW } from '../data/config'
 import { buyUrl, catalogOffers, pendingFromBundles } from '../lib/offers'
@@ -96,7 +96,7 @@ export function OfferStack({ offer, soon }: { offer: Offer; soon: boolean }) {
             ))}
           </ul>
           <p className="stack-sum">
-            Valor somado dos itens: <s>{brl(from)}</s>
+            {COPY.price.sum.charAt(0).toUpperCase() + COPY.price.sum.slice(1)}: <s>{brl(from)}</s>
           </p>
         </>
       )}
@@ -126,14 +126,14 @@ function hookTarget(to: OfferId): string {
   return catalogOffers().some((o) => o.id === to) ? `/produto/${to}` : '/caminho'
 }
 
-// gancho de rodapé: "Depois de X, o próximo passo é Y". `where` = de onde veio o clique (evento hook.click).
+// gancho de rodapé: "O próximo passo natural depois de X" (sugestão de caminho, não estatística). `where` = de onde veio o clique (evento hook.click).
 export function HookBox({ id, where }: { id: ItemId; where: string }) {
   const s = useStore()
   const hooks = hooksFrom(id)
   if (!hooks.length) return null
   return (
     <section className={`block block-info hookbox${s.done[id] ? ' hookbox-hl' : ''}`} aria-label="Próximo passo">
-      <h2 className="section-title">Depois deste, o próximo passo</h2>
+      <h2 className="section-title">Seu próximo passo</h2>
       {hooks.map((h) => {
         const o = OFFER_BY_ID[h.to]
         const have = owns(s, h.to)
@@ -141,7 +141,7 @@ export function HookBox({ id, where }: { id: ItemId; where: string }) {
           <div className={`hook hook-${h.kind}`} key={h.to}>
             <p>{h.text}</p>
             <Link className="btn btn-secondary btn-block" to={have ? `/produto/${h.to}` : hookTarget(h.to)} onClick={() => trackHook(id, h.to, where)}>
-              {have ? `Abrir: ${shortTitle(o.id)}` : `Ver: ${shortTitle(o.id)}`}
+              {have ? `${COPY.button.open}: ${shortTitle(o.id)}` : `${COPY.button.card}: ${shortTitle(o.id)}`}
             </Link>
           </div>
         )
@@ -169,10 +169,10 @@ export function CollectionCard({ v, from }: { v: CollectionView; from: string })
         ))}
       </div>
       <h3 className="ccol-title">{c.title}</h3>
-      <p className="ccol-goal">{c.goal}</p>
+      <p className="ccol-goal">{COLLECTION_COPY[c.id].need}</p>
       <p className="ccol-count" role="status">
-        {done ? 'Você tem a coleção completa.' : v.owned > 0 ? `Você tem ${v.owned} de ${v.total}. ` : ''}
-        {!done && `${v.ready} de ${v.total} prontos hoje`}
+        {done ? 'Você tem a coleção completa.' : v.owned > 0 ? `${COPY.context.collectionHave(v.owned, v.total)}. ` : ''}
+        {!done && v.ready < v.total && `${v.ready} de ${v.total} já disponíveis`}
       </p>
       {!done &&
         (covered ? (
@@ -181,19 +181,17 @@ export function CollectionCard({ v, from }: { v: CollectionView; from: string })
           <>
             <p className="v-price ccol-price">
               <strong>{brl(v.priceCents)}</strong>
-              <span>
-                soma dos itens {v.strike ? <s aria-label={`Soma dos itens: ${brl(v.sumCents)}`}>{brl(v.sumCents)}</s> : brl(v.sumCents)}
-              </span>
+              <span>{COPY.price.once}</span>
             </p>
             {v.buyable && buyUrl(c.id) ? (
               <a className="btn btn-buy btn-block" href={buyUrl(c.id) ?? ''} target="_blank" rel="noreferrer" onClick={() => trackCollection('collection.click', c.id, from)}>
-                <span aria-hidden>🛒</span> Comprar a coleção
+                {COPY.button.collection}
               </a>
             ) : (
               <>
-                <p className="v-soon">Disponível em breve</p>
+                <p className="v-soon">{COPY.button.soon}</p>
                 <button className={`btn btn-block ${asked ? 'btn-done' : 'btn-secondary'}`} disabled={asked} onClick={() => trackCollection('collection.interest', c.id, from)}>
-                  {asked ? 'Anotado ✓ Avisamos você' : 'Quero ser avisada'}
+                  {asked ? COPY.button.notified : COPY.button.notify}
                 </button>
               </>
             )}
@@ -201,6 +199,11 @@ export function CollectionCard({ v, from }: { v: CollectionView; from: string })
         ))}
       <details className="v-details">
         <summary>Ver os {v.total} itens</summary>
+        {!done && !covered && (
+          <p className="v-sum">
+            {COPY.price.sum}: {v.strike ? <s aria-label={`Valor somado dos itens: ${brl(v.sumCents)}`}>{brl(v.sumCents)}</s> : brl(v.sumCents)}
+          </p>
+        )}
         <ul className="col-items">
           {c.items.map((id) => (
             <li key={id} className={owns(s, id) ? 'col-own' : ''}>
@@ -231,7 +234,7 @@ export function Collections({ from }: { from: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return (
-    <Section id="colecoes" title="Coleções" lead="Combinações que andam juntas. Compre item por item ou a coleção.">
+    <Section id="colecoes" title={COPY.sections.collections} lead={COPY.sections.collectionsLead}>
       <Carousel label="Coleções por objetivo">
         {views.map((v) => (
           <div className="car-item car-col" key={v.collection.id}>
@@ -255,16 +258,16 @@ export function HomeOffers() {
   return (
     <>
       {n && !have && (
-        <Section title="Para você" lead={slots.next?.hook?.text}>
+        <Section title={COPY.sections.forYou}>
           <OfferCard offer={n} hero isNext from="home" />
         </Section>
       )}
       {col && (
-        <Section title="Coleção para você">
+        <Section title={COPY.sections.collections}>
           <Link to="/catalogo#colecoes" className="row-link" onClick={() => trackCollection('collection.view', col.collection.id, 'home')}>
             <span>
               <strong>{col.collection.title}</strong>
-              <span>{col.owned > 0 ? `Faltam ${col.missing.length} para completar.` : col.collection.goal}</span>
+              <span>{col.owned > 0 ? `${COPY.context.collectionHave(col.owned, col.collection.items.length)}. Faltam ${col.missing.length}.` : COLLECTION_COPY[col.collection.id].need}</span>
             </span>
             <span className="row-link-go" aria-hidden>
               ›

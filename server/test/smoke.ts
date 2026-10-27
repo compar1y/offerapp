@@ -415,12 +415,12 @@ assert.ok(evCat.some((e) => e.name === 'catalog.view' && e.props?.count === '5')
 assert.ok(evCat.some((e) => e.name === 'offer.view' && e.props?.offerId === 'panetones-vulcao' && e.props?.from === 'catalog'))
 ok('/api/event grava catalog.view e offer.view')
 
-// combo "Leve tudo": desligado e sem preço por padrão; soma calculada; riscado só se o combo for mais barato
+// combo "Biblioteca completa": desligado e sem preço por padrão; soma calculada; riscado só se o combo for mais barato
 assert.equal(COMBO.enabled, false)
-assert.equal(COMBO.comboPriceCents, 9700, 'Leve tudo: R$ 97,00 (config)')
+assert.equal(COMBO.comboPriceCents, 9700, 'Biblioteca completa: R$ 97,00 (config)')
 assert.equal(COMBO.comboInstallments, null, 'parcelamento vazio por padrão')
 assert.equal(COMBO.minAvailable, 10)
-assert.equal(COMBO.title, 'Leve tudo')
+assert.equal(COMBO.title, 'Biblioteca completa')
 assert.equal(comboSumCents(inCatalog), inCatalog.reduce((t, o) => t + o.priceCents, 0))
 assert.equal(comboSumCents([{ priceCents: 2790 }, { priceCents: 3790 }]), 6580)
 assert.equal(comboShowStrike(COMBO.comboPriceCents, comboSumCents(inCatalog)), true, 'R$ 97 é menor que a soma')
@@ -433,7 +433,7 @@ assert.equal((await ev({ name: 'combo.view' }, {})).status, 401)
 assert.equal((await ev({ name: 'combo.compra' })).status, 400)
 const evCombo = (await (await events.GET(new Request('http://x/api/admin/events', { headers: adm }))).json()) as { name: string; props?: Record<string, string> }[]
 for (const name of ['combo.view', 'combo.spin', 'combo.click', 'combo.interest']) assert.ok(evCombo.some((e) => e.name === name && e.props?.from === 'catalog'), name)
-ok('combo "Leve tudo": desligado e sem preço, soma automática, riscado só quando o combo é mais barato, eventos combo.*')
+ok('combo "Biblioteca completa": desligado e sem preço, soma automática, riscado só quando o combo é mais barato, eventos combo.*')
 
 // ACESSO IMEDIATO: webhook paid -> código -> sessão -> direito, sem nenhuma ação manual
 {
@@ -840,6 +840,69 @@ ok('combo "Leve tudo": desligado e sem preço, soma automática, riscado só qua
   assert.equal(titleFontUrl(visualOf('cesta-natal-caseira')), '')
   assert.ok(contrastRatio(visualOf('cesta-natal-caseira').accentColor, '#ffffff') >= 4.5)
   ok('guia visual: 10 ofertas com cor de destaque, paleta e fonte própria; contraste AA conferido; sem guia = padrão do app')
+}
+
+// COMUNICAÇÃO DAS OFERTAS: tom de próximo passo, contexto real, sem gatilho comercial, sem estatística inventada, sem escassez
+{
+  const cat = await import('../../shared/catalog.js')
+  const { OFFERS: OF, COPY, OFFER_COPY, COLLECTION_COPY, COLLECTIONS, HOOKS, TRACKS, ITEMS, BUMP, offerContextFor, bumpContextFor } = cat
+  const catalog = OF.filter((o) => o.catalog)
+  assert.equal(catalog.length, 17)
+  // cada oferta do catálogo tem todos os textos, e os ids de "relatesTo" existem
+  const all = new Set<string>([...ITEMS.map((i) => i.id), ...OF.map((o) => o.id)])
+  const texts: string[] = []
+  for (const o of catalog) {
+    const c = OFFER_COPY[o.id]
+    assert.ok(c, `${o.id}: sem texto de comunicação`)
+    for (const k of ['need', 'cardLine', 'question', 'afterDone', 'afterOpened'] as const) assert.ok(c[k].length >= 20, `${o.id}.${k}`)
+    assert.ok(c.relatesTo.length >= 1 && c.relatesTo.every((r: string) => all.has(r) && r !== o.id), `${o.id}: relatesTo`)
+    assert.ok(c.need.length <= 110 && c.cardLine.length <= 120, `${o.id}: frase longa demais para o card`)
+    texts.push(c.need, c.cardLine, c.question, c.afterDone, c.afterOpened)
+  }
+  for (const c of COLLECTIONS) texts.push(COLLECTION_COPY[c.id].need)
+  for (const h of HOOKS) texts.push(h.text)
+  const flat = (o: unknown): string[] => (typeof o === 'string' ? [o] : o && typeof o === 'object' ? Object.values(o as object).flatMap(flat) : [])
+  texts.push(...flat(COPY.nav), ...flat(COPY.library), ...flat(COPY.sections), ...flat(COPY.button), ...flat(COPY.price), ...flat(COPY.bump), COPY.combo.title, COPY.combo.need, COPY.combo.short, COPY.hookLabel, COPY.context.nextStep)
+  // nada de gatilho comercial em destaque, estatística inventada, promessa de renda ou escassez; sem travessão
+  const banned = /compr[aeo]|oferta|desconto|promo[çc][ãa]o|imperd|corra|garanta|aproveite|\d+\s?%|das alunas|das clientes|mais pedid|mais vendid|últim[ao]s?\b|só hoje|esgot|restam|vagas|faturamento|ganhe|renda|lucro|—/i
+  for (const t of texts) assert.ok(!banned.test(t), `texto proibido: ${t}`)
+  // áreas e botões com a linguagem combinada
+  assert.deepEqual([COPY.nav.library, COPY.nav.journey, COPY.sections.forYou], ['Biblioteca', 'Seu caminho', 'Para você'])
+  assert.equal(COPY.button.card, 'Ver como ajuda')
+  assert.equal(COPY.button.detail, 'Quero isso')
+  assert.equal(COPY.price.sum, 'valor somado dos itens')
+  assert.ok(HOOKS.some((h) => /próximo passo natural depois do Vulcão/i.test(h.text)), 'gancho como sugestão de caminho, não estatística')
+  assert.ok(!HOOKS.some((h) => /geralmente|costuma|quem faz/i.test(h.text)), 'ganchos sem generalização')
+  assert.ok(!texts.some((t) => /Leve tudo/.test(t)))
+  // contexto real: feito > trilha > marcado como visto > necessidade
+  const vul = OFFER_COPY['panetones-vulcao']!
+  const none = { done: {}, seen: {}, owned: [] as string[] }
+  let c = offerContextFor('panetones-vulcao', none)
+  assert.deepEqual([c.kind, c.label, c.text], ['need', '', vul.need])
+  c = offerContextFor('panetones-vulcao', { ...none, seen: { main: true } })
+  assert.equal(c.kind, 'opened')
+  assert.match(c.label, /Fábrica de Panetones Caseiros/)
+  assert.equal(c.text, vul.afterOpened)
+  c = offerContextFor('panetones-vulcao', { ...none, seen: { main: true }, done: { main: true } })
+  assert.equal(c.kind, 'done')
+  assert.equal(c.text, vul.afterDone)
+  // trilha: tem o Vulcão (passo anterior) -> o Segredo dos Recheios mostra a trilha e o gancho
+  c = offerContextFor('segredo-recheios', { ...none, owned: ['panetones-vulcao'] })
+  assert.equal(c.kind, 'trail')
+  assert.match(c.label, /Panetone de confeitaria.*1 de 4/)
+  assert.equal(c.text, HOOKS.find((h) => h.from === 'panetones-vulcao' && h.to === 'segredo-recheios')!.text)
+  // "inCatalog" limita a contagem da trilha aos materiais da biblioteca
+  c = offerContextFor('segredo-recheios', { ...none, owned: ['panetones-vulcao'], inCatalog: new Set(['panetones-vulcao', 'segredo-recheios', 'panetones-vitrine']) })
+  assert.match(c.label, /1 de 3/)
+  // quem já tem o material não vê contexto de oferta
+  assert.equal(offerContextFor('panetones-vulcao', { ...none, owned: ['panetones-vulcao'], done: { main: true } }).kind, 'need')
+  // Fichas de Socorro
+  assert.equal(bumpContextFor({ done: {}, seen: {} }).text, COPY.bump.need)
+  assert.equal(bumpContextFor({ done: { 'bonus-06': true }, seen: {} }).text, COPY.bump.afterDone)
+  assert.equal(bumpContextFor({ done: {}, seen: { main: true } }).kind, 'opened')
+  assert.equal(BUMP.itemId, 'bump')
+  assert.ok(TRACKS.length === 4)
+  ok('comunicação: 17 ofertas com gancho, frase de card, pergunta e contexto; sem compre/oferta/desconto/estatística/escassez; contexto por feito > trilha > visto > necessidade')
 }
 
 // buildMe sem plano

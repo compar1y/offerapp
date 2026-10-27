@@ -13,6 +13,7 @@
     "test:api": "tsx server/test/smoke.ts",
     "checkouts:gen": "tsx scripts/gen-checkouts.ts",
     "checklist:gen": "tsx scripts/gen-checklist.ts",
+    "comunicacao:gen": "tsx scripts/gen-comunicacao.ts",
     "upload:files": "tsx scripts/upload-blob.ts",
     "check:files": "tsx scripts/check-files.ts",
     "catalogo:imagens": "tsx scripts/catalog-images.ts",

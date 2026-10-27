@@ -1,4 +1,4 @@
-import { ITEMS, ITEM_BY_ID, OFFER_BY_ID, type Item } from '../../shared/catalog'
+import { COPY, ITEMS, ITEM_BY_ID, OFFER_BY_ID, type Item } from '../../shared/catalog'
 import { MOCKUPS } from '../data/images'
 import { PREVIEW, supportUrl } from '../data/config'
 import { owns, progress, refreshSession, useStore, openFile } from '../lib/store'
@@ -92,7 +92,7 @@ export function Home() {
       {hasMain && <HomeOffers />}
 
       {!owns(s, 'bump') && (
-        <Section title="Socorro do panetone" lead="Se a massa não cresceu ou o panetone murchou, aqui está o que fazer.">
+        <Section title={COPY.sections.rescue} lead={COPY.sections.rescueLead}>
           <BumpCard />
         </Section>
       )}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { brl } from '../../shared/catalog'
+import { COPY, brl } from '../../shared/catalog'
 import { owns, trackCombo, useStore } from '../lib/store'
 import { comboView, pendingFromBundles, type ComboView } from '../lib/offers'
 import { OfferMedia } from './ui'
@@ -8,7 +8,7 @@ import { OfferMedia } from './ui'
 const SLICES = 8
 const reduced = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-// Roleta: TODAS as fatias levam ao mesmo desconto real (o preço do combo). O giro é só uma revelação animada.
+// Roleta: TODAS as fatias levam ao mesmo valor (o preço da biblioteca completa). O giro é só uma revelação animada.
 function Wheel({ angle, spinning }: { angle: number; spinning: boolean }) {
   const r = 96
   const paths = Array.from({ length: SLICES }, (_, i) => {
@@ -27,12 +27,12 @@ function Wheel({ angle, spinning }: { angle: number; spinning: boolean }) {
   return (
     <div className="wheel-wrap">
       <span className="wheel-pointer" aria-hidden />
-      <svg className="wheel" viewBox="0 0 200 200" role="img" aria-label="Roleta com 8 fatias. Todas valem o mesmo desconto: o preço do combo." style={{ transform: `rotate(${angle}deg)`, transition: spinning ? 'transform 3.4s cubic-bezier(0.17, 0.67, 0.2, 1)' : 'none' }}>
+      <svg className="wheel" viewBox="0 0 200 200" role="img" aria-label="Roleta com 8 fatias. Todas levam ao mesmo valor: o preço da biblioteca completa." style={{ transform: `rotate(${angle}deg)`, transition: spinning ? 'transform 3.4s cubic-bezier(0.17, 0.67, 0.2, 1)' : 'none' }}>
         {paths.map((p, i) => (
           <g key={i}>
             <path d={p.d} fill={p.fill} stroke="#4d1019" strokeWidth="1.5" />
             <text x={p.tx} y={p.ty} fill={p.ink} fontSize="11" fontWeight="800" textAnchor="middle" dominantBaseline="middle" transform={`rotate(${p.rot} ${p.tx} ${p.ty})`}>
-              COMBO
+              TUDO
             </text>
           </g>
         ))}
@@ -57,38 +57,38 @@ function ComboCard({ v, from }: { v: ComboView; from: string }) {
       <p className="combo-count" role="status">
         <strong>{v.total} materiais</strong>
         <span>
-          {v.ready} de {v.total} prontos hoje
+          {v.ready === v.total ? 'todos disponíveis' : `${v.ready} de ${v.total} já disponíveis`}
         </span>
       </p>
       {hasPrice ? (
         <p className="combo-price">
-          {v.strike && (
-            <span className="combo-sum-line">
-              <span className="combo-sum-label">soma dos itens</span>
-              <s className="combo-sum" aria-label={`Soma dos preços individuais: ${brl(v.sumCents)}`}>
-                {brl(v.sumCents)}
-              </s>
-            </span>
-          )}
           <strong>{brl(v.priceCents ?? 0)}</strong>
-          <span className="combo-price-note">{v.demoPrice ? 'preço previsto' : 'pagamento único'}</span>
+          <span className="combo-price-note">{v.demoPrice ? COPY.price.planned : COPY.price.once}</span>
           {v.installments && <span className="combo-price-note">ou 12x no cartão (a parcela aparece no checkout)</span>}
         </p>
       ) : null}
       {v.buyable && v.checkoutUrl ? (
         <a className="btn btn-buy btn-block" href={v.checkoutUrl} target="_blank" rel="noreferrer" onClick={() => trackCombo('combo.click', from)}>
-          <span aria-hidden>🛒</span> Levar tudo
+          {COPY.button.combo}
         </a>
       ) : (
         <>
-          <p className="v-soon">Disponível em breve</p>
+          <p className="v-soon">{COPY.button.soon}</p>
           <button className={`btn btn-block ${s.comboInterest ? 'btn-done' : 'btn-secondary'}`} disabled={s.comboInterest} onClick={() => trackCombo('combo.interest', from)}>
-            {s.comboInterest ? 'Anotado ✓ Avisamos você' : 'Quero ser avisada'}
+            {s.comboInterest ? COPY.button.notified : COPY.button.notify}
           </button>
         </>
       )}
       <details className="v-details">
-        <summary>Ver os {v.total} materiais</summary>
+        <summary>{COPY.combo.detailsOpen(v.total)}</summary>
+        {hasPrice && v.strike && (
+          <p className="v-sum">
+            {COPY.price.sum}:{' '}
+            <s className="combo-sum" aria-label={`Valor somado dos itens: ${brl(v.sumCents)}`}>
+              {brl(v.sumCents)}
+            </s>
+          </p>
+        )}
         <ul className="combo-list">
           {v.items.map((o) => (
             <li key={o.id}>
@@ -105,7 +105,7 @@ function ComboCard({ v, from }: { v: ComboView; from: string }) {
   )
 }
 
-// Seção "Leve tudo": roleta (antes do giro) e card do combo (depois do giro). Sem preço definido, mostra direto o card.
+// Seção "Biblioteca completa": roleta (antes do giro) e card do combo (depois do giro). Sem preço definido, mostra direto o card.
 export function ComboSection() {
   const s = useStore()
   const v = comboView(s)
@@ -135,16 +135,16 @@ export function ComboSection() {
     timer.current = window.setTimeout(() => setPhase('done'), 3500)
   }
   return (
-    <section id="leve-tudo" className="sec combo" aria-label="Leve tudo">
+    <section id="leve-tudo" className="sec combo" aria-label={v.title}>
       <h2 className="sec-title">{v.title}</h2>
-      <p className="sec-lead">Todos os materiais do catálogo, por um preço único.</p>
+      <p className="sec-lead">{COPY.combo.need}</p>
       {phase !== 'done' ? (
         <div className="combo-card combo-spin">
           <Wheel angle={angle} spinning={phase === 'spinning'} />
           <button className="btn btn-open btn-block" onClick={spin} disabled={phase === 'spinning'}>
-            {phase === 'spinning' ? 'Girando...' : 'Girar a roleta'}
+            {phase === 'spinning' ? 'Girando...' : COPY.combo.spin}
           </button>
-          <p className="combo-fine">Todas as fatias valem o mesmo desconto.</p>
+          <p className="combo-fine">{COPY.combo.wheelNote}</p>
         </div>
       ) : (
         <ComboCard v={v} from="catalog" />
@@ -153,23 +153,23 @@ export function ComboSection() {
   )
 }
 
-// Chamada da home para o Leve tudo
+// Chamada da home para a biblioteca completa
 export function ComboBanner() {
   const s = useStore()
   const v = comboView(s)
   if (!v) return null
   return (
-    <section className="sec" aria-label="Leve tudo">
+    <section className="sec" aria-label={v.title}>
       <h2 className="sec-title">{v.title}</h2>
       <Link to="/catalogo#leve-tudo" className="combo-banner" onClick={() => trackCombo('combo.click', 'home-banner')}>
-        <span className="combo-banner-text">Todos os materiais do catálogo, por um preço único.</span>
-        <span className="btn btn-open">Ver o Leve tudo</span>
+        <span className="combo-banner-text">{COPY.combo.short}</span>
+        <span className="btn btn-open">{COPY.button.comboSee}</span>
       </Link>
     </section>
   )
 }
 
-// "Leve tudo" em destaque principal só depois de 3 ou mais itens liberados. Antes disso fica acessível, em tamanho menor.
+// A biblioteca completa em destaque principal só depois de 3 ou mais itens liberados. Antes disso fica acessível, em tamanho menor.
 export function ComboSlot({ prominent }: { prominent: boolean }) {
   const s = useStore()
   const [open, setOpen] = useState(false)
@@ -177,12 +177,12 @@ export function ComboSlot({ prominent }: { prominent: boolean }) {
   if (!v) return null
   if (prominent || open) return <ComboSection />
   return (
-    <section id="leve-tudo" className="sec" aria-label="Leve tudo">
+    <section id="leve-tudo" className="sec" aria-label={v.title}>
       <h2 className="sec-title">{v.title}</h2>
       <div className="combo-compact">
-        <span>Todos os materiais do catálogo, por um preço único.</span>
+        <span>{COPY.combo.short}</span>
         <button className="btn btn-secondary btn-block" onClick={() => setOpen(true)}>
-          Ver o Leve tudo
+          {COPY.button.comboSee}
         </button>
       </div>
     </section>
