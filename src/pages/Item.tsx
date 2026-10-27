@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
-import { ITEM_BY_ID, OFFER_BY_ID, brl, fileKey, type FileEntry, type ItemId } from '../../shared/catalog'
-import { MOCKUPS, PHOTOS } from '../data/images'
+import { ITEM_BY_ID, OFFER_BY_ID, brl, fileKey, type FileEntry, type ItemId, type OfferId } from '../../shared/catalog'
+import { MOCKUPS } from '../data/images'
 import { CONFIG, supportUrl } from '../data/config'
 import { openFile, owns, toggleDone, toggleSeen, trackOffer, useStore } from '../lib/store'
-import { Layout, OfferBlock, OfferMedia, Picture } from '../components/ui'
+import { DeliverableChip, Layout, OfferBlock, OfferMedia, Picture } from '../components/ui'
 import { visibleOffers } from '../lib/offers'
 import { lockInfo, noKitInfo } from '../lib/lock'
+import { themeStyle, themed, useTitleFont } from '../lib/theme'
+import { HookBox, OfferBullets, OfferStack, Testimonials, TrackLine } from '../components/System'
 
 const KIND_LABEL = { pdf: 'PDF', txt: 'Texto (TXT)', docx: 'Word (DOCX)', xlsx: 'Planilha (Excel)' }
 
@@ -14,6 +16,7 @@ export function Item() {
   const { id } = useParams()
   const s = useStore()
   const [msg, setMsg] = useState('')
+  useTitleFont<HTMLDivElement>(id as OfferId, true)
   const item = id ? ITEM_BY_ID[id as ItemId] : undefined
   if (!item) return <Navigate to="/" replace />
   const unlocked = owns(s, item.id)
@@ -35,9 +38,10 @@ export function Item() {
 
   return (
     <Layout title={item.badge} back="/">
+      <div className={offer && themed(offer.id) ? 'themed' : undefined} style={offer ? themeStyle(offer.id) : undefined}>
       <section className="block">
         <div className={`detail-media ${unlocked || inKit ? '' : 'detail-locked'}`}>
-          {offer ? <OfferMedia offer={offer} className="pic-detail" /> : mock ? <Picture img={mock} className="pic-detail" lazy={false} /> : <Picture img={PHOTOS.presente} className="pic-wide" lazy={false} />}
+          {offer ? <OfferMedia offer={offer} className="pic-detail" /> : mock ? <Picture img={mock} className="pic-detail" lazy={false} /> : null}
           {!unlocked && !inKit && (
             <span className="lock-badge lock-big" aria-label="Bloqueado">
               🔒
@@ -46,8 +50,11 @@ export function Item() {
         </div>
         <div className="block-info">
           <span className={unlocked || inKit ? 'tag' : 'tag tag-buy'}>{unlocked ? `${item.badge} · NO SEU KIT` : inKit ? item.badge : offer ? item.badge : `${item.badge} · ADICIONAL`}</span>
+          {offer && <DeliverableChip offer={offer} />}
           <h1>{item.title}</h1>
           <p className="lead">{item.description}</p>
+          {offer && <OfferBullets offer={offer} />}
+          {offer && <TrackLine id={offer.id} />}
           <ul className="bullets">
             {item.includes.map((t) => (
               <li key={t}>{t}</li>
@@ -86,7 +93,7 @@ export function Item() {
               {msg}
             </p>
           )}
-          {inKit && (
+          {(inKit || !!offer) && (
             <button className={`btn btn-block ${s.done[item.id] ? 'btn-done' : 'btn-secondary'}`} aria-pressed={!!s.done[item.id]} onClick={() => toggleDone(item.id)}>
               {s.done[item.id] ? 'Fiz essa ✓ (toque para desmarcar)' : 'Fiz essa'}
             </button>
@@ -115,17 +122,19 @@ export function Item() {
         <section className="block block-info">
           <div className="upsell">
             <span className="tag tag-buy">COMPRA ADICIONAL</span>
+            <OfferStack offer={offer} soon={offer.status === 'soon' || !offer.checkoutUrl} />
+            <Testimonials offer={offer} />
             <p>
-              <strong>Este material não está no seu kit.</strong> Preço: {brl(offer.priceCents)}, pagamento único no checkout da Wiapy.
+              <strong>Este material não está no seu kit.</strong> Pagamento único no checkout da Wiapy.
             </p>
-            {offer.kind === 'seasonal' && !offer.checkoutUrl ? (
+            {offer.status === 'soon' || !offer.checkoutUrl ? (
               s.interested[offer.id] ? (
                 <p className="demo-note" role="status">
                   Anotado. Obrigado pelo interesse! Esse material ainda está em preparação.
                 </p>
               ) : (
                 <button className="btn btn-primary btn-block" onClick={() => trackOffer('offer.interest', offer.id, 'detail')}>
-                  Tenho interesse
+                  Quero ser avisada
                 </button>
               )
             ) : (
@@ -149,16 +158,28 @@ export function Item() {
             <p>
               <strong>Este material não está no seu kit.</strong> As Fichas de Socorro são vendidas à parte, por {lock.price}.
             </p>
-            <a className="btn btn-buy btn-block" href={lock.href} target="_blank" rel="noreferrer">
-              🛒 {lock.buy} · {lock.price}
-            </a>
+            {lock.buyable ? (
+              <a className="btn btn-buy btn-block" href={lock.href} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', 'bump', 'detail')}>
+                🛒 {lock.buy} · {lock.price}
+              </a>
+            ) : s.interested.bump ? (
+              <p className="demo-note" role="status">
+                Anotado ✓ Avisamos que você quer as Fichas assim que a compra pelo app abrir.
+              </p>
+            ) : (
+              <button className="btn btn-secondary btn-block" onClick={() => trackOffer('offer.interest', 'bump', 'detail')}>
+                Quero ser avisada
+              </button>
+            )}
             {lock.note && <p className="hint">{lock.note}</p>}
             <p className="hint">Compra feita no checkout da Wiapy. Nada é cobrado ao tocar em outros botões do app.</p>
           </div>
         </section>
       )}
 
+      {offer && unlocked && <HookBox id={offer.id} where="detail" />}
       {footer && <OfferBlock offer={footer} from="item-footer" />}
+      </div>
     </Layout>
   )
 }

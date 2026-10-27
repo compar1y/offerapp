@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "tsx scripts/catalog-images.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -12,6 +13,7 @@
     "test:api": "tsx server/test/smoke.ts",
     "upload:files": "tsx scripts/upload-blob.ts",
     "check:files": "tsx scripts/check-files.ts",
+    "catalogo:imagens": "tsx scripts/catalog-images.ts",
     "dev:api": "tsx scripts/dev-api.ts",
     "check": "npm run lint && npm run typecheck:api && npm run test:api && npm run build"
   },

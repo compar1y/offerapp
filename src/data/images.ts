@@ -1,4 +1,4 @@
-// Imagens do app (arquivos reais em public/img/, reaproveitados da página de vendas).
+// Imagens do app (arquivos reais em public/img/). SÓ mockups de produto: nada de foto ou ilustração decorativa.
 // O que ainda não existe está em IMAGENS-FALTANDO.md (fora do repositório do app).
 
 import type { ItemId, Offer, OfferId } from '../../shared/catalog'
@@ -12,14 +12,6 @@ export interface Img {
 }
 
 const img = (file: string, alt: string, w: number, h: number): Img => ({ src: `img/${file}`, alt, w, h })
-
-export const PHOTOS = {
-  kit: img('kit-completo.webp', 'Kit completo da Fábrica de Panetones Caseiros com os materiais', 1080, 720),
-  fornada: img('foto-fornada.webp', 'Mulher tirando panetones do forno', 1080, 720),
-  presente: img('foto-presente-minitones.webp', 'Caixa de presente com minipanetones e laço vermelho', 1080, 720),
-  entrega: img('foto-entrega.webp', 'Entrega de um panetone embalado para presente', 1080, 720),
-  chocotone: img('foto-chocotone-laco.webp', 'Chocotone embalado em celofane com laço vermelho', 1080, 810),
-}
 
 // mockups com fundo transparente: verticais dos bônus 533x800; capas planas do principal e do bump
 // (as ofertas adicionais ainda não têm mockup: ver IMAGENS-FALTANDO.md)
@@ -37,6 +29,21 @@ export const MOCKUPS: Record<Exclude<ItemId, OfferId>, Img> = {
 }
 
 // capa de uma oferta: o mockup real, ou null se ainda não existe (aí a tela usa o placeholder "em breve", só em modo demonstração)
+import catalogImages from './catalog-images.json'
+
+// mockup de produto do catálogo: public/img/catalogo/<id>.webp (lista gerada por `npm run catalogo:imagens`)
+export function catalogImage(o: Offer): Img | null {
+  if (!o.catalog || !(catalogImages as string[]).includes(o.id)) return null
+  const [w, h] = o.imageRatio === '2:3' ? [640, 960] : [800, 600]
+  return img(`catalogo/${o.id}.webp`, `Mockup de ${o.title}: ${o.imageType}`, w, h)
+}
+
+// faixa 900x300 com os mini-mockups dos bônus: public/img/catalogo/<id>-bonus.webp (só ofertas com bônus)
+export function catalogBonusImage(o: Offer): Img | null {
+  if (!o.catalog || !o.bonus?.length || !(catalogImages as string[]).includes(`${o.id}-bonus`)) return null
+  return img(`catalogo/${o.id}-bonus.webp`, `Mini-mockups dos bônus de ${o.title}: ${o.bonus.map((b) => b.title).join('; ')}`, 900, 300)
+}
+
 export function offerCover(o: Offer): Img | null {
   return o.cover ? img(o.cover, `Capa de ${o.title}`, 533, 800) : null
 }

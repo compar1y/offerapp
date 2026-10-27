@@ -20,6 +20,10 @@ export const CONFIG = {
   demoCode: '123456',
 }
 
+// Catálogo de ofertas (aba /catalogo, bolinha vermelha, banner na home). DESLIGADO em produção até ordem do Levi.
+// Ligado no modo demonstração/prévia. Para ligar em produção: VITE_CATALOG_ENABLED=true no build e ofertas com enabled: true em shared/catalog.ts.
+export const CATALOG_ENABLED: boolean = CONFIG.demo || import.meta.env.VITE_CATALOG_ENABLED === 'true'
+
 export function supportUrl(message: string = CONFIG.supportMessage): string {
   return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(message)}`
 }

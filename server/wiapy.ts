@@ -5,7 +5,7 @@
 //   a lista de arquivos de products[] se chama `itens` (não `items`)
 // Tolerante: ignora campos extras e aceita o JSON com vírgulas faltando/sobrando (os exemplos da doc têm esse erro).
 
-import { BUMP, DEFAULT_FULL_KIT_CHECKOUT_IDS, OFFERS, PLANS, type OfferId } from '../shared/catalog.js'
+import { BUMP, COLLECTIONS, COMBO, DEFAULT_FULL_KIT_CHECKOUT_IDS, OFFERS, OFFER_BY_ID, PLANS, type OfferId } from '../shared/catalog.js'
 import { env } from './env.js'
 
 export type WiapyStatus = 'paid' | 'unpaid' | 'credit_card_declined' | 'refunded' | 'chargedback' | 'unknown'
@@ -99,21 +99,59 @@ export function parseWiapyPayload(body: unknown): ParsedWiapy {
 
 const has = (hay: string, hints: string[]) => hints.some((h) => h && hay.toLowerCase().includes(h.toLowerCase()))
 
-// o bump aparece em checkout.orderbump[] e também em products[]. Reconhece por id, por título ou por valor (R$ 7,90 = 790).
-export function detectBump(p: ParsedWiapy): boolean {
-  if (p.checkoutId && BUMP.wiapyProductId && p.checkoutId === BUMP.wiapyProductId) return true
-  if (p.orderbump.some((o) => (BUMP.wiapyProductId && o.id === BUMP.wiapyProductId) || has(o.title, BUMP.titleHints) || o.amountCents === BUMP.priceCents)) return true
-  return p.products.some((x) => (BUMP.wiapyProductId && x.id === BUMP.wiapyProductId) || has(x.title, BUMP.titleHints))
+// ---------------------------------------------------------------- bump (+20 Fichas de Socorro)
+
+// BUMP_ORDERBUMP_IDS (env, separado por vírgula): cada item vale como id exato OU trecho do título, sem diferenciar maiúsculas.
+// Vazio = só o id e os trechos do catálogo (BUMP em shared/catalog.ts).
+export function bumpMatchers(): { ids: string[]; hints: string[] } {
+  const fromEnv = env('BUMP_ORDERBUMP_IDS')
+    .split(/[,;]+/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+  return { ids: [BUMP.wiapyProductId, ...fromEnv].filter(Boolean), hints: [...BUMP.titleHints, ...fromEnv] }
 }
 
+// valores de apoio (centavos): só o kit e kit + bump. Variáveis FULL_KIT_AMOUNT_CENTS e BUMP_TOTAL_CENTS; padrão 3790 e 4580.
+export function bumpAmounts(): { kit: number; total: number } {
+  const num = (name: string, fallback: number) => {
+    const n = Number(env(name))
+    return Number.isFinite(n) && n > 0 ? Math.round(n) : fallback
+  }
+  const kit = num('FULL_KIT_AMOUNT_CENTS', PLANS.completo.priceCents)
+  return { kit, total: num('BUMP_TOTAL_CENTS', kit + BUMP.priceCents) }
+}
+
+export type BumpVia = 'orderbump' | 'products' | 'checkout' | 'amount'
+
+// Como o bump foi reconhecido (null = sem bump). Ordem: checkout.orderbump[] (id/título), products[] (id/título), checkout do próprio bump,
+// e por último o valor: payment.amount ou checkout.amount igual a kit + bump (4580), quando o payload não detalha o bump.
+export function detectBumpVia(p: ParsedWiapy): BumpVia | null {
+  const m = bumpMatchers()
+  const idHit = (id: string) => !!id && m.ids.some((x) => x.toLowerCase() === id.toLowerCase())
+  if (p.orderbump.some((o) => idHit(o.id) || has(o.title, m.hints) || o.amountCents === BUMP.priceCents)) return 'orderbump'
+  if (p.products.some((x) => idHit(x.id) || has(x.title, m.hints))) return 'products'
+  if (idHit(p.checkoutId)) return 'checkout'
+  const { total } = bumpAmounts()
+  if (p.amountCents === total || p.checkoutAmountCents === total) return 'amount'
+  return null
+}
+
+export const detectBump = (p: ParsedWiapy): boolean => detectBumpVia(p) !== null
+
 // ofertas adicionais (OFFERS): só contam as que estão ligadas (enabled) e configuradas (id do produto ou trecho do título)
+const idInPayload = (p: ParsedWiapy, id: string): boolean => !!id && (p.checkoutId === id || p.orderbump.some((x) => x.id === id) || p.products.some((x) => x.id === id))
+
 export function detectOffers(p: ParsedWiapy): OfferId[] {
-  return OFFERS.filter((o) => {
-    if (!o.enabled) return false
-    const id = o.wiapyProductId
-    if (id && (p.checkoutId === id || p.orderbump.some((x) => x.id === id) || p.products.some((x) => x.id === id))) return true
-    return o.titleHints.length > 0 && (p.orderbump.some((x) => has(x.title, o.titleHints)) || p.products.some((x) => has(x.title, o.titleHints)))
-  }).map((o) => o.id)
+  const got = new Set<OfferId>()
+  for (const o of OFFERS) {
+    if (!o.enabled) continue
+    if (idInPayload(p, o.wiapyProductId)) got.add(o.id)
+    else if (o.titleHints.length > 0 && (p.orderbump.some((x) => has(x.title, o.titleHints)) || p.products.some((x) => has(x.title, o.titleHints)))) got.add(o.id)
+  }
+  // coleção ou "Leve tudo" comprados: liberam os itens (só os que estão ligados). Sem wiapyProductId configurado, nada acontece.
+  for (const c of COLLECTIONS) if (idInPayload(p, c.wiapyProductId)) for (const id of c.items) if (OFFER_BY_ID[id].enabled) got.add(id)
+  if (idInPayload(p, COMBO.wiapyProductId)) for (const o of OFFERS) if (o.catalog && o.enabled) got.add(o.id)
+  return OFFERS.filter((o) => got.has(o.id)).map((o) => o.id)
 }
 
 // valor do checkout principal em centavos: checkout.amount; senão payment.amount menos os bumps
@@ -151,13 +189,14 @@ export function fullKitCheckoutIds(): string[] {
   return fromEnv.length ? fromEnv : DEFAULT_FULL_KIT_CHECKOUT_IDS
 }
 
-// Checagem extra OPCIONAL de valor: com FULL_KIT_REQUIRE_AMOUNT=1 só libera se o valor do checkout for exatamente R$ 37,90.
+// Checagem extra OPCIONAL de valor: com FULL_KIT_REQUIRE_AMOUNT=1 só libera se o valor for o do kit (R$ 37,90) ou kit + bump (R$ 45,80).
 export function isFullKit(p: ParsedWiapy): { ok: boolean; reason?: string } {
   if (!p.checkoutId) return { ok: false, reason: 'sem checkout.id' }
   if (!fullKitCheckoutIds().includes(p.checkoutId)) return { ok: false, reason: 'checkout fora da lista FULL_KIT_CHECKOUT_IDS' }
   if (env('FULL_KIT_REQUIRE_AMOUNT') === '1') {
     const amount = mainAmount(p)
-    if (amount !== PLANS.completo.priceCents) return { ok: false, reason: `valor ${amount ?? 'desconhecido'} diferente de ${PLANS.completo.priceCents}` }
+    const { kit, total } = bumpAmounts()
+    if (amount !== kit && amount !== total) return { ok: false, reason: `valor ${amount ?? 'desconhecido'} diferente de ${kit} (kit) e de ${total} (kit + bump)` }
   }
   return { ok: true }
 }
@@ -166,5 +205,7 @@ export function isFullKit(p: ParsedWiapy): { ok: boolean; reason?: string } {
 export function isStandaloneExtra(p: ParsedWiapy): boolean {
   if (!p.checkoutId) return false
   if (BUMP.wiapyProductId && p.checkoutId === BUMP.wiapyProductId) return true
+  if (COLLECTIONS.some((c) => !!c.wiapyProductId && p.checkoutId === c.wiapyProductId)) return true
+  if (COMBO.wiapyProductId && p.checkoutId === COMBO.wiapyProductId) return true
   return OFFERS.some((o) => o.enabled && !!o.wiapyProductId && p.checkoutId === o.wiapyProductId)
 }

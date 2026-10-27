@@ -38,7 +38,9 @@ src/data/config.ts     marca, WhatsApp de suporte, modo demo/servidor
 src/data/images.ts     imagens reais usadas (id, arquivo, proporção, texto alternativo)
 src/lib/access.ts      AccessProvider (interface) + demoProvider + serverProvider
 src/lib/store.ts       estado da tela; só fala com o AccessProvider
-src/pages, components  Home, Item (produto), Conta, Login/Código, pop-up de boas-vindas, formulário
+src/pages, components  Home, Item (produto), Catálogo, Caminho, Conta, Login/Código, pop-up de boas-vindas, formulário
+src/lib/system.ts      trilhas, coleções, próximo passo, "Leve tudo" (regras do sistema)
+src/lib/theme.ts       tema por oferta e carregamento da fonte do título
 server/                lógica do servidor (parser Wiapy, compras, KV, arquivos, assinatura HMAC, e-mail)
 api/                   funções da Vercel (finas): auth, me, feedback, file, dl, webhook/wiapy, admin/*
 scripts/               dev-api (servidor local), upload-blob, check-files
@@ -78,7 +80,9 @@ Para mudar o que o kit libera, edite só `ENTITLEMENTS` em `shared/catalog.ts`. 
 
 O bump é detectado por id, título ("fichas de socorro") ou valor (790) dentro do checkout do kit, ou como compra avulsa se o checkout for o próprio produto do bump. Confirmar no primeiro pedido de teste qual id vem em `checkout.id`. Use `WEBHOOK_LOG_RAW=1` para guardar o corpo sem dados pessoais e conferir.
 
-### Ofertas adicionais (OFFERS): 3 slots, todos desligados
+### Ofertas adicionais antigas (3 slots, todos desligados)
+
+São as três ofertas da primeira versão (`kit-lucrativo`, `kit-embalagem-etiqueta`, `fornada-pascoa`). O catálogo novo (próxima seção) vem na frente delas; estas continuam desligadas.
 
 `OFFERS` em `shared/catalog.ts` (reexportada por `src/data/config.ts`). Cada oferta tem: `id`, `title`, `subtitle`, `description`, `includes`, `priceCents`, `checkoutUrl` (vazio), `wiapyProductId` (vazio), `enabled` (false), `kind` (`upsell`, `downsell`, `seasonal`), `placement`, `requiresDismissed`, `cover` (mockup) e `files`.
 
@@ -97,6 +101,28 @@ Regras:
 - Liberação: webhook com `checkout.id`, `orderbump[].id` ou `products[].id` igual ao `wiapyProductId` (ou título com os `titleHints`) de uma oferta LIGADA libera só aquela oferta. Manual: `POST /api/admin/grant` com `offers: ["kit-lucrativo"]`; CSV: coluna `ofertas` (ids separados por `|`).
 
 Para ligar uma oferta: preencha `checkoutUrl` e `wiapyProductId`, cadastre o arquivo em `files`, suba o arquivo no armazenamento privado (`npm run upload:files`), preencha `cover` com o mockup e troque `enabled` para `true`. Para ver só o visual: no modo demonstração use "Ligar ofertas" da barra de teste.
+
+## Catálogo de ofertas como sistema (`/catalogo`, `/caminho`)
+
+Fonte: `shared/catalog.ts` (OFFERS com `catalog: true`, TRACKS, HOOKS, COLLECTIONS, COMBO, OFFER_VISUAL). Documentos de decisão: `../OFERTAS-30-TIER-S.md` (as 30 ideias, notas, tier S, pilha de valor, mapa, guia visual) e `../CATALOGO-OFERTAS-APP.md` (tabela final do que está no app).
+
+**Desligado em produção.** O catálogo só existe se `CATALOG_ENABLED` for verdadeiro: sempre no modo demonstração/prévia; em produção só com `VITE_CATALOG_ENABLED=true` no build (decisão do Levi, mandar só quando ele mandar). Desligado, nenhuma rota, bolinha, banner ou card do catálogo aparece.
+
+- **17 ofertas ligadas (`enabled`)**, todas "Em breve" (`status: 'soon'`) com "Quero ser avisada" até existir produto, checkout e arquivo: 10 do tier S (Vulcão, Vitrine com Fotos, Caixas de Doces de Natal = Destaque e primeira do catálogo, Segredo dos Recheios, 15 Receitas que VÃO EXPLODIR, 20 Sobremesas com Panetone, Ceia Doce, Mini Panetones, Rabanada de Padaria, Doces para Revender) e 7 de Natal/Ano Novo (Cesta de Natal Caseira, Biscoitos Decorados, Dia de Produção em Escala, Mesa Doce de Ano Novo, Chocotone e Panetone de Colher, Natal das Crianças, Janeiro Também Tem Panetone). Páscoa, Dia das Mães, Junina, Premium, Ponto Perfeito, Calendário 2027, Artes Prontas e Kit Etiquetas ficam fora (desligadas ou ausentes).
+- **Acesso imediato:** pendente não libera; pago libera uma vez; estorno/chargeback revoga; direitos calculados na leitura. Toda oferta comprada abre direto em `/produto/<id>`.
+- **Cada card:** chip do tipo de entregável (caderno, planilha, vídeo-aula...), imagem do produto, 5 a 7 bullets, pilha de valor (2 a 3 bônus, "valor somado dos itens" calculado por `offerValueFromCents`, sem "preço antigo", sem relógio), `testimonials` (vazio; a seção "O que dizem os clientes" só aparece com depoimento real cadastrado), linha da trilha ("Faltam N") e ganchos.
+- **Sistema:** 4 trilhas (Panetone de confeitaria, Ceia completa, Encomendas de dezembro, Natal e Ano Novo), 12 ganchos (inclui as pontes Mini→Caixas e Vitrine→Ceia Doce), 5 coleções (Primeira Fornada, Panetone de Confeitaria, Ceia Completa, Presentes que Vendem, Encomendas de Dezembro). Tela `/caminho` ("Seu caminho"): bolinhas ✓ liberado, ● próximo passo, 🔒 bloqueado; "Fiz essa" destaca o próximo passo; a compra nunca é bloqueada. Na home aparecem no máximo 2 espaços de oferta (próximo passo + coleção, ou "Leve tudo"). "Leve tudo" fica em destaque só com 3+ itens liberados (antes, linha compacta).
+- **Combo "Leve tudo":** `COMBO` (preço, checkout e `wiapyProductId` vazios). Soma = ofertas ligadas. O preço de R$197 que aparece na prévia existe só no modo demonstração. Sem preço real definido, mostra "Em breve" + "Quero ser avisada". Coleções seguem a mesma regra (`priceCents` nulo, checkout vazio).
+- **Webhook:** `detectOffers` libera a oferta por `wiapyProductId`/`titleHints`; um `wiapyProductId` de coleção libera os itens da coleção; o do `COMBO` libera todas as ofertas ligadas. Bump (Fichas de Socorro) é por cliente (`bump` no direito), fora da soma do combo.
+- **Eventos** (`POST /api/event`, só estes nomes): `catalog.view`, `offer.view`, `offer.click`, `offer.interest`, `offer.dismiss`, `item.done`, `item.undone`, `combo.view|spin|click|interest`, `journey.view`, `hook.click`, `collection.view|click|interest`. Leitura em `GET /api/admin/events`.
+- **Guia visual por oferta:** cada oferta do tier S tem `accentColor`, paleta (`primary`, `secondary`, `bg`) e fonte do título (`OFFER_VISUAL`; ofertas sem guia usam `DEFAULT_VISUAL`). Aplicado no card, no detalhe e na bolinha da etapa no mapa. A marca "Fábrica de Panetones" fica só no cabeçalho. Contraste AA conferido em teste (`server/test/smoke.ts`, grupo 24) e no QA de tela. As fontes vêm do Google Fonts, só a do título, 1 peso, `display=swap`, carregadas só quando o card/detalhe está perto da tela, com fonte reserva; o service worker não guarda requisições de outro domínio, então offline vale a fonte reserva (o app continua inteiro). Atenção LGPD: a requisição de fonte vai para o Google; a alternativa é hospedar as fontes em `public/` (não feito).
+- **Imagens:** o app não tem foto decorativa. Imagem só em cards de acesso, produtos bloqueados/à venda (mockup) e ícones funcionais. Por oferta: `public/img/catalogo/<id>.webp` (produto, 640x960 com fundo transparente; 800x600 só nas ofertas `imageRatio: '4:3'`) e `<id>-bonus.webp` (faixa 900x300 dos bônus, transparente). Prontos hoje: os mockups de 9 ofertas do tier S (Vulcão, Vitrine, Caixas, Recheios, 15 Receitas, Sobremesas, Ceia Doce, Mini Panetones, Revender; WebP com alfa, 134 a 203 KB). Faltam: Rabanada (será refeita), as 10 faixas de bônus e as 7 ofertas de Natal/Ano Novo. Sem arquivo, a demonstração mostra um placeholder transparente e a produção não mostra imagem. Lista em `../IMAGENS-FALTANDO.md`; `npm run catalogo:imagens` confere e atualiza `src/data/catalog-images.json` (roda também antes do build). Para converter: `cwebp`/Pillow com qualidade alta e alfa preservado, mantendo a proporção.
+
+### Para ligar uma oferta do catálogo
+1. `checkoutUrl` e `wiapyProductId` (Wiapy), 2. arquivo em `files` + `npm run upload:files` (PDF pago nunca no git nem em `public/`), 3. mockup e faixa de bônus em `public/img/catalogo/`, 4. `status: 'available'`, 5. `VITE_CATALOG_ENABLED=true` quando o Levi mandar.
+
+### Variáveis do webhook (opcionais)
+`BUMP_ORDERBUMP_IDS` (ids ou trechos de título que contam como bump), `FULL_KIT_AMOUNT_CENTS` (valor do kit, padrão 3790), `BUMP_TOTAL_CENTS` (kit + bump, padrão 4580), `FULL_KIT_CHECKOUT_IDS`, `FULL_KIT_REQUIRE_AMOUNT`.
 
 ## Estados de compra e liberação
 

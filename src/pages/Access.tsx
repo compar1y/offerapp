@@ -1,9 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CONFIG } from '../data/config'
-import { PHOTOS } from '../data/images'
-import { cancelPending, requestCode, useStore, verifyCode } from '../lib/store'
-import { Picture, SupportButton } from '../components/ui'
+import { cancelPending, checkAccess, requestCode, useStore, verifyCode } from '../lib/store'
+import { SupportButton } from '../components/ui'
 
 export function Login() {
   const navigate = useNavigate()
@@ -25,7 +24,6 @@ export function Login() {
 
   return (
     <div className="page access">
-      <Picture img={PHOTOS.kit} lazy={false} className="pic-wide" />
       <div className="access-hero">
         <h1>{CONFIG.brand}</h1>
         <p>Entre com o e-mail que você usou na compra.</p>
@@ -42,6 +40,9 @@ export function Login() {
           {busy ? 'Enviando...' : 'Receber código de acesso'}
         </button>
         <p className="hint">Você vai receber um código de 6 números no e-mail. Não precisa de senha.</p>
+        <Link className="btn btn-link" to="/compra-confirmada">
+          Acabei de comprar
+        </Link>
         {CONFIG.demo && <p className="demo-note">Modo demonstração: use qualquer e-mail e o código {CONFIG.demoCode}.</p>}
       </form>
       <SupportButton />
@@ -132,8 +133,88 @@ export function Code() {
         >
           Usar outro e-mail
         </button>
+        <Link className="btn btn-link" to={`/compra-confirmada?email=${encodeURIComponent(pendingEmail ?? '')}`}>
+          Acabei de comprar e o código não chega
+        </Link>
         <p className="hint">Não chegou ou comprou com outro e-mail? Fale com o suporte pelo botão Ajuda.</p>
         {CONFIG.demo && <p className="demo-note">Modo demonstração: o código é {CONFIG.demoCode}.</p>}
+      </form>
+      <SupportButton />
+    </div>
+  )
+}
+
+// Página pública para usar como "URL de obrigado" no Wiapy: #/compra-confirmada
+// O webhook libera o acesso sozinho. Se esta tela abrir antes dele chegar, perguntamos de novo a cada 5 s (até ~2 min).
+const POLL_MS = 5000
+const POLL_MAX = 24
+
+export function Confirmed() {
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const [email, setEmail] = useState(params.get('email') ?? '')
+  const [phase, setPhase] = useState<'form' | 'waiting' | 'timeout'>('form')
+  const [error, setError] = useState('')
+  const run = useRef(0)
+  const valid = /\S+@\S+\.\S+/.test(email)
+
+  useEffect(() => () => void (run.current += 1), [])
+
+  async function start(e?: FormEvent) {
+    e?.preventDefault()
+    if (!valid || phase === 'waiting') return
+    const id = ++run.current
+    setError('')
+    setPhase('waiting')
+    for (let i = 0; i < POLL_MAX; i++) {
+      const r = await checkAccess(email)
+      if (id !== run.current) return
+      if (!r.ok) {
+        setError(r.error ?? 'Não foi possível conferir agora.')
+        setPhase('form')
+        return
+      }
+      if (r.ready) {
+        navigate('/codigo')
+        return
+      }
+      await new Promise((res) => setTimeout(res, POLL_MS))
+      if (id !== run.current) return
+    }
+    setPhase('timeout')
+  }
+
+  return (
+    <div className="page access">
+      <div className="access-hero">
+        <h1>Compra confirmada</h1>
+        <p>Entre com o e-mail da compra. Seu acesso é liberado sozinho, sem precisar de aprovação.</p>
+      </div>
+      <form className="card form" onSubmit={start}>
+        <label htmlFor="email">E-mail usado na compra</label>
+        <input id="email" type="email" inputMode="email" autoComplete="email" placeholder="nome@email.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={phase === 'waiting'} />
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        {phase === 'waiting' && (
+          <p className="ok-msg" role="status" aria-live="polite">
+            Estamos liberando seu acesso, tente em instantes. Esta tela confere sozinha, não precisa recarregar.
+          </p>
+        )}
+        {phase === 'timeout' && (
+          <p className="error" role="status">
+            Ainda não apareceu. Confira se o e-mail é o mesmo da compra e tente de novo. Se o pagamento foi no PIX, ele pode levar alguns minutos.
+          </p>
+        )}
+        <button className="btn btn-primary" disabled={!valid || phase === 'waiting'}>
+          {phase === 'waiting' ? 'Liberando...' : phase === 'timeout' ? 'Tentar de novo' : 'Receber código de acesso'}
+        </button>
+        <Link className="btn btn-link" to="/entrar">
+          Já tenho acesso: entrar
+        </Link>
+        {CONFIG.demo && <p className="demo-note">Modo demonstração: um e-mail que começa com "aguardando" simula a espera da liberação (cerca de 12 s). Código: {CONFIG.demoCode}.</p>}
       </form>
       <SupportButton />
     </div>

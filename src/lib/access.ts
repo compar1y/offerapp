@@ -5,7 +5,7 @@
 import { CONFIG } from '../data/config'
 import { itemsFor, type ItemId, type MeResponse, type PlanId, type PurchaseView } from '../../shared/catalog'
 
-export type AppEventName = 'offer.click' | 'offer.dismiss' | 'offer.interest' | 'item.done' | 'item.undone'
+export type AppEventName = 'offer.click' | 'offer.dismiss' | 'offer.interest' | 'offer.view' | 'catalog.view' | 'combo.view' | 'combo.spin' | 'combo.click' | 'combo.interest' | 'journey.view' | 'hook.click' | 'collection.view' | 'collection.click' | 'collection.interest' | 'item.done' | 'item.undone'
 
 export interface Result {
   ok: boolean
@@ -20,6 +20,8 @@ export interface AccessProvider {
   readonly mode: 'demo' | 'server'
   requestCode(email: string): Promise<Result>
   verifyCode(email: string, code: string): Promise<Result>
+  // tela "compra confirmada": o acesso já foi liberado? (pergunta leve, repetida a cada ~5 s). Se sim, o código já foi enviado.
+  checkAccess(email: string): Promise<{ ok: boolean; ready?: boolean; error?: string }>
   // null = sem sessão
   getSession(): Promise<MeResponse | null>
   logout(): Promise<void>
@@ -33,6 +35,9 @@ export interface AccessProvider {
 
 // ------------------------------------------------------------------ demo
 
+// demonstração: as ofertas que "Já comprei" simula (a 1ª; as 3 primeiras = o começo da trilha Panetone de confeitaria)
+export const DEMO_OWNED = ['panetones-vulcao', 'segredo-recheios', 'panetones-vitrine']
+
 export const DEMO_KEY = 'panetone-demo:v2'
 
 // no modo demonstração o cliente sempre tem o kit completo; só se alterna "com Fichas de Socorro" e "ofertas ligadas"
@@ -40,6 +45,8 @@ interface DemoState {
   email: string | null
   bump: boolean
   offers: boolean
+  // simula que a cliente já comprou as N primeiras ofertas de DEMO_OWNED (0, 1 ou 3)
+  have: number
 }
 
 function loadDemo(): DemoState {
@@ -47,12 +54,12 @@ function loadDemo(): DemoState {
     const raw = localStorage.getItem(DEMO_KEY)
     if (raw) {
       const j = JSON.parse(raw) as Partial<DemoState>
-      return { email: j.email ?? null, bump: !!j.bump, offers: !!j.offers }
+      return { email: j.email ?? null, bump: !!j.bump, offers: !!j.offers, have: [0, 1, 3].includes(Number(j.have)) ? Number(j.have) : 0 }
     }
   } catch {
     /* sem armazenamento */
   }
-  return { email: null, bump: false, offers: false }
+  return { email: null, bump: false, offers: false, have: 0 }
 }
 
 function saveDemo(s: DemoState) {
@@ -63,15 +70,16 @@ function saveDemo(s: DemoState) {
   }
 }
 
-export function getDemoFlags(): { bump: boolean; offers: boolean } {
-  const { bump, offers } = loadDemo()
-  return { bump, offers }
+export function getDemoFlags(): { bump: boolean; offers: boolean; have: number } {
+  const { bump, offers, have } = loadDemo()
+  return { bump, offers, have }
 }
 
-export function setDemoFlags(patch: Partial<{ bump: boolean; offers: boolean }>) {
+export function setDemoFlags(patch: Partial<{ bump: boolean; offers: boolean; have: number }>) {
   saveDemo({ ...loadDemo(), ...patch })
 }
 
+const demoWaitSince: Record<string, number> = {}
 let demoPending: string | null = null
 
 export const demoProvider: AccessProvider = {
@@ -79,6 +87,21 @@ export const demoProvider: AccessProvider = {
   async requestCode(email) {
     demoPending = email.trim().toLowerCase()
     return { ok: true }
+  },
+  async checkAccess(email) {
+    // demonstração: e-mail que começa com "aguardando" simula o webhook atrasado (libera ~12 s depois da primeira pergunta)
+    const e = email.trim().toLowerCase()
+    if (!e.startsWith('aguardando')) {
+      demoPending = e
+      return { ok: true, ready: true }
+    }
+    const first = (demoWaitSince[e] ??= Date.now())
+    const ready = Date.now() - first >= 12000
+    if (ready) {
+      demoPending = e
+      delete demoWaitSince[e]
+    }
+    return { ok: true, ready }
   },
   async verifyCode(email, code) {
     if (code.trim() !== CONFIG.demoCode) return { ok: false, error: 'Código errado. Confira e tente de novo.' }
@@ -91,7 +114,8 @@ export const demoProvider: AccessProvider = {
     const plan: PlanId = 'completo'
     const purchases: PurchaseView[] = [{ orderId: 'demo-1', plan, bump: false, status: 'paid', source: 'manual', createdAt: new Date().toISOString() }]
     if (s.bump) purchases.push({ orderId: 'demo-2', plan: null, bump: true, status: 'paid', source: 'manual', createdAt: new Date().toISOString() })
-    return { email: s.email, plan, items: itemsFor(plan, s.bump), purchases }
+    const items = itemsFor(plan, s.bump, DEMO_OWNED.slice(0, s.have))
+    return { email: s.email, plan, items, entitlements: items, purchases }
   },
   async logout() {
     saveDemo({ ...loadDemo(), email: null })
@@ -163,6 +187,13 @@ export const serverProvider: AccessProvider = {
     if (r.status === 429) return { ok: false, error: 'Muitas tentativas. Espere alguns minutos e tente de novo.' }
     if (r.status === 0) return { ok: false, error: 'Sem conexão. Tente de novo.' }
     return r.status < 300 ? { ok: true } : { ok: false, error: r.data?.error ?? 'Não foi possível enviar o código.' }
+  },
+  async checkAccess(email) {
+    const r = await api<{ ready?: boolean; error?: string }>('/auth/request-code', { method: 'POST', body: JSON.stringify({ email, wait: true }) })
+    if (r.status === 429) return { ok: false, error: 'Muitas tentativas. Espere alguns minutos e tente de novo.' }
+    if (r.status === 0) return { ok: false, error: 'Sem conexão. Tente de novo.' }
+    if (r.status >= 300) return { ok: false, error: r.data?.error ?? 'Confira o e-mail digitado.' }
+    return { ok: true, ready: r.data?.ready === true }
   },
   async verifyCode(email, code) {
     const r = await api<{ token?: string; error?: string }>('/auth/verify', { method: 'POST', body: JSON.stringify({ email, code }) })

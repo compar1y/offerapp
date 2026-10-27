@@ -1,13 +1,14 @@
 import { ITEMS, ITEM_BY_ID } from '../../shared/catalog'
-import { PHOTOS, MOCKUPS } from '../data/images'
+import { MOCKUPS } from '../data/images'
 import { CONFIG, supportUrl } from '../data/config'
-import { owns, progress, useStore, openFile } from '../lib/store'
+import { owns, progress, refreshSession, useStore, openFile } from '../lib/store'
 import { DemoBar, Layout, OfferBlock, Picture, ProductCard, ProgressBar } from '../components/ui'
 import { ownedOffers, visibleOffers } from '../lib/offers'
+import { HomeOffers } from '../components/System'
 import { DifficultyForm } from '../components/DifficultyForm'
 import { WelcomeModal } from '../components/WelcomeModal'
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export function Home() {
   const s = useStore()
@@ -19,6 +20,18 @@ export function Home() {
   const hasMain = owns(s, 'main')
   const pending = !!s.session?.purchases.some((p) => p.status === 'pending')
   const [msg, setMsg] = useState('')
+
+  // sem o kit ainda (webhook atrasado ou PIX pendente): confere sozinho a cada 8 s, por até ~3 min
+  useEffect(() => {
+    if (hasMain) return
+    let n = 0
+    const t = setInterval(() => {
+      n += 1
+      if (n > 22) clearInterval(t)
+      else void refreshSession()
+    }, 8000)
+    return () => clearInterval(t)
+  }, [hasMain])
   const banner = visibleOffers(s, 'home-banner')[0]
   const cards = visibleOffers(s, 'home-card')
   const mine = ownedOffers(s)
@@ -36,7 +49,6 @@ export function Home() {
       <DemoBar />
 
       <section className="block">
-        <Picture img={PHOTOS.kit} lazy={false} className="pic-wide" />
         <div className="block-info">
           <h1>Olá! Sua Fábrica de Panetones está aqui</h1>
           <p className="lead">
@@ -52,8 +64,8 @@ export function Home() {
             </p>
           ) : (
             <p className="kit-line">
-              <strong>{pending ? 'Aguardando a confirmação do pagamento' : 'O kit ainda não está liberado neste e-mail'}</strong>
-              <span>{pending ? 'Assim que o banco confirmar, os materiais aparecem aqui.' : 'Se você já comprou, fale com o suporte.'}</span>
+              <strong>{pending ? 'Aguardando a confirmação do pagamento' : 'Estamos liberando seu acesso, tente em instantes'}</strong>
+              <span>{pending ? 'Assim que o banco confirmar, os materiais aparecem aqui.' : 'Esta tela confere sozinha. Se você já comprou e não aparecer, fale com o suporte.'}</span>
             </p>
           )}
           <ProgressBar seen={seen} total={total} />
@@ -85,8 +97,9 @@ export function Home() {
         </div>
       </section>
 
+      <HomeOffers />
+
       <section className="block">
-        <Picture img={PHOTOS.fornada} className="pic-wide" />
         <div className="block-info">
           <h2 className="section-title">Bônus do kit completo</h2>
           <p className="lead">
@@ -109,7 +122,6 @@ export function Home() {
       )}
 
       <section className="block">
-        <Picture img={PHOTOS.chocotone} className="pic-wide" />
         <div className="block-info">
           <h2 className="section-title">Socorro do panetone</h2>
           <p className="lead">Se a massa não cresceu ou o panetone murchou, aqui você acha o que fazer.</p>
@@ -148,7 +160,6 @@ export function Home() {
       {banner && <OfferBlock offer={banner} from="home-banner" />}
 
       <section className="block">
-        <Picture img={PHOTOS.presente} className="pic-wide" />
         <div className="block-info">
           <h2 className="section-title">Qual sua maior dificuldade agora?</h2>
           <p className="lead">Conte para a gente. Isso ajuda a melhorar o app e os próximos materiais.</p>
@@ -157,7 +168,6 @@ export function Home() {
       </section>
 
       <section className="block help">
-        <Picture img={PHOTOS.entrega} className="pic-wide" />
         <div className="block-info">
           <h2 className="section-title">Precisa de ajuda?</h2>
           <p className="lead">Fale com o suporte pelo WhatsApp se algum material não abrir ou não aparecer.</p>

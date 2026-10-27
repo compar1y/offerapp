@@ -1,10 +1,13 @@
 import { useEffect, type ReactNode } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { init, useStore } from './lib/store'
-import { Code, Login } from './pages/Access'
+import { Code, Confirmed, Login } from './pages/Access'
 import { Home } from './pages/Home'
 import { Item } from './pages/Item'
 import { Account } from './pages/Account'
+import { Catalog } from './pages/Catalog'
+import { Journey } from './pages/Journey'
+import { CATALOG_ENABLED } from './data/config'
 
 function Private({ children }: { children: ReactNode }) {
   const { session } = useStore()
@@ -31,9 +34,12 @@ export default function App() {
       <ScrollToTop />
       <Routes>
         <Route path="/entrar" element={session ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/compra-confirmada" element={session ? <Navigate to="/" replace /> : <Confirmed />} />
         <Route path="/codigo" element={pendingEmail ? <Code /> : <Navigate to="/entrar" replace />} />
         <Route path="/" element={<Private><Home /></Private>} />
         <Route path="/produto/:id" element={<Private><Item /></Private>} />
+        {CATALOG_ENABLED && <Route path="/catalogo" element={<Private><Catalog /></Private>} />}
+        {CATALOG_ENABLED && <Route path="/caminho" element={<Private><Journey /></Private>} />}
         <Route path="/conta" element={<Private><Account /></Private>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

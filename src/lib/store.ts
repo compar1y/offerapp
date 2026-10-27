@@ -3,7 +3,7 @@
 
 import { useSyncExternalStore } from 'react'
 import { provider, getDemoFlags, setDemoFlags, type OpenFileResult } from './access'
-import { ITEM_BY_ID, findFile, type ItemId, type MeResponse, type OfferId } from '../../shared/catalog'
+import { ITEM_BY_ID, findFile, type CollectionId, type ItemId, type MeResponse, type OfferId } from '../../shared/catalog'
 
 export interface State {
   ready: boolean
@@ -16,15 +16,23 @@ export interface State {
   // ofertas que a cliente dispensou com "Agora não"
   dismissed: Partial<Record<OfferId, boolean>>
   // ofertas em que a cliente já disse ter interesse (oferta sazonal sem checkout)
-  interested: Partial<Record<OfferId, boolean>>
+  interested: Partial<Record<OfferId | 'bump', boolean>>
+  // ofertas do catálogo que a cliente já viu (some a bolinha vermelha da navegação)
+  viewed: Partial<Record<OfferId, boolean>>
+  // combo "Leve tudo": já girou a roleta / já pediu aviso
+  comboSpun: boolean
+  comboInterest: boolean
+  // coleções em que a cliente pediu aviso
+  collectionInterest: Partial<Record<CollectionId, boolean>>
   demoBump: boolean
   demoOffers: boolean
+  demoHave: number
 }
 
 const UI_KEY = 'panetone-app:v2'
 
-type UiState = Pick<State, 'welcomed' | 'seen' | 'done' | 'dismissed' | 'interested'>
-const UI_EMPTY: UiState = { welcomed: false, seen: {}, done: {}, dismissed: {}, interested: {} }
+type UiState = Pick<State, 'welcomed' | 'seen' | 'done' | 'dismissed' | 'interested' | 'viewed' | 'comboSpun' | 'comboInterest' | 'collectionInterest'>
+const UI_EMPTY: UiState = { welcomed: false, seen: {}, done: {}, dismissed: {}, interested: {}, viewed: {}, comboSpun: false, comboInterest: false, collectionInterest: {} }
 
 function loadUi(): UiState {
   try {
@@ -38,13 +46,13 @@ function loadUi(): UiState {
 
 function saveUi() {
   try {
-    localStorage.setItem(UI_KEY, JSON.stringify({ welcomed: state.welcomed, seen: state.seen, done: state.done, dismissed: state.dismissed, interested: state.interested }))
+    localStorage.setItem(UI_KEY, JSON.stringify({ welcomed: state.welcomed, seen: state.seen, done: state.done, dismissed: state.dismissed, interested: state.interested, viewed: state.viewed, comboSpun: state.comboSpun, comboInterest: state.comboInterest, collectionInterest: state.collectionInterest }))
   } catch {
     /* segue em memória */
   }
 }
 
-let state: State = { ready: false, session: null, pendingEmail: null, demoBump: getDemoFlags().bump, demoOffers: getDemoFlags().offers, ...loadUi() }
+let state: State = { ready: false, session: null, pendingEmail: null, demoBump: getDemoFlags().bump, demoOffers: getDemoFlags().offers, demoHave: getDemoFlags().have, ...loadUi() }
 const listeners = new Set<() => void>()
 
 function set(patch: Partial<State>) {
@@ -67,9 +75,22 @@ export async function init() {
   set({ session, ready: true })
 }
 
+// confere de novo o que o cliente tem (usado enquanto o acesso está sendo liberado)
+export async function refreshSession() {
+  const session = await provider.getSession()
+  if (session) set({ session })
+}
+
 export async function requestCode(email: string) {
   const r = await provider.requestCode(email)
   if (r.ok) set({ pendingEmail: email.trim().toLowerCase() })
+  return r
+}
+
+// tela "compra confirmada": quando o acesso já existe, o código foi enviado e seguimos para a tela do código
+export async function checkAccess(email: string) {
+  const r = await provider.checkAccess(email)
+  if (r.ok && r.ready) set({ pendingEmail: email.trim().toLowerCase() })
   return r
 }
 
@@ -122,7 +143,7 @@ export function dismissOffer(id: OfferId, from: string) {
 }
 
 // clique numa oferta (comprar, abrir card) ou interesse (oferta sazonal sem checkout). Só registra, nunca bloqueia.
-export function trackOffer(name: 'offer.click' | 'offer.interest', id: OfferId, from: string) {
+export function trackOffer(name: 'offer.click' | 'offer.interest', id: OfferId | 'bump', from: string) {
   if (name === 'offer.interest') {
     state = { ...state, interested: { ...state.interested, [id]: true } }
     saveUi()
@@ -131,15 +152,56 @@ export function trackOffer(name: 'offer.click' | 'offer.interest', id: OfferId, 
   void provider.trackEvent(name, { offerId: id, from }).catch(() => undefined)
 }
 
+// A cliente abriu o catálogo: marca cada oferta mostrada como vista (guarda no aparelho) e avisa o servidor.
+// catalog.view a cada abertura; offer.view só na primeira vez que cada oferta é vista.
+export function viewCatalog(ids: OfferId[]) {
+  const fresh = ids.filter((id) => !state.viewed[id])
+  if (fresh.length) {
+    state = { ...state, viewed: { ...state.viewed, ...Object.fromEntries(fresh.map((id) => [id, true])) } }
+    saveUi()
+    set({})
+  }
+  void provider.trackEvent('catalog.view', { count: String(ids.length), novas: String(fresh.length) }).catch(() => undefined)
+  for (const id of fresh) void provider.trackEvent('offer.view', { offerId: id, from: 'catalog' }).catch(() => undefined)
+}
+
+// combo "Leve tudo": view/spin/click/interest. spin e interest também ficam guardados no aparelho.
+export function trackCombo(name: 'combo.view' | 'combo.spin' | 'combo.click' | 'combo.interest', from: string) {
+  if (name === 'combo.spin' || name === 'combo.interest') {
+    state = { ...state, ...(name === 'combo.spin' ? { comboSpun: true } : { comboInterest: true }) }
+    saveUi()
+    set({})
+  }
+  void provider.trackEvent(name, { from }).catch(() => undefined)
+}
+
+// sistema de catálogo: mapa "Seu caminho", ganchos e coleções. Só registram, nunca bloqueiam.
+export function trackJourney(count: number) {
+  void provider.trackEvent('journey.view', { count: String(count) }).catch(() => undefined)
+}
+
+export function trackHook(fromItem: string, to: OfferId, where: string) {
+  void provider.trackEvent('hook.click', { itemId: fromItem, to, from: where }).catch(() => undefined)
+}
+
+export function trackCollection(name: 'collection.view' | 'collection.click' | 'collection.interest', id: CollectionId, from: string) {
+  if (name === 'collection.interest') {
+    state = { ...state, collectionInterest: { ...state.collectionInterest, [id]: true } }
+    saveUi()
+    set({})
+  }
+  void provider.trackEvent(name, { collectionId: id, from }).catch(() => undefined)
+}
+
 // só no modo demonstração. Ligar/desligar as ofertas recarrega a página (OFFERS é lida ao iniciar o app).
-export async function changeDemo(patch: Partial<{ bump: boolean; offers: boolean }>) {
+export async function changeDemo(patch: Partial<{ bump: boolean; offers: boolean; have: number }>) {
   setDemoFlags(patch)
   if (patch.offers !== undefined) {
     window.location.reload()
     return
   }
   const session = await provider.getSession()
-  set({ demoBump: getDemoFlags().bump, session })
+  set({ demoBump: getDemoFlags().bump, demoHave: getDemoFlags().have, session })
 }
 
 export function owns(s: State, id: ItemId): boolean {

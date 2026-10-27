@@ -8,7 +8,7 @@
 
 import { ENTITLEMENTS, itemsFor, type ItemId, type OfferId, type MeResponse, type PlanId, type PurchaseStatus, type PurchaseView } from '../shared/catalog.js'
 import { getKV } from './kv.js'
-import { detectBump, detectOffers, isFullKit, isStandaloneExtra, type ParsedWiapy } from './wiapy.js'
+import { detectBumpVia, detectOffers, isFullKit, isStandaloneExtra, type ParsedWiapy } from './wiapy.js'
 
 export interface Purchase {
   orderId: string
@@ -16,6 +16,8 @@ export interface Purchase {
   plan: PlanId | null
   bump: boolean
   offers: OfferId[]
+  // snapshot dos ids liberados por este pagamento (o acesso real é calculado na leitura, ver buildMe)
+  entitlements: ItemId[]
   status: PurchaseStatus
   source: 'wiapy' | 'manual' | 'csv'
   amountCents: number | null
@@ -114,7 +116,8 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
       return { ok: true, action: 'ignored', status, reason: kit.reason }
     }
     const plan = kit.ok ? ('completo' as const) : null
-    const bump = detectBump(p)
+    const bumpVia = detectBumpVia(p)
+    const bump = bumpVia !== null
     const offers = detectOffers(p)
     const needsReview = false
     const created: Purchase = {
@@ -123,6 +126,7 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
       plan,
       bump,
       offers,
+      entitlements: itemsFor(plan, bump, offers),
       status,
       source: 'wiapy',
       amountCents: p.amountCents,
@@ -134,6 +138,7 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
       history: [{ status, at: now }],
     }
     await saveOrder(created)
+    if (bump) await logEvent({ name: 'purchase.bump_detected', origin, email: p.email, orderId, props: { via: bumpVia, status } })
     await logEvent({ name: `purchase.${status}`, origin, email: p.email, orderId, props: { ...props, plan, bump, offers } })
     return { ok: true, action: 'created', status }
   }
@@ -169,6 +174,7 @@ export async function grantManual(args: { email: string; plan?: PlanId | null; b
     plan: args.plan ?? null,
     bump: !!args.bump,
     offers: args.offers ?? [],
+    entitlements: itemsFor(args.plan ?? null, !!args.bump, args.offers ?? []),
     status: 'paid',
     source: args.source,
     amountCents: null,
@@ -216,11 +222,12 @@ export function buildMe(email: string, purchases: Purchase[]): MeResponse {
     plan: p.plan,
     bump: p.bump,
     offers: p.offers ?? [],
+    entitlements: p.entitlements ?? itemsFor(p.plan, p.bump, p.offers ?? []),
     status: p.status,
     source: p.source,
     createdAt: p.createdAt,
   }))
-  return { email, plan, items: [...items], purchases: views }
+  return { email, plan, items: [...items], entitlements: [...items], purchases: views }
 }
 
 export async function meFor(email: string): Promise<MeResponse> {
