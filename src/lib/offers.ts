@@ -1,6 +1,7 @@
 // Regras de quais ofertas aparecem para a cliente. Tudo daqui só devolve algo se a oferta estiver LIGADA (enabled).
-import { COMBO, OFFERS, comboShowStrike, comboSumCents, type Offer, type OfferPlacement } from '../../shared/catalog'
-import { CATALOG_ENABLED, CONFIG } from '../data/config'
+import { COMBO, OFFERS, bundlePending, comboGate, comboOffers, comboShowInstallments, comboShowStrike, comboSumCents, isBundleId, type BundleId, type Offer, type OfferId, type OfferPlacement } from '../../shared/catalog'
+import { CATALOG_ENABLED, COMBO_MIN_AVAILABLE, PREVIEW } from '../data/config'
+import { buyUrl, getCheckouts, isReady, readySet } from './checkouts'
 import { owns, type State } from './store'
 
 // Quem já comprou (entitlement) não vê a oferta. Dispensada ("Agora não") some. O downsell só aparece depois de
@@ -29,7 +30,7 @@ export function catalogOffers(): Offer[] {
   if (!CATALOG_ENABLED) return []
   // destaque primeiro, depois o top 10 (tierS), depois os demais, cada grupo na ordem da lista OFFERS
   const rank = (o: Offer) => (o.featured ? 0 : o.tierS ? 1 : 2)
-  return OFFERS.filter((o) => o.catalog && (o.enabled || CONFIG.demo))
+  return OFFERS.filter((o) => o.catalog && (o.enabled || PREVIEW))
     .map((o, i) => ({ o, i }))
     .sort((a, b) => rank(a.o) - rank(b.o) || a.i - b.i)
     .map((x) => x.o)
@@ -40,10 +41,23 @@ export function unseenOffers(s: State): Offer[] {
   return catalogOffers().filter((o) => o.badgeNew && !s.viewed[o.id] && !owns(s, o.id))
 }
 
-// ---- super oferta "Leve tudo"
-// Preço de DEMONSTRAÇÃO: só no modo demo/prévia e só enquanto o Levi não definir COMBO.comboPriceCents. Nunca no modo real.
-export const DEMO_COMBO_PRICE_CENTS = 19700
+// direitos de combo/coleção que a cliente já pagou (vêm do /api/me) e os itens deles que ainda não saíram.
+// Esses itens entram sozinhos quando `available` virar true: o app só mostra o aviso.
+export { buyUrl, isReady }
+export const ownedBundles = (s: State): BundleId[] => {
+  const out = new Set<BundleId>()
+  for (const p of s.session?.purchases ?? []) if (p.status === 'paid') for (const b of p.bundles ?? []) if (isBundleId(b)) out.add(b)
+  return [...out]
+}
+export const pendingFromBundles = (s: State): Set<OfferId> => {
+  const out = new Set<OfferId>()
+  for (const b of ownedBundles(s)) for (const id of bundlePending(b, readySet())) if (!owns(s, id)) out.add(id)
+  return out
+}
 
+// ---- super oferta "Leve tudo"
+// Preço: COMBO.comboPriceCents (R$ 97,00). A soma riscada vem SEMPRE das ofertas enabled do catálogo. O rótulo "preço de demonstração"
+// só existe na demonstração enquanto não houver checkout.
 export interface ComboView {
   title: string
   items: Offer[]
@@ -51,27 +65,42 @@ export interface ComboView {
   priceCents: number | null
   demoPrice: boolean
   strike: boolean
-  checkoutUrl: string
-  // tem preço e checkout: o botão abre o checkout. Senão: "Em breve" + "Quero ser avisada"
+  // "ou 12x": só com COMBO.comboInstallments = 12 (confirmado pelo Caixa na Wiapy)
+  installments: boolean
+  // link do checkouts.json (null = sem compra)
+  checkoutUrl: string | null
+  // gate: botão de compra só com checkout E itens prontos >= mínimo. Senão "Em breve" + "Quero ser avisada"
+  ready: number
+  total: number
+  min: number
+  readyIds: Set<OfferId>
   buyable: boolean
 }
 
-// null = o combo não aparece (catálogo desligado, combo desligado, sem itens ou a cliente já tem tudo)
+// null = o combo não aparece (catálogo desligado, combo desligado, sem itens ou a cliente já tem tudo, inclusive o que vem por direito de bundle)
 export function comboView(s: State): ComboView | null {
-  if (!CATALOG_ENABLED || !(COMBO.enabled || CONFIG.demo)) return null
-  const items = catalogOffers()
-  if (items.length === 0 || items.every((o) => owns(s, o.id))) return null
-  const demoPrice = CONFIG.demo && COMBO.comboPriceCents === null
-  const priceCents = demoPrice ? DEMO_COMBO_PRICE_CENTS : COMBO.comboPriceCents
+  if (!CATALOG_ENABLED || !(COMBO.enabled || PREVIEW)) return null
+  const items = comboOffers()
+  if (items.length === 0) return null
+  const pending = pendingFromBundles(s)
+  if (items.every((o) => owns(s, o.id) || pending.has(o.id))) return null
+  const priceCents = COMBO.comboPriceCents
   const sumCents = comboSumCents(items)
+  const g = comboGate(getCheckouts(), COMBO_MIN_AVAILABLE)
+  const hasPrice = priceCents !== null && priceCents > 0
   return {
     title: COMBO.title,
     items,
     sumCents,
     priceCents,
-    demoPrice,
+    demoPrice: PREVIEW && !buyUrl('combo'),
     strike: comboShowStrike(priceCents, sumCents),
-    checkoutUrl: COMBO.checkoutUrl,
-    buyable: !!COMBO.checkoutUrl && priceCents !== null && priceCents > 0,
+    installments: hasPrice && comboShowInstallments(COMBO.comboInstallments),
+    checkoutUrl: buyUrl('combo'),
+    ready: g.ready,
+    total: g.total,
+    min: g.min,
+    readyIds: new Set(items.filter((o) => isReady(o.id)).map((o) => o.id)),
+    buyable: hasPrice && g.open,
   }
 }

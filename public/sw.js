@@ -3,9 +3,10 @@
 //  - nunca guarda /api/*, PDFs, planilhas, textos ou qualquer arquivo pago;
 //  - nunca guarda respostas de outros domínios;
 //  - nunca guarda respostas que não sejam 200 ou que tenham Cache-Control: no-store.
-const CACHE = 'panetone-shell-v2'
+const CACHE = 'panetone-shell-v3'
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png']
-const BLOCKED = /\/api\/|\.(pdf|docx?|xlsx?|txt|csv|zip)(\?|$)/i
+//  - nunca guarda checkouts.json (links de compra e "pronto" mudam sem deploy de código).
+const BLOCKED = /\/api\/|\/checkouts\.json|\.(pdf|docx?|xlsx?|txt|csv|zip)(\?|$)/i
 const OK = /\.(js|css|webp|png|svg|woff2?|webmanifest)(\?|$)|\/$|index\.html$/i
 
 self.addEventListener('install', (e) => {

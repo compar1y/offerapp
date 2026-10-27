@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -14,6 +14,9 @@ process.env.WIAPY_WEBHOOK_TOKEN = randomBytes(12).toString('hex')
 process.env.ADMIN_TOKEN = randomBytes(12).toString('hex')
 process.env.DATA_FILE = join(tmp, 'db.json')
 process.env.FILES_DIR = join(tmp, 'files')
+process.env.CHECKOUTS_FILE = join(tmp, 'checkouts.json')
+process.env.CHECKOUTS_CACHE_MS = '0'
+await writeFile(process.env.CHECKOUTS_FILE, '{}')
 process.env.DEV_LOG_CODES = '1'
 delete process.env.VERCEL
 
@@ -249,12 +252,13 @@ assert.ok(all.some((e) => e.name === 'purchase.ignored_checkout' && e.origin ===
 ok('feedback vira evento; eventos de compra guardam origem e pedido')
 
 // 9. ofertas adicionais (OFFERS): 3 slots base + catálogo unificado (12 do GPT + seeds), todas desligadas; nada é liberado enquanto estiverem desligadas
-assert.deepEqual(OFFERS.filter((o) => ['kit-lucrativo', 'kit-embalagem-etiqueta', 'fornada-pascoa'].includes(o.id)).map((o) => [o.id, o.kind, o.priceCents, o.enabled, o.checkoutUrl, o.wiapyProductId]), [
-  ['fornada-pascoa', 'seasonal', 7700, false, '', ''],
-  ['kit-lucrativo', 'upsell', 7700, false, '', ''],
-  ['kit-embalagem-etiqueta', 'downsell', 3700, false, '', ''],
+assert.deepEqual(OFFERS.filter((o) => ['kit-lucrativo', 'kit-embalagem-etiqueta', 'fornada-pascoa'].includes(o.id)).map((o) => [o.id, o.kind, o.priceCents, o.enabled, o.wiapyProductId]), [
+  ['fornada-pascoa', 'seasonal', 7700, false, ''],
+  ['kit-lucrativo', 'upsell', 7700, false, ''],
+  ['kit-embalagem-etiqueta', 'downsell', 3700, false, ''],
 ])
-assert.ok(OFFERS.every((o) => o.checkoutUrl === '' && o.wiapyProductId === ''), 'nenhuma oferta tem checkout nem id Wiapy ainda')
+assert.ok(OFFERS.every((o) => o.wiapyProductId === ''), 'nenhuma oferta tem id Wiapy ainda')
+assert.ok(OFFERS.every((o) => !('checkoutUrl' in o) && !('status' in o) && !('available' in o)), 'o link e o estado de cada oferta vêm só de public/checkouts.json')
 assert.ok(OFFERS.filter((o) => !o.catalog).every((o) => !o.enabled), 'fora do catálogo = desligada')
 assert.equal(OFFER_BY_ID['kit-embalagem-etiqueta'].requiresDismissed, 'kit-lucrativo')
 assert.ok(/etiquetas/i.test(OFFER_BY_ID['kit-embalagem-etiqueta'].description) && /B[ôo]nus 01/.test(OFFER_BY_ID['kit-embalagem-etiqueta'].description))
@@ -372,17 +376,15 @@ ok('bump por cliente: só kit, kit+bump em orderbump, kit+bump só pelo valor, p
 // catálogo: campos obrigatórios, sem promessa de renda, sem escassez falsa
 for (const o of OFFERS) {
   assert.equal(typeof o.catalog, 'boolean', o.id)
-  assert.ok(o.status === 'available' || o.status === 'soon', o.id)
   assert.equal(typeof o.badgeNew, 'boolean', o.id)
   assert.ok(o.headline.length > 5 && o.promise.length > 5, `${o.id}: headline e promise preenchidos`)
-  if (o.status === 'available') assert.ok(o.checkoutUrl, `${o.id}: oferta disponível precisa de checkout`)
   const copy = `${o.headline} ${o.promise} ${o.description} ${o.subtitle}`
   assert.ok(!/garant|ganhe|faturar|fature|renda|últimas? (vagas|unidades)|só hoje|termina em|\d+ ?(vagas|restantes)|R\$ ?\d+ ?(por|\/) ?(dia|mês|semana)/i.test(copy), `${o.id}: sem promessa de renda nem escassez falsa`)
 }
 assert.equal(new Set(OFFERS.map((o) => o.id)).size, OFFERS.length)
 const inCatalog = OFFERS.filter((o) => o.catalog)
 assert.equal(inCatalog.length, 17, '10 do tier S + 7 de Natal/Ano Novo no catálogo')
-assert.ok(inCatalog.every((o) => o.status === 'soon' && o.checkoutUrl === '' && o.enabled), 'todos "em breve", sem checkout, enabled')
+assert.ok(inCatalog.every((o) => o.enabled), 'todas as do catálogo estão enabled')
 assert.equal(OFFERS.filter((o) => o.tierS).length, 10)
 assert.ok(OFFERS.every((o) => o.deliverableType.trim() && o.imageType.trim() && ['2:3', '4:3'].includes(o.imageRatio)), 'todo item tem tipo de entregável e briefing de imagem')
 assert.ok(inCatalog.every((o) => !/^pdf/i.test(o.deliverableType)), 'nenhum entregável é só "PDF"')
@@ -398,7 +400,7 @@ assert.equal(OFFER_BY_ID['caixas-doces-natal'].priceCents, 3700)
 assert.equal(OFFER_BY_ID['rabanada-padaria'].priceCents, 2490)
 assert.equal(OFFER_BY_ID['panetones-vulcao'].priceCents, 2790)
 assert.equal(OFFER_BY_ID['segredo-recheios'].priceCents, 3790)
-ok('catálogo: ofertas têm catalog/status/badgeNew/headline/promise, sem renda numérica nem escassez')
+ok('catálogo: ofertas têm catalog/badgeNew/headline/promise, sem renda numérica nem escassez')
 
 // eventos do catálogo
 assert.equal((await ev({ name: 'catalog.view', count: 5, novas: '5' }, {})).status, 401)
@@ -415,12 +417,13 @@ ok('/api/event grava catalog.view e offer.view')
 
 // combo "Leve tudo": desligado e sem preço por padrão; soma calculada; riscado só se o combo for mais barato
 assert.equal(COMBO.enabled, false)
-assert.equal(COMBO.comboPriceCents, null)
-assert.equal(COMBO.checkoutUrl, '')
+assert.equal(COMBO.comboPriceCents, 9700, 'Leve tudo: R$ 97,00 (config)')
+assert.equal(COMBO.comboInstallments, null, 'parcelamento vazio por padrão')
+assert.equal(COMBO.minAvailable, 10)
 assert.equal(COMBO.title, 'Leve tudo')
 assert.equal(comboSumCents(inCatalog), inCatalog.reduce((t, o) => t + o.priceCents, 0))
 assert.equal(comboSumCents([{ priceCents: 2790 }, { priceCents: 3790 }]), 6580)
-assert.equal(comboShowStrike(29700, comboSumCents(inCatalog)), true, 'o preço de demonstração é menor que a soma')
+assert.equal(comboShowStrike(COMBO.comboPriceCents, comboSumCents(inCatalog)), true, 'R$ 97 é menor que a soma')
 assert.equal(comboShowStrike(31500, 31500), false, 'preço igual à soma: sem riscado')
 assert.equal(comboShowStrike(40000, 31500), false, 'combo mais caro: sem riscado')
 assert.equal(comboShowStrike(null, 31500), false, 'sem preço: sem riscado')
@@ -556,8 +559,8 @@ ok('combo "Leve tudo": desligado e sem preço, soma automática, riscado só qua
   assert.deepEqual(COLLECTIONS.find((c) => c.id === 'primeira-fornada')!.items, ['panetones-vulcao', 'rabanada-padaria'])
   for (const c of COLLECTIONS) {
     for (const id of c.items) assert.ok(BY[id], `coleção ${c.id}: ${id}`)
-    assert.equal(c.collectionPriceCents, null)
-    assert.equal(c.checkoutUrl, '')
+    assert.equal(c.collectionPriceOverrideCents, null)
+    assert.equal(c.minAvailable, null)
     assert.equal(collectionSumCents(c), c.items.reduce((t, id) => t + BY[id].priceCents, 0))
   }
   const pf = COLLECTIONS.find((c) => c.id === 'primeira-fornada')!
@@ -581,18 +584,233 @@ ok('combo "Leve tudo": desligado e sem preço, soma automática, riscado só qua
   }
   assert.equal((await ev({ name: 'journey.view' }, {})).status, 401)
   // webhook: coleção e "Leve tudo" liberam os itens (só com wiapyProductId configurado); vazio não libera nada
-  const { detectOffers } = await import('../wiapy.js')
+  const { detectOffers, detectBundles } = await import('../wiapy.js')
   const fake = (checkoutId: string) => parseWiapyPayload(payload({ id: 'x', status: 'paid', checkoutId, amount: 1000 }))
-  assert.deepEqual(detectOffers(fake('pid-colecao-teste')), [])
+  assert.deepEqual(detectBundles(fake('pid-colecao-teste')), [])
   pf.wiapyProductId = 'pid-colecao-teste'
-  assert.deepEqual(detectOffers(fake('pid-colecao-teste')), ['panetones-vulcao', 'rabanada-padaria'])
+  assert.deepEqual(detectBundles(fake('pid-colecao-teste')), ['primeira-fornada'], 'coleção comprada grava o direito da coleção')
+  assert.deepEqual(detectOffers(fake('pid-colecao-teste')), [], 'e não uma lista fixa de produtos')
   pf.wiapyProductId = ''
   COMBO.wiapyProductId = 'pid-combo-teste'
-  assert.deepEqual(detectOffers(fake('pid-combo-teste')), OF.filter((o) => o.catalog && o.enabled).map((o) => o.id))
+  assert.deepEqual(detectBundles(fake('pid-combo-teste')), ['combo'])
   COMBO.wiapyProductId = ''
-  assert.deepEqual(detectOffers(fake('pid-combo-teste')), [])
+  assert.deepEqual(detectBundles(fake('pid-combo-teste')), [])
   void cat
-  ok('sistema de catálogo: pilha de valor calculada, bullets 5-7, depoimentos vazios, trilhas/ganchos/pontes/coleções, eventos novos, coleção e combo liberam itens pelo webhook, sem renda/escassez')
+  ok('sistema de catálogo: pilha de valor calculada, bullets 5-7, depoimentos vazios, trilhas/ganchos/pontes/coleções, eventos novos, coleção e combo gravam o direito pelo webhook, sem renda/escassez')
+}
+
+// PREÇOS, GATE e DIREITOS de combo/coleção
+{
+  const C = await import('../../shared/catalog.js')
+  const { roundToNiceCents, collectionPrice, collectionPriceByRule, collectionSumCents, comboOffers, comboGate, collectionGate, effectiveMin, gateOpen, bundleItems, bundlePending, COLLECTIONS: COLS, DEFAULT_COMBO_MIN_AVAILABLE } = C
+  const { applyWiapyEvent } = await import('../purchases.js')
+  void applyWiapyEvent
+  // regra: soma x 0,65, valor mais próximo terminado em ,00 ou ,90; empate para baixo
+  const table: [number, number][] = [[5280, 3400], [9370, 6090], [8890, 5790], [11190, 7290], [13100, 8500], [1300, 800], [300, 190], [100, 90], [0, 0]]
+  for (const [sum, want] of table) assert.equal(roundToNiceCents(sum), want, `soma ${sum}`)
+  assert.equal(roundToNiceCents(1300), 800, 'empate (8,45) vai para baixo: 8,00')
+  assert.equal(roundToNiceCents(300), 190, 'empate (1,95) vai para baixo: 1,90')
+  for (let sum = 0; sum <= 40000; sum += 10) {
+    const r = roundToNiceCents(sum)
+    assert.ok(r % 100 === 0 || r % 100 === 90, `termina em ,00 ou ,90: ${sum} -> ${r}`)
+    assert.ok(Math.abs(r - sum * 0.65) <= 50, `perto do alvo: ${sum} -> ${r}`)
+  }
+  const expected: Record<string, [number, number]> = {
+    'primeira-fornada': [5280, 3400],
+    'panetone-confeitaria': [9370, 6090],
+    'ceia-completa': [8890, 5790],
+    'presentes-que-vendem': [11190, 7290],
+    'encomendas-dezembro': [13100, 8500],
+  }
+  for (const c of COLS) {
+    assert.equal(collectionSumCents(c), expected[c.id][0], `soma ${c.id}`)
+    assert.equal(collectionPrice(c), expected[c.id][1], `preço ${c.id}`)
+    assert.ok(collectionPrice(c) < collectionSumCents(c), 'sempre abaixo da soma')
+  }
+  const pf = COLS[0]
+  pf.collectionPriceOverrideCents = 2990
+  assert.equal(collectionPrice(pf), 2990, 'override manual vence a regra')
+  assert.equal(collectionPriceByRule(pf), 3400, 'a regra segue calculável')
+  pf.collectionPriceOverrideCents = null
+  assert.equal(collectionPrice(pf), 3400)
+
+  // combo: R$ 97,00 contra a soma das ofertas enabled do catálogo (nunca digitada)
+  const items = comboOffers()
+  assert.equal(items.length, 17)
+  assert.equal(C.comboSumCents(items), 55720, 'soma das 17: R$ 557,20')
+  assert.equal(C.COMBO.comboPriceCents, 9700)
+  OFFER_BY_ID['kit-lucrativo'].catalog = true
+  OFFER_BY_ID['kit-lucrativo'].enabled = true
+  assert.equal(C.comboSumCents(comboOffers()), 55720 + OFFER_BY_ID['kit-lucrativo'].priceCents, 'a soma acompanha as ofertas enabled')
+  OFFER_BY_ID['kit-lucrativo'].catalog = false
+  OFFER_BY_ID['kit-lucrativo'].enabled = false
+  assert.equal(C.comboSumCents(comboOffers()), 55720)
+  assert.equal(C.comboShowInstallments(null), false)
+  assert.equal(C.comboShowInstallments(12), true)
+  assert.equal(C.comboShowInstallments(6), false)
+
+  // estado de cada oferta: só o arquivo de checkouts (ready). Sem arquivo nada está pronto.
+  const { parseCheckouts, readyIdsOf, buyUrlOf, applyCheckoutPrices, CHECKOUT_IDS, ITEMS: ALLITEMS } = C
+  const { loadCheckouts } = await import('../checkouts.js')
+  const file = process.env.CHECKOUTS_FILE as string
+  const cmap: Record<string, { checkoutUrl: string; ready: boolean; price?: number }> = {}
+  const flush = () => writeFile(file, JSON.stringify(cmap))
+  const setReady = async (id: string, v: boolean, url = `https://pay.exemplo.test/${id}`) => {
+    cmap[id] = { checkoutUrl: v ? url : '', ready: v }
+    await flush()
+  }
+  assert.equal(readyIdsOf(await loadCheckouts()).size, 0, 'arquivo vazio: nada pronto')
+  assert.ok(ALLITEMS.length > 0)
+
+  // parseCheckouts: só ids conhecidos, só https, ready exatamente true, price inteiro positivo
+  const pc = parseCheckouts({
+    'panetones-vulcao': { checkoutUrl: ' https://pay.exemplo.test/a ', ready: true, price: 2790 },
+    'panetones-vitrine': { checkoutUrl: 'http://inseguro.test/x', ready: true },
+    'segredo-recheios': { checkoutUrl: 'https://pay.exemplo.test/b', ready: 'true' },
+    'ceia-doce': { checkoutUrl: 'javascript:alert(1)', ready: true, price: -5 },
+    'mini-panetones': { checkoutUrl: 'https://pay.exemplo.test/c', ready: true, price: 12.5 },
+    'id-desconhecido': { checkoutUrl: 'https://pay.exemplo.test/z', ready: true },
+    combo: 'texto',
+  })
+  assert.deepEqual(pc['panetones-vulcao'], { checkoutUrl: 'https://pay.exemplo.test/a', ready: true, price: 2790 })
+  assert.deepEqual(pc['panetones-vitrine'], { checkoutUrl: '', ready: true }, 'http não vale como link')
+  assert.equal(pc['segredo-recheios'].ready, false, 'ready só vale se for exatamente true')
+  assert.deepEqual(pc['ceia-doce'], { checkoutUrl: '', ready: true }, 'link inválido e price negativo descartados')
+  assert.equal(pc['mini-panetones'].price, undefined, 'price precisa ser inteiro')
+  assert.equal(pc['id-desconhecido'], undefined)
+  assert.equal(pc.combo, undefined)
+  assert.deepEqual(parseCheckouts(null), {})
+  assert.deepEqual(parseCheckouts([1]), {})
+  // buyUrlOf: ready E link
+  assert.equal(buyUrlOf(pc, 'panetones-vulcao'), 'https://pay.exemplo.test/a')
+  assert.equal(buyUrlOf(pc, 'panetones-vitrine'), null, 'ready sem link: sem botão Comprar')
+  assert.equal(buyUrlOf(parseCheckouts({ 'ceia-doce': { checkoutUrl: 'https://pay.exemplo.test/ok', ready: false } }), 'ceia-doce'), null, 'link sem ready: sem botão Comprar')
+  assert.equal(buyUrlOf({}, 'combo'), null)
+  // ids do arquivo: as 23 ofertas, combo, 5 coleções e bump
+  assert.equal(CHECKOUT_IDS.length, OFFERS.length + 1 + COLS.length + 1)
+  assert.ok(CHECKOUT_IDS.includes('combo') && CHECKOUT_IDS.includes('bump') && COLS.every((c) => CHECKOUT_IDS.includes(c.id)))
+  // preços do arquivo: aplicam e voltam ao valor base quando o campo some
+  const baseVulcao = OFFER_BY_ID['panetones-vulcao'].priceCents
+  applyCheckoutPrices(parseCheckouts({ 'panetones-vulcao': { checkoutUrl: '', ready: false, price: 2990 }, bump: { checkoutUrl: '', ready: false, price: 990 }, combo: { checkoutUrl: '', ready: false, price: 8900 }, 'primeira-fornada': { checkoutUrl: '', ready: false, price: 2900 } }))
+  assert.equal(OFFER_BY_ID['panetones-vulcao'].priceCents, 2990)
+  assert.equal(C.BUMP.priceCents, 990)
+  assert.equal(C.COMBO.comboPriceCents, 8900)
+  assert.equal(collectionPrice(COLS[0]), 2900)
+  applyCheckoutPrices({})
+  assert.equal(OFFER_BY_ID['panetones-vulcao'].priceCents, baseVulcao)
+  assert.equal(C.BUMP.priceCents, 790)
+  assert.equal(C.COMBO.comboPriceCents, 9700)
+  assert.equal(collectionPrice(COLS[0]), 3400)
+
+  // o public/checkouts.json que vai para produção: estrutura válida (ids conhecidos; ready:true exige link https). Não fixa o conteúdo.
+  const real = JSON.parse(await readFile(new URL('../../public/checkouts.json', import.meta.url), 'utf8')) as Record<string, { checkoutUrl?: unknown; ready?: unknown; price?: unknown }>
+  for (const [id, e] of Object.entries(real)) {
+    assert.ok(CHECKOUT_IDS.includes(id), `public/checkouts.json: id desconhecido ${id}`)
+    assert.equal(typeof e.ready, 'boolean', `${id}: ready é booleano`)
+    assert.equal(typeof e.checkoutUrl, 'string', `${id}: checkoutUrl é texto`)
+    if (e.ready) assert.match(String(e.checkoutUrl), /^https:\/\/\S+$/, `${id}: ready:true exige link https`)
+  }
+  for (const id of CHECKOUT_IDS) assert.ok(id in real, `public/checkouts.json: falta o id ${id}`)
+  // o arquivo de exemplo também é válido e abre o gate do combo (12 prontos e link)
+  const exMap = parseCheckouts(JSON.parse(await readFile(new URL('../../checkouts.example.json', import.meta.url), 'utf8')))
+  assert.equal(CHECKOUT_IDS.every((id) => id in exMap), true)
+  assert.equal(C.readyCount(items.map((o) => o.id), readyIdsOf(exMap)), 12)
+  assert.equal(comboGate(exMap).open, true, 'exemplo: combo com link e 12 prontos abre')
+  assert.equal(collectionGate(COLS[0], exMap).open, true, 'exemplo: Primeira fornada (2 de 2) com link abre')
+  assert.equal(collectionGate(COLS[1], exMap).open, false, 'exemplo: coleção sem link não abre')
+
+  // gate (combo e coleções) pelo mapa
+  const ids = items.map((o) => o.id)
+  const mapWith = (n: number, withLink = true, extra: Record<string, string> = {}) => {
+    const m: Record<string, { checkoutUrl: string; ready: boolean }> = {}
+    for (const id of ids.slice(0, n)) m[id] = { checkoutUrl: `https://pay.exemplo.test/${id}`, ready: true }
+    if (withLink) m.combo = { checkoutUrl: 'https://pay.exemplo.test/combo', ready: true }
+    for (const [id, u] of Object.entries(extra)) m[id] = { checkoutUrl: u, ready: true }
+    return parseCheckouts(m)
+  }
+  assert.equal(DEFAULT_COMBO_MIN_AVAILABLE, 10)
+  assert.equal(comboGate(mapWith(17, false)).open, false, 'sem link do combo: nunca abre')
+  assert.deepEqual(comboGate(mapWith(2)), { ready: 2, total: 17, min: 10, open: false })
+  assert.equal(comboGate(mapWith(9)).open, false)
+  assert.equal(comboGate(mapWith(10)).open, true, '10 prontos + link: abre')
+  assert.equal(comboGate(mapWith(17)).open, true)
+  assert.equal(comboGate(mapWith(5), 5).open, true, 'o mínimo é configurável')
+  assert.equal(effectiveMin(10, 7), 7, 'o mínimo nunca passa do total')
+  assert.equal(effectiveMin(null, 3), 3)
+  assert.equal(gateOpen(null, 99, 1), false)
+  // coleções: padrão = todos os itens
+  const cf = COLS[1]
+  const cmapWith = (n: number, link: string) => {
+    const m: Record<string, { checkoutUrl: string; ready: boolean }> = {}
+    for (const id of cf.items.slice(0, n)) m[id] = { checkoutUrl: '', ready: true }
+    m[cf.id] = { checkoutUrl: link, ready: true }
+    return parseCheckouts(m)
+  }
+  assert.deepEqual(collectionGate(cf, cmapWith(2, 'https://pay.exemplo.test/col')), { ready: 2, total: 3, min: 3, open: false })
+  assert.equal(collectionGate(cf, cmapWith(3, 'https://pay.exemplo.test/col')).open, true)
+  assert.equal(collectionGate(cf, cmapWith(2, 'https://pay.exemplo.test/col'), 2).open, true, 'COLLECTION_MIN_AVAILABLE configurável')
+  assert.equal(collectionGate(cf, cmapWith(3, '')).open, false, 'sem link: não abre')
+
+  // direitos: comprar o combo/coleção grava o direito; /api/me libera os prontos e os demais saem sozinhos quando available vira true
+  const BP = 'pid-combo-direito'
+  C.COMBO.wiapyProductId = BP
+  const EC = 'combo-cliente@example.com'
+  const pay = (id: string, status: string, email = EC, checkoutId = BP) => post(payload({ id, status, email, checkoutId, amount: 9700 }))
+  await setReady('panetones-vulcao', true)
+  await setReady('panetones-vitrine', true)
+  await pay('cb-1', 'unpaid')
+  assert.deepEqual((await meFor(EC)).items, [], 'PIX pendente não libera')
+  await pay('cb-1', 'paid')
+  await pay('cb-1', 'paid')
+  assert.equal((await purchasesOf(EC)).length, 1, 'idempotente')
+  assert.deepEqual((await purchasesOf(EC))[0].bundles, ['combo'])
+  let mc = await meFor(EC)
+  assert.deepEqual(new Set(mc.items), new Set(['panetones-vulcao', 'panetones-vitrine']), 'só os prontos liberam na hora')
+  assert.deepEqual(mc.purchases[0].bundles, ['combo'])
+  const rs = readyIdsOf(await loadCheckouts())
+  assert.equal(bundleItems('combo', rs).length, 2)
+  assert.equal(bundlePending('combo', rs).length, 15)
+  await setReady('segredo-recheios', true)
+  mc = await meFor(EC)
+  assert.ok(mc.items.includes('segredo-recheios'), 'quando ready vira true no arquivo, libera sozinho (sem nova compra)')
+  assert.equal(mc.items.length, 3)
+  assert.equal((await purchasesOf(EC)).length, 1)
+  // um item ligado mas desligado depois (enabled=false) não libera
+  OFFER_BY_ID['segredo-recheios'].enabled = false
+  assert.ok(!(await meFor(EC)).items.includes('segredo-recheios'))
+  OFFER_BY_ID['segredo-recheios'].enabled = true
+  await pay('cb-1', 'refunded')
+  assert.deepEqual((await meFor(EC)).items, [], 'estorno revoga o direito inteiro')
+  await pay('cb-1', 'paid')
+  assert.deepEqual((await meFor(EC)).items, [], 'paid atrasado não volta a liberar')
+  C.COMBO.wiapyProductId = ''
+
+  // coleção
+  const CP = 'pid-colecao-direito'
+  pf.wiapyProductId = CP
+  const ECo = 'colecao-cliente@example.com'
+  await post(payload({ id: 'cl-1', status: 'paid', email: ECo, checkoutId: CP, amount: 3400 }))
+  assert.deepEqual((await purchasesOf(ECo))[0].bundles, ['primeira-fornada'])
+  assert.deepEqual((await meFor(ECo)).items, ['panetones-vulcao'], 'Vulcão pronto libera; Rabanada ainda não saiu')
+  await setReady('rabanada-padaria', true)
+  assert.deepEqual(new Set((await meFor(ECo)).items), new Set(['panetones-vulcao', 'rabanada-padaria']), 'Rabanada entra sozinha ao sair')
+  assert.ok(!(await meFor(ECo)).items.includes('panetones-vitrine'), 'a coleção não libera o que não é dela')
+  pf.wiapyProductId = ''
+
+  // liberação manual com bundle
+  const gb = await grant.POST(new Request('http://x', { method: 'POST', headers: adm, body: JSON.stringify({ email: 'bundle-manual@example.com', bundles: ['combo'] }) }))
+  assert.equal(gb.status, 200)
+  assert.equal((await meFor('bundle-manual@example.com')).items.length, 4, 'vulcão, vitrine, recheios e rabanada prontos')
+  const gb2 = await grant.POST(new Request('http://x', { method: 'POST', headers: adm, body: JSON.stringify({ email: 'bundle-manual2@example.com', bundles: ['xyz'] }) }))
+  assert.equal(gb2.status, 400)
+
+  for (const id of ['panetones-vulcao', 'panetones-vitrine', 'segredo-recheios', 'rabanada-padaria']) await setReady(id, false)
+  assert.equal(readyIdsOf(await loadCheckouts()).size, 0)
+  // arquivo ilegível: nada pronto, sem erro
+  await writeFile(file, '{ isto não é json')
+  assert.equal(readyIdsOf(await loadCheckouts()).size, 0)
+  await flush()
+  ok('preços (combo R$ 97, coleções por regra com empate para baixo, override, preço do arquivo), checkouts.json (parse, https, ready, buyUrl, arquivo real e exemplo válidos), gate (link + prontos >= mínimo) e direitos de combo/coleção resolvidos na leitura (libera prontos, libera os outros ao sair, estorno revoga)')
 }
 
 // GUIA VISUAL por oferta: cor de destaque, paleta e fonte do título, com contraste AA

@@ -1,8 +1,10 @@
 // Catálogo como sistema: trilhas, ganchos, coleções e as 2 ofertas da home. Tudo calculado pelos entitlements da cliente.
 // A compra nunca é bloqueada: o "próximo passo" só orienta e destaca.
-import { COLLECTIONS, HOOKS, TRACKS, collectionMissing, collectionSumCents, trackNext, type Collection, type Hook, type OfferId, type Track, type TrackId } from '../../shared/catalog'
+import { COLLECTIONS, HOOKS, TRACKS, collectionGate, collectionMissing, collectionPrice, collectionSumCents, trackNext, type Collection, type Hook, type OfferId, type Track, type TrackId } from '../../shared/catalog'
 import { owns, type State } from './store'
-import { catalogOffers } from './offers'
+import { catalogOffers, isReady } from './offers'
+import { getCheckouts } from './checkouts'
+import { COLLECTION_MIN_AVAILABLE } from '../data/config'
 
 export const ownedIds = (s: State): string[] => s.session?.items ?? []
 export const ownedOfferCount = (s: State): number => catalogOffers().filter((o) => owns(s, o.id)).length
@@ -71,8 +73,14 @@ export interface CollectionView {
   owned: number
   total: number
   sumCents: number
-  priceCents: number | null
+  priceCents: number
+  // preço por regra (soma x 0,65 em ,00/,90) ou override manual
+  overridden: boolean
   strike: boolean
+  // prontos hoje (gate): botão de compra só com checkout E prontos >= mínimo
+  ready: number
+  min: number
+  readyIds: Set<OfferId>
   buyable: boolean
 }
 
@@ -81,7 +89,8 @@ export function collectionViews(s: State): CollectionView[] {
   return COLLECTIONS.map((collection) => {
     const missing = collectionMissing(collection, owned)
     const sumCents = collectionSumCents(collection)
-    const priceCents = collection.collectionPriceCents && collection.collectionPriceCents > 0 ? collection.collectionPriceCents : null
+    const priceCents = collectionPrice(collection)
+    const g = collectionGate(collection, getCheckouts(), COLLECTION_MIN_AVAILABLE)
     return {
       collection,
       missing,
@@ -90,8 +99,12 @@ export function collectionViews(s: State): CollectionView[] {
       sumCents,
       priceCents,
       // riscada só quando existe preço da coleção e ele é menor que a soma; o rótulo é sempre "soma dos itens"
-      strike: priceCents !== null && priceCents < sumCents,
-      buyable: priceCents !== null && !!collection.checkoutUrl,
+      overridden: !!collection.collectionPriceOverrideCents && collection.collectionPriceOverrideCents > 0,
+      strike: priceCents < sumCents,
+      ready: g.ready,
+      min: g.min,
+      readyIds: new Set(collection.items.filter((id) => isReady(id))),
+      buyable: g.open,
     }
   })
 }

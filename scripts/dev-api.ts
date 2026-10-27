@@ -1,6 +1,6 @@
 // Servidor local que roda as funções de api/ (mesmos handlers da Vercel), só para desenvolvimento e QA. Não é usado em produção.
 //   cp .env.example .env.local   (preencha os segredos)   e depois:   npm run dev:api
-//   (em outro terminal)  VITE_ACCESS_MODE=server npm run dev     (o Vite encaminha /api para a porta 8787)
+//   (em outro terminal)  npm run dev:server     (o Vite encaminha /api para a porta 8787)
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { join, relative } from 'node:path'

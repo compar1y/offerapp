@@ -4,18 +4,22 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --mode preview",
     "prebuild": "tsx scripts/catalog-images.ts",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/verify-prod-bundle.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck:api": "tsc -p tsconfig.server.json",
     "test:api": "tsx server/test/smoke.ts",
+    "checkouts:gen": "tsx scripts/gen-checkouts.ts",
+    "checklist:gen": "tsx scripts/gen-checklist.ts",
     "upload:files": "tsx scripts/upload-blob.ts",
     "check:files": "tsx scripts/check-files.ts",
     "catalogo:imagens": "tsx scripts/catalog-images.ts",
     "dev:api": "tsx scripts/dev-api.ts",
-    "check": "npm run lint && npm run typecheck:api && npm run test:api && npm run build"
+    "check": "npm run lint && npm run typecheck:api && npm run test:api && npm run build && npm run build:preview -- --outDir dist-preview --emptyOutDir && rm -rf dist-preview",
+    "dev:server": "vite",
+    "build:preview": "tsc -b && vite build --mode preview"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.2",

@@ -1,6 +1,7 @@
 // Estado da tela. Fala com o AccessProvider (demo ou servidor); guarda no aparelho só o que é da interface
 // (boas-vindas feitas, materiais vistos, "fiz essa", ofertas dispensadas). Eventos também vão ao servidor, sem bloquear a tela.
 
+import { loadCheckouts, subscribeCheckouts } from './checkouts'
 import { useSyncExternalStore } from 'react'
 import { provider, getDemoFlags, setDemoFlags, type OpenFileResult } from './access'
 import { ITEM_BY_ID, findFile, type CollectionId, type ItemId, type MeResponse, type OfferId } from '../../shared/catalog'
@@ -71,8 +72,15 @@ export function useStore(): State {
 }
 
 export async function init() {
-  const session = await provider.getSession()
+  subscribeCheckouts(() => set({}))
+  // os links de compra vêm do checkouts.json: espera no máximo 2,5 s para a tela já nascer com os botões certos
+  const wait = new Promise<void>((r) => setTimeout(r, 2500))
+  const [session] = await Promise.all([provider.getSession(), Promise.race([loadCheckouts(), wait])])
   set({ session, ready: true })
+  // ao voltar para o app, confere de novo (um link novo ou ready:true aparece sem recarregar)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void loadCheckouts()
+  })
 }
 
 // confere de novo o que o cliente tem (usado enquanto o acesso está sendo liberado)

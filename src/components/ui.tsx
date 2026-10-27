@@ -1,12 +1,12 @@
 import { type ReactNode } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { CATALOG_ENABLED, CONFIG, supportUrl } from '../data/config'
+import { CATALOG_ENABLED, CONFIG, PREVIEW, supportUrl } from '../data/config'
 import type { Img } from '../data/images'
-import { MOCKUPS, catalogImage, offerCover } from '../data/images'
-import { OFFER_BY_ID, brl, type DeliverableIcon, type Item, type Offer, type OfferId } from '../../shared/catalog'
-import { lockInfo } from '../lib/lock'
-import { unseenOffers } from '../lib/offers'
-import { changeDemo, dismissOffer, trackOffer, useStore } from '../lib/store'
+import { catalogImage, offerCover } from '../data/images'
+import { brl, shortTitle, type DeliverableIcon, type Offer } from '../../shared/catalog'
+import { buyUrl, pendingFromBundles, unseenOffers } from '../lib/offers'
+import { changeDemo, dismissOffer, owns, trackOffer, useStore } from '../lib/store'
+import { themeStyle } from '../lib/theme'
 
 export function Layout({ title, back, children }: { title?: string; back?: string; children: ReactNode }) {
   const navigate = useNavigate()
@@ -129,40 +129,6 @@ export function ProgressBar({ seen, total }: { seen: number; total: number }) {
   )
 }
 
-// cartão de produto: imagem (mockup) em cima, informação embaixo.
-// Comprado (já no seu kit) x adicional (bloqueado, com cadeado) são visualmente diferentes.
-export function ProductCard({ item, unlocked, seen, from }: { item: Item; unlocked: boolean; seen: boolean; from?: string }) {
-  const offer = item.kind === 'offer' ? OFFER_BY_ID[item.id as OfferId] : null
-  const mock = offer ? null : MOCKUPS[item.id as keyof typeof MOCKUPS]
-  return (
-    <Link
-      to={`/produto/${item.id}`}
-      className={`pcard ${unlocked ? 'pcard-own' : 'pcard-locked'} ${item.extra ? 'pcard-extra' : ''}`}
-      onClick={() => offer && !unlocked && trackOffer('offer.click', offer.id, from ?? 'home-card')}
-    >
-      <span className="pcard-state">{unlocked ? '✓ No seu kit' : '🔒 Adicional'}</span>
-      <span className="pcard-media">
-        {mock && <Picture img={mock} />}
-        {offer && <OfferMedia offer={offer} className="pic-card" />}
-        {!unlocked && (
-          <span className="lock-badge" aria-label="Bloqueado">
-            🔒
-          </span>
-        )}
-      </span>
-      <span className="pcard-body">
-        <span className="tag">{item.badge}</span>
-        <strong className="pcard-title">{item.title}</strong>
-        {unlocked ? (
-          <span className={seen ? 'pill pill-ok' : 'pill pill-open'}>{seen ? 'Visto ✓' : 'Acessar'}</span>
-        ) : (
-          <span className="pill pill-lock">{offer ? `Ver detalhes · ${brl(offer.priceCents)}` : lockInfo().label}</span>
-        )}
-      </span>
-    </Link>
-  )
-}
-
 // ---- ofertas adicionais (OFFERS): compra ADICIONAL, sempre marcada como tal. Imagem em cima, informação embaixo.
 
 // Capa da oferta: o mockup real quando existe. Sem mockup, só em modo demonstração aparece um placeholder
@@ -201,7 +167,7 @@ export function OfferMedia({ offer, className = '' }: { offer: Offer; className?
   const cover = catalogImage(offer) ?? offerCover(offer)
   const wide = offer.imageRatio === '4:3'
   if (cover) return <Picture img={cover} className={`${className}${wide ? ' pic-wide' : ''}`} />
-  if (!CONFIG.demo) return null
+  if (!PREVIEW) return null
   return (
     <span className={`cover-ph ${className}${wide ? ' cover-ph-wide' : ''}`} role="img" aria-label={`Mockup de ${offer.title}: ${offer.imageType} (placeholder, imagem em breve)`}>
       <span className="cover-ph-book">
@@ -213,59 +179,156 @@ export function OfferMedia({ offer, className = '' }: { offer: Offer; className?
 }
 
 function offerHref(o: Offer): string {
-  return o.checkoutUrl || supportUrl(`Oi! Quero comprar o ${o.title} (${brl(o.priceCents)}).`)
+  return buyUrl(o.id) ?? ''
 }
 
-const OFFER_TAG: Record<Offer['kind'], string> = {
-  upsell: 'COMPRA ADICIONAL · NÃO ESTÁ NO SEU KIT',
-  downsell: 'COMPRA ADICIONAL · NÃO ESTÁ NO SEU KIT',
-  seasonal: 'COMPRA ADICIONAL · SAZONAL',
-}
-
-// bloco de venda (banner da home e rodapé de uma página). `from` identifica de onde veio o clique nos eventos.
+// bloco de venda (banner da home e rodapé de uma página): imagem, nome, preço e botão. Os detalhes ficam na página da oferta.
 export function OfferBlock({ offer, from }: { offer: Offer; from: 'home-banner' | 'item-footer' }) {
   const canDismiss = offer.kind !== 'seasonal'
+  const href = offerHref(offer)
   return (
-    <section className="block block-info" aria-label={`Oferta: ${offer.title}`}>
-      <div className="upsell offer">
-        <div className="offer-media">
-          <OfferMedia offer={offer} className="pic-offer" />
-        </div>
-        <div className="offer-info">
-          <span className="tag tag-buy">{OFFER_TAG[offer.kind]}</span>
-          <h3>{offer.title}</h3>
-          <p className="lead">{offer.description}</p>
-          {offer.includes.length > 0 && (
-            <ul className="bullets">
-              {offer.includes.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
+    <Section title="Para você" id={`oferta-${from}`}>
+      <article className="vcard upsell offer" aria-label={`Oferta: ${offer.title}`}>
+        <Link to={`/produto/${offer.id}`} className="vcard-media">
+          <OfferMedia offer={offer} className="pic-v" />
+        </Link>
+        <div className="vcard-body">
+          <h3 className="vcard-title">
+            <Link to={`/produto/${offer.id}`}>{offer.title}</Link>
+          </h3>
+          <p className="vcard-promise">{offer.description}</p>
+          <Price offer={offer} soon={!href} />
+          {href ? (
+            <a className="btn btn-buy btn-block" href={href} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', offer.id, from)}>
+              Comprar
+            </a>
+          ) : (
+            <Link className="btn btn-secondary btn-block" to={`/produto/${offer.id}`}>
+              Ver detalhes
+            </Link>
           )}
-          <p className="price-line">
-            Preço: <strong>{brl(offer.priceCents)}</strong>, pagamento único no checkout da Wiapy.
-          </p>
-          <a className="btn btn-buy btn-block" href={offerHref(offer)} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', offer.id, from)}>
-            🛒 Comprar por {brl(offer.priceCents)}
-          </a>
-          <Link className="btn btn-link btn-block" to={`/produto/${offer.id}`}>
-            Ver o que é antes de decidir
-          </Link>
           {canDismiss && (
             <button className="btn btn-link btn-block btn-quiet" onClick={() => dismissOffer(offer.id, from)}>
               Agora não
             </button>
           )}
         </div>
-      </div>
+      </article>
+    </Section>
+  )
+}
+
+// ---- peças da organização visual: seções com título grande, carrossel com scroll-snap, cards limpos
+
+export function Section({ id, title, lead, children }: { id?: string; title: string; lead?: string; children: ReactNode }) {
+  return (
+    <section className="sec" id={id} aria-label={title}>
+      <h2 className="sec-title">{title}</h2>
+      {lead && <p className="sec-lead">{lead}</p>}
+      {children}
     </section>
+  )
+}
+
+// carrossel horizontal com scroll-snap suave (cada filho vira um "car-item")
+export function Carousel({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="carousel" role="region" aria-label={label} tabIndex={0}>
+      {children}
+    </div>
+  )
+}
+
+export function Price({ offer, soon }: { offer: Offer; soon?: boolean }) {
+  return (
+    <p className="v-price">
+      <strong>{brl(offer.priceCents)}</strong>
+      <span>{soon ? 'preço previsto' : 'pagamento único'}</span>
+    </p>
+  )
+}
+
+// ação principal de uma oferta. Acessar (já é seu) e Comprar têm cor, rótulo e ícone diferentes.
+//   já tem        -> "Acessar" (verde escuro)
+//   ready + link  -> "Comprar" (verde vivo, abre o checkout direto)
+//   senão         -> "Disponível em breve" + "Quero ser avisada"
+export function OfferAction({ offer, from }: { offer: Offer; from: string }) {
+  const s = useStore()
+  if (owns(s, offer.id))
+    return (
+      <Link className="btn btn-open btn-block" to={`/produto/${offer.id}`}>
+        Acessar
+      </Link>
+    )
+  if (pendingFromBundles(s).has(offer.id)) return <p className="v-note">Incluído na sua compra. Entra automático quando sair.</p>
+  const url = buyUrl(offer.id)
+  if (url)
+    return (
+      <a className="btn btn-buy btn-block" href={url} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', offer.id, from)}>
+        <span aria-hidden>🛒</span> Comprar
+      </a>
+    )
+  const asked = !!s.interested[offer.id]
+  return (
+    <>
+      <p className="v-soon">Disponível em breve</p>
+      <button className={`btn btn-block ${asked ? 'btn-done' : 'btn-secondary'}`} disabled={asked} onClick={() => trackOffer('offer.interest', offer.id, from)}>
+        {asked ? 'Anotado ✓ Avisamos você' : 'Quero ser avisada'}
+      </button>
+    </>
+  )
+}
+
+// card de oferta: imagem grande, nome curto, UMA frase, preço e botão. Bullets, pilha de valor e bônus ficam na página da oferta.
+export function OfferCard({ offer, hero = false, isNew = false, isNext = false, focus = false, from }: { offer: Offer; hero?: boolean; isNew?: boolean; isNext?: boolean; focus?: boolean; from: string }) {
+  const s = useStore()
+  const owned = owns(s, offer.id)
+  return (
+    <article id={`card-${offer.id}`} style={themeStyle(offer.id)} className={`vcard${hero ? ' vcard-hero' : ''}${focus ? ' vcard-focus' : ''}`} aria-label={offer.title}>
+      <Link to={`/produto/${offer.id}`} className="vcard-media" aria-label={`Ver ${shortTitle(offer.id)}`}>
+        <OfferMedia offer={offer} className="pic-v" />
+        <span className="vflags">
+          {offer.featured && <span className="flag flag-featured">★ Destaque</span>}
+          {isNew && !owned && <span className="flag flag-new">Novo</span>}
+          {isNext && !owned && <span className="flag flag-next">● Próximo passo</span>}
+          {owned && <span className="flag flag-own">No seu acesso</span>}
+        </span>
+      </Link>
+      <div className="vcard-body">
+        <DeliverableChip offer={offer} />
+        <h3 className="vcard-title">
+          <Link to={`/produto/${offer.id}`}>{shortTitle(offer.id)}</Link>
+        </h3>
+        <p className="vcard-promise">{offer.promise}</p>
+        {!owned && <Price offer={offer} soon={!buyUrl(offer.id)} />}
+        <OfferAction offer={offer} from={from} />
+      </div>
+    </article>
+  )
+}
+
+// peça de carrossel (trilhas e coleções): imagem 2:3 grande, nome, estado
+export function ProductTile({ to, media, title, state, tone = 'open', seen = false }: { to: string; media: ReactNode; title: string; state: string; tone?: 'open' | 'buy' | 'soon'; seen?: boolean }) {
+  return (
+    <Link to={to} className="tile">
+      <span className="tile-media">
+        {media}
+        {seen && (
+          <span className="jstep-mark jm-owned" role="img" aria-label="Visto">
+            ✓
+          </span>
+        )}
+      </span>
+      <strong className="tile-title">{title}</strong>
+      <span className={`tile-state tile-${tone}`}>{state}</span>
+    </Link>
   )
 }
 
 // só aparece em modo demonstração: o cliente sempre tem o kit; alterna só as Fichas de Socorro e as ofertas
 export function DemoBar() {
   const { demoBump, demoOffers, demoHave } = useStore()
-  if (!CONFIG.demo) return null
+  if (!PREVIEW) return null
   return (
     <div className="demobar" role="group" aria-label="Opções de teste (modo demonstração)">
       <span className="demobar-title">Modo demonstração · opções de teste</span>

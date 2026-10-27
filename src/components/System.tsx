@@ -4,13 +4,14 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { OFFER_BY_ID, brl, shortTitle, hooksFrom, offerValueFromCents, type ItemId, type Offer, type OfferId } from '../../shared/catalog'
 import { catalogBonusImage } from '../data/images'
-import { CONFIG } from '../data/config'
-import { catalogOffers } from '../lib/offers'
+import { PREVIEW } from '../data/config'
+import { buyUrl, catalogOffers, pendingFromBundles } from '../lib/offers'
+import { themeStyle } from '../lib/theme'
 import { owns, trackCollection, trackHook, useStore } from '../lib/store'
 import { collectionViews, homeSlots, trackOf, type CollectionView } from '../lib/system'
 import { ComboBanner } from './Combo'
 import { CATALOG_ENABLED } from '../data/config'
-import { Picture, OfferMedia, Icon } from './ui'
+import { Carousel, Icon, OfferCard, OfferMedia, Picture, Section } from './ui'
 
 export function OfferBullets({ offer }: { offer: Offer }) {
   if (!offer.bullets?.length) return null
@@ -46,7 +47,7 @@ export function OfferStack({ offer, soon }: { offer: Offer; soon: boolean }) {
     <div className="stack">
       {offer.stack && (
         <>
-          <h3 className="stack-title">O que você recebe</h3>
+          <h3 className="stack-title">Como funciona</h3>
           <p className="stack-deliv">
             Formato: <strong>{offer.deliverableType}</strong>
           </p>
@@ -64,11 +65,11 @@ export function OfferStack({ offer, soon }: { offer: Offer; soon: boolean }) {
       )}
       {!!offer.bonus?.length && (
         <>
-          <h3 className="stack-title">Junto, estes bônus</h3>
+          <h3 className="stack-title">Bônus que vêm junto</h3>
           {strip ? (
             <Picture img={strip} className="bonus-strip" />
           ) : (
-            CONFIG.demo && (
+            PREVIEW && (
               <div className="bonus-strip-ph" role="img" aria-label={`Mini-mockups dos bônus de ${offer.title} (placeholder, imagem em breve)`}>
                 {offer.bonus.map((b) => (
                   <span key={b.title} className="bonus-ph">
@@ -99,11 +100,7 @@ export function OfferStack({ offer, soon }: { offer: Offer; soon: boolean }) {
           </p>
         </>
       )}
-      <p className="ccard-price">
-        <strong>{soon ? `Preço previsto: ${brl(offer.priceCents)}` : brl(offer.priceCents)}</strong>
-        {!soon && <span> · pagamento único</span>}
-      </p>
-      <p className="stack-guarantee">
+      <p className="stack-guarantee" data-soon={soon || undefined}>
         <span aria-hidden>🛡️</span> Garantia de 7 dias. <small>(confira as condições no checkout)</small>
       </p>
     </div>
@@ -126,7 +123,7 @@ export function TrackLine({ id }: { id: string }) {
 }
 
 function hookTarget(to: OfferId): string {
-  return catalogOffers().some((o) => o.id === to) ? `/catalogo?foco=${to}` : '/caminho'
+  return catalogOffers().some((o) => o.id === to) ? `/produto/${to}` : '/caminho'
 }
 
 // gancho de rodapé: "Depois de X, o próximo passo é Y". `where` = de onde veio o clique (evento hook.click).
@@ -153,60 +150,72 @@ export function HookBox({ id, where }: { id: ItemId; where: string }) {
   )
 }
 
-// coleção por objetivo: itens com ✓ / mockup, "Faltam N", barra de progresso real, soma dos itens e botão
+// coleção por objetivo (peça de carrossel): três capas grandes, nome, uma frase, "N de M prontos", preço e botão.
+// A lista completa dos itens fica dentro de "Ver os itens".
 export function CollectionCard({ v, from }: { v: CollectionView; from: string }) {
   const s = useStore()
   const c = v.collection
   const asked = !!s.collectionInterest[c.id]
   const done = v.missing.length === 0
+  // a cliente já pagou esta coleção (ou o combo): o que falta sai sozinho, então não oferecemos compra de novo
+  const covered = v.missing.length > 0 && v.missing.every((id) => pendingFromBundles(s).has(id))
   return (
-    <article className="card colcard" aria-label={`Coleção ${c.title}`}>
-      <h3 className="colcard-title">Coleção {c.title}</h3>
-      <p className="lead">{c.goal}</p>
-      <ul className="col-items">
-        {c.items.map((id) => (
-          <li key={id} className={owns(s, id) ? 'col-own' : ''}>
-            <span className="col-mock">
-              <OfferMedia offer={OFFER_BY_ID[id]} className="pic-col" />
-              {owns(s, id) && <span className="col-check" aria-label="Você já tem">✓</span>}
-            </span>
-            <span className="col-name">{shortTitle(id)}</span>
-          </li>
+    <article className="ccol" aria-label={`Coleção ${c.title}`}>
+      <div className="ccol-media" aria-hidden>
+        {c.items.slice(0, 3).map((id) => (
+          <span className="ccol-cover" key={id} style={themeStyle(id)}>
+            <OfferMedia offer={OFFER_BY_ID[id]} className="pic-col" />
+          </span>
         ))}
-      </ul>
-      <div className="col-progress" role="group" aria-label={`${v.owned} de ${v.total} itens`}>
-        <div className="progress-track">
-          <div className="progress-fill" style={{ width: `${Math.round((v.owned / v.total) * 100)}%` }} />
-        </div>
-        <p className="hint">
-          {done ? 'Você tem a coleção completa.' : v.owned === 0 ? `${v.total} itens nesta coleção.` : `Faltam ${v.missing.length} para completar sua coleção (${v.owned} de ${v.total}).`}
-        </p>
       </div>
-      {!done && (
-        <>
-          <p className="col-sum">
-            {v.priceCents !== null && v.strike ? (
-              <>
-                Soma dos itens: <s>{brl(v.sumCents)}</s>
-              </>
+      <h3 className="ccol-title">{c.title}</h3>
+      <p className="ccol-goal">{c.goal}</p>
+      <p className="ccol-count" role="status">
+        {done ? 'Você tem a coleção completa.' : v.owned > 0 ? `Você tem ${v.owned} de ${v.total}. ` : ''}
+        {!done && `${v.ready} de ${v.total} prontos hoje`}
+      </p>
+      {!done &&
+        (covered ? (
+          <p className="v-note">Coleção comprada: o que falta entra sozinho quando sair.</p>
+        ) : (
+          <>
+            <p className="v-price ccol-price">
+              <strong>{brl(v.priceCents)}</strong>
+              <span>
+                soma dos itens {v.strike ? <s aria-label={`Soma dos itens: ${brl(v.sumCents)}`}>{brl(v.sumCents)}</s> : brl(v.sumCents)}
+              </span>
+            </p>
+            {v.buyable && buyUrl(c.id) ? (
+              <a className="btn btn-buy btn-block" href={buyUrl(c.id) ?? ''} target="_blank" rel="noreferrer" onClick={() => trackCollection('collection.click', c.id, from)}>
+                <span aria-hidden>🛒</span> Comprar a coleção
+              </a>
             ) : (
-              <>Soma dos itens: {brl(v.sumCents)}</>
+              <>
+                <p className="v-soon">Disponível em breve</p>
+                <button className={`btn btn-block ${asked ? 'btn-done' : 'btn-secondary'}`} disabled={asked} onClick={() => trackCollection('collection.interest', c.id, from)}>
+                  {asked ? 'Anotado ✓ Avisamos você' : 'Quero ser avisada'}
+                </button>
+              </>
             )}
-          </p>
-          <p className="ccard-price">
-            <strong>{v.priceCents !== null ? `Preço da coleção: ${brl(v.priceCents)}` : 'Preço da coleção: em breve'}</strong>
-          </p>
-          {v.buyable ? (
-            <a className="btn btn-primary btn-block" href={c.checkoutUrl} target="_blank" rel="noreferrer" onClick={() => trackCollection('collection.click', c.id, from)}>
-              Quero esta coleção
-            </a>
-          ) : (
-            <button className={`btn btn-block ${asked ? 'btn-done' : 'btn-secondary'}`} disabled={asked} onClick={() => trackCollection('collection.interest', c.id, from)}>
-              {asked ? 'Anotado ✓ Em breve' : 'Quero ser avisada'}
-            </button>
-          )}
-        </>
-      )}
+          </>
+        ))}
+      <details className="v-details">
+        <summary>Ver os {v.total} itens</summary>
+        <ul className="col-items">
+          {c.items.map((id) => (
+            <li key={id} className={owns(s, id) ? 'col-own' : ''}>
+              <Link to={`/produto/${id}`} className="col-name">
+                {shortTitle(id)}
+              </Link>
+              {owns(s, id) ? (
+                <span className="col-check">✓ você tem</span>
+              ) : !v.readyIds.has(id) ? (
+                <span className="col-soon">{pendingFromBundles(s).has(id) ? 'já é seu: entra automático quando sair' : 'entra automático quando sair'}</span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </details>
     </article>
   )
 }
@@ -222,19 +231,19 @@ export function Collections({ from }: { from: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return (
-    <section id="colecoes" className="collections" aria-label="Coleções por objetivo">
-      <h2 className="section-title">Coleções por objetivo</h2>
-      <p className="lead">Combinações que andam juntas. Você pode comprar item por item ou a coleção, quando ela estiver disponível.</p>
-      <div className="catalog-list">
+    <Section id="colecoes" title="Coleções" lead="Combinações que andam juntas. Compre item por item ou a coleção.">
+      <Carousel label="Coleções por objetivo">
         {views.map((v) => (
-          <CollectionCard key={v.collection.id} v={v} from={from} />
+          <div className="car-item car-col" key={v.collection.id}>
+            <CollectionCard v={v} from={from} />
+          </div>
         ))}
-      </div>
-    </section>
+      </Carousel>
+    </Section>
   )
 }
 
-// Home: no máximo 2 espaços de oferta. (1) o próximo passo da trilha, (2) a coleção que falta ou, com 3+ itens liberados, o "Leve tudo".
+// Home: no máximo 2 espaços de oferta. (1) o próximo passo da trilha (o destaque), (2) a coleção que falta ou, com 3+ itens liberados, o "Leve tudo".
 // Sem relógio e sem "só hoje": os mesmos 2 espaços valem o tempo todo.
 export function HomeOffers() {
   const s = useStore()
@@ -244,31 +253,29 @@ export function HomeOffers() {
   const have = n ? owns(s, n.id) : false
   const col = slots.collection
   return (
-    <section className="block home-offers" aria-label="Para você agora">
+    <>
       {n && !have && (
-        <Link to={`/catalogo?foco=${n.id}`} className="catalog-banner" onClick={() => slots.next?.hook && trackHook(slots.next.hook.from, n.id, 'home')}>
-          <span className="catalog-banner-top">
-            <span className="tag">PRÓXIMO PASSO</span>
-          </span>
-          <strong className="catalog-banner-title">{shortTitle(n.id)}</strong>
-          <span className="catalog-banner-text">{slots.next?.hook?.text ?? n.promise}</span>
-          <span className="catalog-banner-cta">Ver este material ›</span>
-        </Link>
+        <Section title="Para você" lead={slots.next?.hook?.text}>
+          <OfferCard offer={n} hero isNext from="home" />
+        </Section>
       )}
       {col && (
-        <Link to="/catalogo?foco=colecoes" className="catalog-banner" onClick={() => trackCollection('collection.view', col.collection.id, 'home')}>
-          <span className="catalog-banner-top">
-            <span className="tag">COLEÇÃO</span>
-          </span>
-          <strong className="catalog-banner-title">{col.collection.title}</strong>
-          <span className="catalog-banner-text">{col.owned > 0 ? `Faltam ${col.missing.length} para completar sua coleção.` : col.collection.goal}</span>
-          <span className="catalog-banner-cta">Ver a coleção ›</span>
-        </Link>
+        <Section title="Coleção para você">
+          <Link to="/catalogo#colecoes" className="row-link" onClick={() => trackCollection('collection.view', col.collection.id, 'home')}>
+            <span>
+              <strong>{col.collection.title}</strong>
+              <span>{col.owned > 0 ? `Faltam ${col.missing.length} para completar.` : col.collection.goal}</span>
+            </span>
+            <span className="row-link-go" aria-hidden>
+              ›
+            </span>
+          </Link>
+        </Section>
       )}
       {slots.leveTudo && <ComboBanner />}
-      <Link className="btn btn-link btn-block" to="/caminho">
+      <Link className="btn btn-secondary btn-block" to="/caminho">
         Ver seu caminho
       </Link>
-    </section>
+    </>
   )
 }

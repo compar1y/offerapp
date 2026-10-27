@@ -1,0 +1,122 @@
+{
+  "panetones-vulcao": {
+    "checkoutUrl": "https://pay.exemplo.test/panetones-vulcao",
+    "ready": true
+  },
+  "panetones-vitrine": {
+    "checkoutUrl": "https://pay.exemplo.test/panetones-vitrine",
+    "ready": true
+  },
+  "caixas-doces-natal": {
+    "checkoutUrl": "https://pay.exemplo.test/caixas-doces-natal",
+    "ready": true
+  },
+  "segredo-recheios": {
+    "checkoutUrl": "https://pay.exemplo.test/segredo-recheios",
+    "ready": true
+  },
+  "receitas-explodir-vendas": {
+    "checkoutUrl": "https://pay.exemplo.test/receitas-explodir-vendas",
+    "ready": true
+  },
+  "sobremesas-natal": {
+    "checkoutUrl": "https://pay.exemplo.test/sobremesas-natal",
+    "ready": true
+  },
+  "ceia-doce": {
+    "checkoutUrl": "https://pay.exemplo.test/ceia-doce",
+    "ready": true
+  },
+  "mini-panetones": {
+    "checkoutUrl": "https://pay.exemplo.test/mini-panetones",
+    "ready": true
+  },
+  "rabanada-padaria": {
+    "checkoutUrl": "https://pay.exemplo.test/rabanada-padaria",
+    "ready": true
+  },
+  "doces-para-revender": {
+    "checkoutUrl": "https://pay.exemplo.test/doces-para-revender",
+    "ready": true
+  },
+  "cesta-natal-caseira": {
+    "checkoutUrl": "https://pay.exemplo.test/cesta-natal-caseira",
+    "ready": true
+  },
+  "biscoitos-natal-decorados": {
+    "checkoutUrl": "https://pay.exemplo.test/biscoitos-natal-decorados",
+    "ready": true
+  },
+  "dia-producao-escala": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "mesa-doce-ano-novo": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "chocotone-colher": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "natal-criancas": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "janeiro-panetone": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "panetones-premium": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "ponto-perfeito": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "fornada-pascoa": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "ano-inteiro-encomendas": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "kit-lucrativo": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "kit-embalagem-etiqueta": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "combo": {
+    "checkoutUrl": "https://pay.exemplo.test/combo",
+    "ready": true
+  },
+  "primeira-fornada": {
+    "checkoutUrl": "https://pay.exemplo.test/primeira-fornada",
+    "ready": true
+  },
+  "panetone-confeitaria": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "ceia-completa": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "presentes-que-vendem": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "encomendas-dezembro": {
+    "checkoutUrl": "",
+    "ready": false
+  },
+  "bump": {
+    "checkoutUrl": "https://pay.exemplo.test/bump",
+    "ready": true
+  }
+}

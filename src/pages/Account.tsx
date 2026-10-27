@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { CONFIG } from '../data/config'
+import { PREVIEW } from '../data/config'
 import { PLANS, brl, BUMP, OFFER_BY_ID, type PurchaseStatus } from '../../shared/catalog'
 import { logout, useStore } from '../lib/store'
 import { DemoBar, Layout } from '../components/ui'
@@ -51,7 +51,7 @@ export function Account() {
       >
         Sair
       </button>
-      {CONFIG.demo && <p className="hint center">Modo demonstração: nada aqui é cobrança real.</p>}
+      {PREVIEW && <p className="hint center">Modo demonstração: nada aqui é cobrança real.</p>}
     </Layout>
   )
 }

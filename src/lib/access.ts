@@ -2,7 +2,7 @@
 //   demo   : tudo no navegador (localStorage), código 123456, seletor de teste só para Fichas de Socorro e ofertas.
 //   server : fetch para /api/* (Vercel Functions em api/), sessão por token assinado.
 
-import { CONFIG } from '../data/config'
+import { DEMO_CODE, PREVIEW } from '../data/config'
 import { itemsFor, type ItemId, type MeResponse, type PlanId, type PurchaseView } from '../../shared/catalog'
 
 export type AppEventName = 'offer.click' | 'offer.dismiss' | 'offer.interest' | 'offer.view' | 'catalog.view' | 'combo.view' | 'combo.spin' | 'combo.click' | 'combo.interest' | 'journey.view' | 'hook.click' | 'collection.view' | 'collection.click' | 'collection.interest' | 'item.done' | 'item.undone'
@@ -104,7 +104,7 @@ export const demoProvider: AccessProvider = {
     return { ok: true, ready }
   },
   async verifyCode(email, code) {
-    if (code.trim() !== CONFIG.demoCode) return { ok: false, error: 'Código errado. Confira e tente de novo.' }
+    if (code.trim() !== DEMO_CODE) return { ok: false, error: 'Código errado. Confira e tente de novo.' }
     saveDemo({ ...loadDemo(), email: (demoPending ?? email).trim().toLowerCase() })
     return { ok: true }
   },
@@ -242,6 +242,6 @@ export const serverProvider: AccessProvider = {
   },
 }
 
-export const provider: AccessProvider = CONFIG.demo ? demoProvider : serverProvider
+export const provider: AccessProvider = PREVIEW ? demoProvider : serverProvider
 
 export type { ItemId }

@@ -203,7 +203,7 @@ export const ITEMS: Item[] = [
 
 // ---------------------------------------------------------------- ofertas adicionais (OFFERS), TODAS DESLIGADAS
 // Lista editável. Cada oferta é uma compra ADICIONAL, sempre marcada como tal, e some para quem já comprou.
-// Para ligar uma oferta: preencha checkoutUrl e wiapyProductId, cadastre o arquivo em `files`, suba o arquivo no
+// Para ligar uma oferta: preencha wiapyProductId (e o link do checkout em public/checkouts.json), cadastre o arquivo em `files`, suba o arquivo no
 // armazenamento privado e troque enabled para true. Com enabled = false NADA aparece para o cliente e o servidor não libera nada.
 // Em modo demonstração, o botão "Ofertas desligadas/ligadas" da barra de teste liga as três só para ver o visual.
 // Para incluir um produto novo no catálogo: 1) acrescente o id em ItemId (lista acima), 2) acrescente o objeto em OFFERS (copie um existente).
@@ -241,8 +241,6 @@ export interface Offer {
   includes: string[]
   // preço em centavos
   priceCents: number
-  // TODO: link do checkout (vazio = o botão abre o WhatsApp; na oferta sazonal vira "Quero ser avisada")
-  checkoutUrl: string
   // TODO: id do produto na Wiapy (checkout.id, orderbump[].id ou products[].id)
   wiapyProductId: string
   titleHints: string[]
@@ -251,8 +249,6 @@ export interface Offer {
   requiresDismissed?: OfferId
   // aparece na página /catalogo (e na bolinha de novidades), quando CATALOG_ENABLED estiver ligado
   catalog: boolean
-  // 'available' = tem checkout e o botão compra; 'soon' = em breve, o botão vira "Quero ser avisada" (grava offer.interest)
-  status: 'available' | 'soon'
   // selo "Destaque" e primeira posição no catálogo (escolha editorial, não é escassez)
   // formato do que o cliente recebe (rótulo curto no card, para não parecer que tudo é PDF) e o ícone funcional do chip
   deliverableType: string
@@ -294,11 +290,9 @@ export const OFFERS: Offer[] = [
     description: 'Panetones com cobertura e recheio escorrendo, de apelo visual imediato. É uma compra à parte, ainda em preparação.',
     includes: ['PDF de cerca de 40 páginas', '15 combinações', 'Técnicas de montagem, caldas e controle de consistência', 'Instruções de apresentação'],
     priceCents: 2790,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['vulcão'],
     catalog: true,
-    status: 'soon',
     badgeNew: true,
     headline: 'Panetones Vulcão: o recheio que escorre e vende pelos olhos',
     promise: '15 combinações de cobertura e recheio escorrendo, com técnica de montagem.',
@@ -336,11 +330,9 @@ export const OFFERS: Offer[] = [
     description: 'Técnicas para finalizar o panetone com cara de confeitaria e um guia para fotografá-lo com o celular na vitrine e na divulgação. É uma compra à parte, ainda em preparação.',
     includes: ['PDF de cerca de 50 páginas', '25 técnicas de decoração e combinações de cores', 'Guia de fotos com o celular: composições, cenários caseiros e luz'],
     priceCents: 2790,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['vitrine'],
     catalog: true,
-    status: 'soon',
     badgeNew: true,
     headline: '25 acabamentos de luxo e fotos que dão vontade: seu panetone de vitrine',
     promise: 'Acabamentos para o panetone parecer de confeitaria e um guia para fotografar com o celular.',
@@ -378,11 +370,9 @@ export const OFFERS: Offer[] = [
     description: 'Brigadeiros gourmet, trufas e bombons de colher, com a montagem de caixas de presente. Não leva fermentação. É uma compra à parte, ainda em preparação.',
     includes: ['30 receitas de brigadeiro gourmet, trufa e bombom de colher', 'Montagem de caixas de 4, 6, 9 e 12', 'Rendimento por receita, validade e conservação', 'Lista de compras e custo por caixa'],
     priceCents: 3700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['caixas de doces de natal'],
     catalog: true,
-    status: 'soon',
     badgeNew: true,
     headline: 'Caixas de Doces de Natal: 30 brigadeiros e trufas que viram presente',
     promise: '30 receitas e a montagem de caixas para acompanhar o panetone na mesma encomenda.',
@@ -420,11 +410,9 @@ export const OFFERS: Offer[] = [
     description: 'Recheios para transformar uma massa simples em um produto mais elaborado. É uma compra à parte, ainda em preparação.',
     includes: ['PDF de cerca de 40 páginas', '20 recheios', '5 técnicas de aplicação', 'Quantidades por tamanho, combinações e conservação'],
     priceCents: 3790,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['recheios'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'O segredo dos recheios que dão cara de confeitaria ao panetone',
     promise: '20 recheios, técnicas de aplicação e quantidades por tamanho.',
@@ -462,11 +450,9 @@ export const OFFERS: Offer[] = [
     description: 'Uma coleção de 15 receitas temáticas de panetone, com sabores e apresentações diferentes das 100 receitas do seu kit. É uma compra à parte, ainda em preparação.',
     includes: ['PDF de 45 a 55 páginas', '15 receitas temáticas', 'Fotos de corte, ingredientes, rendimento e montagem'],
     priceCents: 4700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['vão explodir'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: '15 Receitas que VÃO EXPLODIR DE VENDAS a partir de dezembro',
     promise: 'Uma coleção de 15 sabores e apresentações para o seu cardápio de fim de ano.',
@@ -505,11 +491,9 @@ export const OFFERS: Offer[] = [
     description: 'Ideias do que fazer com o panetone na ceia: tiramisù, pavê, rabanada recheada, taças e pudim. É uma compra à parte, ainda em preparação.',
     includes: ['PDF de cerca de 60 páginas', '20 receitas com rendimento e montagem', 'Versões em travessa, em camadas, com conservação'],
     priceCents: 3700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['sobremesas de natal'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: '20 sobremesas de Natal para fazer com panetone, até na travessa',
     promise: 'Tiramisù, pavê, rabanada recheada, taças e sobremesas cremosas em travessa.',
@@ -546,11 +530,9 @@ export const OFFERS: Offer[] = [
     description: 'Sobremesas para a ceia, em travessa e individuais: pavês, tortas geladas, mousses, panna cotta, bolos no pote e taças. Sem panetone. É uma compra à parte, ainda em preparação.',
     includes: ['PDF com 25 receitas', 'Versões em travessa e individuais (pote e taça)', 'Cronograma de 3 dias antes da ceia'],
     priceCents: 2700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['ceia doce'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Ceia Doce: 25 sobremesas de Natal e Ano Novo sem complicação',
     promise: '25 sobremesas em travessa, no pote e em taça, com cronograma de 3 dias antes da ceia.',
@@ -588,11 +570,9 @@ export const OFFERS: Offer[] = [
     description: 'Mini panetones para lembrancinhas, presentes e encomendas individuais. É uma compra à parte, ainda em preparação.',
     includes: ['PDF de cerca de 45 páginas', '20 modelos', 'Pesos, medidas e rendimentos', 'Técnicas de recheio'],
     priceCents: 2790,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['mini panetones'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Mini Panetones: pequenos no tamanho, gigantes no desejo',
     promise: 'Lembrancinhas, presentes e encomendas individuais.',
@@ -629,18 +609,16 @@ export const OFFERS: Offer[] = [
     description: 'Doze versões da rabanada de Natal, com recheios e coberturas. É uma compra à parte, ainda em preparação.',
     includes: ['PDF com 12 versões', 'Recheios e coberturas', 'Rendimento e conservação'],
     priceCents: 2490,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['rabanada de padaria'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Rabanada de Padaria: 12 versões que dão vontade',
     promise: '12 versões da rabanada, com recheios e coberturas.',
     deliverableType: 'Vídeo-aulas',
     deliverableIcon: 'video',
     imageType: 'Tablet/celular com player de vídeo e prato de rabanada',
-    imageRatio: '4:3',
+    imageRatio: '2:3',
     bullets: [
       'O truque do pão e do banho que deixa a rabanada cremosa por dentro e dourada por fora.',
       '12 versões: tradicional, recheada, de forno e com cobertura.',
@@ -670,11 +648,9 @@ export const OFFERS: Offer[] = [
     description: 'Um pacote para vender doces de Natal junto com o panetone: caixas de presente e lembrancinhas em potinhos, com rendimento por receita e como embalar e organizar a encomenda. É uma compra à parte, ainda em preparação.',
     includes: ['Pacote: Caixas de Doces + Lembrancinhas em Potinhos', 'Como embalar, rendimento por receita e custo', 'Passos para organizar uma encomenda'],
     priceCents: 4700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['doces de natal para revender'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Doces de Natal para Revender: Caixas + Lembrancinhas',
     promise: 'Pacote para quem quer vender doces junto com o panetone: receitas, embalagem e rendimento.',
@@ -712,11 +688,9 @@ export const OFFERS: Offer[] = [
     description: 'Receitas e modelos de cesta de Natal com itens feitos em casa. Complementa, sem repetir, o Bônus 02 (20 Ideias de Kits de Natal). É uma compra à parte, ainda em preparação.',
     includes: ['5 modelos de cesta com lista de itens', 'Receitas dos itens feitos em casa', 'Como montar e embalar'],
     priceCents: 3700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['cesta de natal caseira'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Cesta de Natal Caseira: presentes comestíveis montados do zero',
     promise: 'Receitas e 5 modelos de cesta com lista do que vai em cada uma e como embalar.',
@@ -740,11 +714,9 @@ export const OFFERS: Offer[] = [
     description: 'Massa amanteigada que mantém a forma no forno, glacê e 15 modelos de biscoito de Natal, com passo a passo. É uma compra à parte, ainda em preparação.',
     includes: ['15 modelos', 'Massa amanteigada e glacê', 'Passo a passo e embalagem em saquinho'],
     priceCents: 3700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['biscoitos de natal decorados'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Biscoitos de Natal Decorados: do cortador ao saquinho',
     promise: 'Massa que não deforma no forno, glacê e 15 modelos, com passo a passo.',
@@ -768,11 +740,9 @@ export const OFFERS: Offer[] = [
     description: 'Uma planilha e um roteiro para organizar um dia de produção com várias encomendas. É uma compra à parte, ainda em preparação.',
     includes: ['Planilha de produção', 'Passo a passo do dia', 'Checklist de compras e horários'],
     priceCents: 3700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['dia de produção em escala'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Dia de Produção em Escala: faça várias encomendas num só dia',
     promise: 'Planilha e passo a passo para organizar uma fornada maior sem se perder.',
@@ -796,11 +766,9 @@ export const OFFERS: Offer[] = [
     description: 'Sobremesas para a mesa doce da virada do ano, para servir e para encomendas. É uma compra à parte, ainda em preparação.',
     includes: ['Receitas de sobremesas de Ano Novo', 'Montagem da mesa doce', 'Rendimento e conservação'],
     priceCents: 2700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['mesa doce de ano novo'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Mesa Doce de Ano Novo: sobremesas para a virada',
     promise: 'Sobremesas para a mesa de Ano Novo, para servir e para encomenda.',
@@ -824,11 +792,9 @@ export const OFFERS: Offer[] = [
     description: 'Doze sobremesas de colher feitas com panetone ou chocotone, de preparo rápido. É uma compra à parte, ainda em preparação.',
     includes: ['12 receitas de colher', 'Rendimento e conservação'],
     priceCents: 2490,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['panetone de colher'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Chocotone e Panetone de Colher: 12 sobremesas rápidas',
     promise: '12 sobremesas de colher feitas com panetone e chocotone, sem forno.',
@@ -852,11 +818,9 @@ export const OFFERS: Offer[] = [
     description: 'Panetones temáticos para presentear, com decoração comestível. Compra sazonal, à parte, ainda em preparação.',
     includes: ['PDF de cerca de 40 páginas', '20 modelos', 'Decoração comestível, ingredientes e montagem'],
     priceCents: 2490,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['natal das crianças'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Natal das Crianças: 20 panetones que viram presentes',
     promise: 'Panetones temáticos para presentear, com decoração comestível.',
@@ -880,11 +844,9 @@ export const OFFERS: Offer[] = [
     description: 'Receitas de panetone para o café da tarde, sobremesas e apresentações sem tema natalino. É uma compra à parte, ainda em preparação.',
     includes: ['PDF de cerca de 45 páginas', '15 receitas', 'Apresentações sem tema natalino'],
     priceCents: 2790,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['janeiro também'],
     catalog: true,
-    status: 'soon',
     badgeNew: false,
     headline: 'Janeiro também tem panetone: 15 sabores para além do Natal',
     promise: 'Receitas para vender depois do Natal, sem tema natalino.',
@@ -908,11 +870,9 @@ export const OFFERS: Offer[] = [
     description: 'Uma linha de maior valor percebido, para encomendas especiais. É uma compra à parte, ainda em preparação.',
     includes: ['PDF de cerca de 65 páginas', '12 receitas premium', 'Ingredientes especiais, montagem e acabamento'],
     priceCents: 4790,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['panetones premium'],
     catalog: false,
-    status: 'soon',
     badgeNew: false,
     headline: 'Panetones Premium: a coleção de alto padrão para encomendas especiais',
     promise: '12 receitas premium com ingredientes especiais e acabamento.',
@@ -936,11 +896,9 @@ export const OFFERS: Offer[] = [
     description: 'Um mini-curso em PDF sobre massa, fermentação e forno. Ensina a prevenir os problemas; as Fichas de Socorro ensinam a diagnosticar. É uma compra à parte, ainda em preparação.',
     includes: ['PDF de cerca de 50 páginas', '30 comparações técnicas e testes'],
     priceCents: 3790,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['ponto perfeito'],
     catalog: false,
-    status: 'soon',
     badgeNew: false,
     headline: 'O ponto perfeito: domine a massa do panetone sem adivinhação',
     promise: 'Mini-curso em PDF sobre massa, fermentação e forno, com comparações visuais.',
@@ -964,11 +922,9 @@ export const OFFERS: Offer[] = [
     description: 'Um material sazonal para a próxima fornada, a de Páscoa. Ainda em preparação: toque para dizer que tem interesse.',
     includes: [],
     priceCents: 7700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['fornada de páscoa'],
     catalog: false,
-    status: 'soon',
     badgeNew: false,
     headline: 'A próxima fornada: a de Páscoa',
     promise: 'Material sazonal para a fornada de Páscoa, ainda em preparação.',
@@ -992,11 +948,9 @@ export const OFFERS: Offer[] = [
     description: 'Um calendário com as datas do ano em que dá para oferecer doces e panetones por encomenda, com ideias do que preparar em cada uma. Compra à parte, ainda em preparação.',
     includes: [],
     priceCents: 3790,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['ano inteiro de encomendas'],
     catalog: false,
-    status: 'soon',
     badgeNew: false,
     headline: 'Venda o ano todo, não só em dezembro',
     promise: 'Calendário de datas e ideias do que oferecer em cada uma.',
@@ -1020,11 +974,9 @@ export const OFFERS: Offer[] = [
     description: 'Um material complementar para quem quer organizar melhor a produção e a venda dos panetones. É uma compra à parte e não está no seu kit.',
     includes: [],
     priceCents: 7700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['kit panetone lucrativo'],
     catalog: false,
-    status: 'soon',
     badgeNew: false,
     headline: 'Organize do preço ao pedido: seu panetone pronto para vender',
     promise: 'Material complementar para organizar a produção e a venda dos panetones.',
@@ -1049,11 +1001,9 @@ export const OFFERS: Offer[] = [
       'Etiquetas e rótulos prontos para imprimir em casa e colar em caixas, sacos e kits. Complementa o Bônus 01 (Guia de Embalagem), que ensina a embalar: aqui você recebe só as etiquetas e os rótulos.',
     includes: ['Etiquetas e rótulos para imprimir', 'Para colar em caixas, sacos e kits'],
     priceCents: 3700,
-    checkoutUrl: '',
     wiapyProductId: '',
     titleHints: ['kit embalagem e etiqueta'],
     catalog: false,
-    status: 'soon',
     badgeNew: false,
     headline: 'Etiquetas prontas para o seu panetone ter cara de loja',
     promise: 'Rótulos e etiquetas para imprimir em casa. Complementa o Bônus 01.',
@@ -1071,23 +1021,32 @@ export const OFFERS: Offer[] = [
   },
 ]
 
-// ---- SUPER OFERTA "Leve tudo": todos os produtos do catálogo num preço único (o preço do combo).
-// Tudo desligado/vazio até o Levi definir. Sem comboPriceCents ou sem checkoutUrl o combo aparece "Em breve" com "Quero ser avisada".
+// ---- SUPER OFERTA "Leve tudo": todos os produtos do catálogo (enabled) num preço único.
+// Preço definido pelo Levi: R$ 97,00. A soma riscada NUNCA é digitada: vem sempre da soma das ofertas enabled do catálogo (comboOffers).
+// O combo continua DESLIGADO (enabled=false). O botão de compra só abre com o link em public/checkouts.json (ready:true) E itens prontos >= minAvailable (comboGate).
+export const COMBO_PRICE_CENTS = 9700
+export const DEFAULT_COMBO_MIN_AVAILABLE = 10
 export const COMBO: {
   enabled: boolean
   title: string
-  // preço do combo em centavos; null = ainda não definido (sem preço na tela)
+  // preço do combo em centavos (R$ 97,00). null = sem preço na tela
   comboPriceCents: number | null
-  // TODO: checkout Wiapy do combo com o desconto real (vazio até o Caixa criar)
-  checkoutUrl: string
-  // TODO: id do produto/checkout do combo na Wiapy (para liberar todos os itens quando o webhook for ligado)
+  // parcelas: vazio (null) por padrão. "ou 12x" só aparece com 12, e só depois que o Caixa confirmar o parcelamento na Wiapy
+  comboInstallments: number | null
+  // mínimo de itens prontos (available) para mostrar o botão de compra. Padrão 10. Env: VITE_COMBO_MIN_AVAILABLE
+  minAvailable: number
+  // TODO: id do produto/checkout do combo na Wiapy (a compra grava o direito "combo", ver bundleItems)
   wiapyProductId: string
-} = { enabled: false, title: 'Leve tudo', comboPriceCents: null, checkoutUrl: '', wiapyProductId: '' }
+} = { enabled: false, title: 'Leve tudo', comboPriceCents: COMBO_PRICE_CENTS, comboInstallments: null, minAvailable: DEFAULT_COMBO_MIN_AVAILABLE, wiapyProductId: '' }
 
 // soma dos preços individuais (calculada, nunca digitada)
 export const comboSumCents = (offers: { priceCents: number }[]): number => offers.reduce((t, o) => t + o.priceCents, 0)
 // só mostra o preço riscado se o combo for mesmo mais barato que a soma
 export const comboShowStrike = (priceCents: number | null, sumCents: number): boolean => priceCents !== null && priceCents > 0 && priceCents < sumCents
+// os itens do combo: ofertas do catálogo que estão ligadas
+export const comboOffers = (): Offer[] => OFFERS.filter((o) => o.catalog && o.enabled)
+// "ou 12x" só com comboInstallments = 12 (confirmado pelo Caixa na Wiapy)
+export const comboShowInstallments = (installments: number | null): boolean => installments === 12
 
 export const OFFER_IDS: OfferId[] = OFFERS.map((o) => o.id)
 export const isOfferId = (id: unknown): id is OfferId => typeof id === 'string' && (OFFER_IDS as string[]).includes(id)
@@ -1275,7 +1234,7 @@ export const HOOKS: Hook[] = [
 export const hooksFrom = (id: ItemId): Hook[] => HOOKS.filter((h) => h.from === id)
 export const hookBetween = (from: ItemId, to: ItemId): Hook | undefined => HOOKS.find((h) => h.from === from && h.to === to)
 
-// COLEÇÕES por objetivo. collectionPriceCents null = sem preço definido: a tela mostra só a soma e "Quero ser avisada".
+// COLEÇÕES por objetivo. Preço = regra (soma dos itens x 0,65, arredondada para ,00 ou ,90) ou override manual opcional.
 export type CollectionId = 'primeira-fornada' | 'panetone-confeitaria' | 'ceia-completa' | 'presentes-que-vendem' | 'encomendas-dezembro'
 
 export interface Collection {
@@ -1283,21 +1242,21 @@ export interface Collection {
   title: string
   goal: string
   items: OfferId[]
-  // TODO Levi: preço da coleção em centavos (vazio = só "Quero ser avisada")
-  collectionPriceCents: number | null
-  // TODO Caixa: checkout Wiapy da coleção (vazio = sem compra)
-  checkoutUrl: string
+  // preço manual (opcional, em centavos). Sem override, o preço é calculado pela regra collectionPriceByRule (soma dos itens x 0,65)
+  collectionPriceOverrideCents: number | null
+  // mínimo de itens prontos para mostrar o botão de compra. null = todos os itens da coleção. Env: VITE_COLLECTION_MIN_AVAILABLE
+  minAvailable: number | null
   // TODO Caixa: id do produto/checkout da coleção na Wiapy (libera todos os itens quando o webhook reconhecer)
   wiapyProductId: string
 }
 
 // "Primeira fornada" é a coleção de entrada (ticket baixo)
 export const COLLECTIONS: Collection[] = [
-  { id: 'primeira-fornada', title: 'Primeira Fornada', goal: 'Para começar: o panetone com recheio e a rabanada', items: ['panetones-vulcao', 'rabanada-padaria'], collectionPriceCents: null, checkoutUrl: '', wiapyProductId: '' },
-  { id: 'panetone-confeitaria', title: 'Panetone de Confeitaria', goal: 'Do recheio ao acabamento de vitrine', items: ['panetones-vulcao', 'segredo-recheios', 'panetones-vitrine'], collectionPriceCents: null, checkoutUrl: '', wiapyProductId: '' },
-  { id: 'ceia-completa', title: 'Ceia Completa', goal: 'A mesa doce de Natal do começo ao fim', items: ['sobremesas-natal', 'ceia-doce', 'rabanada-padaria'], collectionPriceCents: null, checkoutUrl: '', wiapyProductId: '' },
-  { id: 'presentes-que-vendem', title: 'Presentes que Vendem', goal: 'Caixas, minis e divulgação para oferecer de presente', items: ['caixas-doces-natal', 'mini-panetones', 'doces-para-revender'], collectionPriceCents: null, checkoutUrl: '', wiapyProductId: '' },
-  { id: 'encomendas-dezembro', title: 'Encomendas de Dezembro', goal: 'Receitas, caixas e divulgação para a temporada', items: ['receitas-explodir-vendas', 'caixas-doces-natal', 'doces-para-revender'], collectionPriceCents: null, checkoutUrl: '', wiapyProductId: '' },
+  { id: 'primeira-fornada', title: 'Primeira Fornada', goal: 'Para começar: o panetone com recheio e a rabanada', items: ['panetones-vulcao', 'rabanada-padaria'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
+  { id: 'panetone-confeitaria', title: 'Panetone de Confeitaria', goal: 'Do recheio ao acabamento de vitrine', items: ['panetones-vulcao', 'segredo-recheios', 'panetones-vitrine'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
+  { id: 'ceia-completa', title: 'Ceia Completa', goal: 'A mesa doce de Natal do começo ao fim', items: ['sobremesas-natal', 'ceia-doce', 'rabanada-padaria'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
+  { id: 'presentes-que-vendem', title: 'Presentes que Vendem', goal: 'Caixas, minis e divulgação para oferecer de presente', items: ['caixas-doces-natal', 'mini-panetones', 'doces-para-revender'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
+  { id: 'encomendas-dezembro', title: 'Encomendas de Dezembro', goal: 'Receitas, caixas e divulgação para a temporada', items: ['receitas-explodir-vendas', 'caixas-doces-natal', 'doces-para-revender'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
 ]
 export const COLLECTION_BY_ID = Object.fromEntries(COLLECTIONS.map((c) => [c.id, c])) as Record<CollectionId, Collection>
 export const isCollectionId = (x: unknown): x is CollectionId => typeof x === 'string' && x in COLLECTION_BY_ID
@@ -1306,6 +1265,73 @@ export const isCollectionId = (x: unknown): x is CollectionId => typeof x === 's
 export const collectionSumCents = (c: Collection): number => c.items.reduce((t, id) => t + OFFER_BY_ID[id].priceCents, 0)
 // "Faltam N": itens da coleção que o cliente ainda não tem (pelos entitlements)
 export const collectionMissing = (c: Collection, owned: readonly string[]): OfferId[] => c.items.filter((id) => !owned.includes(id))
+
+// ---- preço da coleção por regra
+// Regra: soma dos itens x 0,65 (35% menos), arredondada para o valor MAIS PRÓXIMO terminado em ,00 ou ,90. Empate vai para BAIXO.
+// Função pura em centavos inteiros (sem ponto flutuante): compara as distâncias em centésimos de centavo (soma x 65).
+export const COLLECTION_DISCOUNT_FACTOR = 0.65
+export function roundToNiceCents(sumCents: number): number {
+  const scaled = Math.round(sumCents) * 65 // alvo em centésimos de centavo: sumCents x 0,65 x 100
+  const base = Math.floor(scaled / 10000) // reais inteiros do alvo
+  let best = -1
+  let bestDist = Infinity
+  for (let r = Math.max(0, base - 1); r <= base + 1; r++) {
+    for (const end of [0, 90]) {
+      const cand = r * 100 + end
+      const dist = Math.abs(cand * 100 - scaled)
+      if (dist < bestDist) {
+        best = cand
+        bestDist = dist
+      } // empate: mantém o primeiro (o menor), então vai para baixo
+    }
+  }
+  return best
+}
+export const collectionPriceByRule = (c: Collection): number => roundToNiceCents(collectionSumCents(c))
+// preço final da coleção: override manual (se houver) ou a regra
+export const collectionPrice = (c: Collection): number => (c.collectionPriceOverrideCents && c.collectionPriceOverrideCents > 0 ? c.collectionPriceOverrideCents : collectionPriceByRule(c))
+
+// ---- prontos hoje e gate de compra (combo e coleções)
+// "Pronto" vem de UMA fonte: public/checkouts.json (campo ready de cada id), lido em runtime pelo app e pelo servidor.
+export const comboItemIds = (): OfferId[] => comboOffers().map((o) => o.id)
+export const readyCount = (ids: readonly OfferId[], ready: ReadonlySet<string>): number => ids.filter((id) => ready.has(id)).length
+
+// o mínimo efetivo nunca passa do total de itens (senão o botão nunca abriria)
+export const effectiveMin = (min: number | null, total: number): number => Math.min(total, min === null ? total : Math.max(1, Math.floor(min)))
+
+// GATE: só mostra o botão de compra (e só deve ser ligado em produção) com link + ready:true no checkouts.json E prontos >= mínimo. Senão: "Quero ser avisada".
+export const gateOpen = (buyUrl: string | null, ready: number, min: number): boolean => !!buyUrl && ready >= min
+export interface Gate {
+  ready: number
+  total: number
+  min: number
+  open: boolean
+}
+export const comboGate = (map: CheckoutMap, minOverride?: number | null): Gate => {
+  const ids = comboItemIds()
+  const min = effectiveMin(minOverride ?? COMBO.minAvailable, ids.length)
+  const r = readyCount(ids, readyIdsOf(map))
+  return { ready: r, total: ids.length, min, open: gateOpen(buyUrlOf(map, 'combo'), r, min) }
+}
+export const collectionGate = (c: Collection, map: CheckoutMap, minOverride?: number | null): Gate => {
+  const min = effectiveMin(minOverride ?? c.minAvailable, c.items.length)
+  const r = readyCount(c.items, readyIdsOf(map))
+  return { ready: r, total: c.items.length, min, open: gateOpen(buyUrlOf(map, c.id), r, min) }
+}
+
+// ---- direitos de combo/coleção (BUNDLES)
+// Comprar o "Leve tudo" ou uma coleção grava um DIREITO (o id do bundle), não uma lista fixa de produtos. A lista é resolvida na LEITURA (/api/me):
+// libera na hora os itens ligados (enabled) E prontos (ready no checkouts.json). Os que ainda não saíram entram sozinhos quando ready virar true.
+export type BundleId = 'combo' | CollectionId
+export const isBundleId = (x: unknown): x is BundleId => x === 'combo' || isCollectionId(x)
+const bundleIds = (bundle: BundleId): OfferId[] => (bundle === 'combo' ? comboItemIds() : COLLECTION_BY_ID[bundle].items)
+export function bundleItems(bundle: BundleId, ready: ReadonlySet<string>): OfferId[] {
+  return bundleIds(bundle).filter((id) => OFFER_BY_ID[id].enabled && ready.has(id))
+}
+// itens do bundle que a cliente já pagou mas ainda não saíram (o app mostra "entra automático quando sair")
+export function bundlePending(bundle: BundleId, ready: ReadonlySet<string>): OfferId[] {
+  return bundleIds(bundle).filter((id) => OFFER_BY_ID[id].enabled && !ready.has(id))
+}
 
 // próximo passo de cada trilha: o primeiro item que o cliente ainda não tem. `unlocked` = a etapa anterior já está liberada
 // (o app destaca esse card; comprar nunca fica bloqueado).
@@ -1379,8 +1405,6 @@ export interface Bump {
   wiapyProductId: string
   // trechos do título, para reconhecer o bump mesmo se o id vier diferente
   titleHints: string[]
-  // TODO: link do checkout avulso do bump, se existir (vazio = WhatsApp)
-  checkoutUrl: string
 }
 
 export const BUMP: Bump = {
@@ -1388,13 +1412,65 @@ export const BUMP: Bump = {
   priceCents: 790,
   wiapyProductId: '6ad318de6ebcdbf668bb03c1',
   titleHints: ['fichas de socorro', 'fichas'],
-  checkoutUrl: '',
 }
 
-export function itemsFor(plan: PlanId | null, hasBump: boolean, offers: string[] = []): ItemId[] {
+// ---------------------------------------------------------------- public/checkouts.json (links de compra e "pronto")
+// UM arquivo, por id: { "<id>": { "checkoutUrl": "https://...", "ready": true, "price": 3790 } }
+//   checkoutUrl : link do checkout Wiapy (https). Vazio = sem compra.
+//   ready       : true = o produto está entregue/publicado. Só com ready:true E link o botão vira "Comprar".
+//                 Também é o "available" do gate do combo/coleções e libera os itens já pagos por combo/coleção.
+//   price       : opcional, em centavos. Troca o preço mostrado (oferta, bump, combo ou coleção). A soma riscada continua calculada.
+// O app lê o arquivo em runtime (fetch sem cache) e o servidor lê a mesma cópia: trocar o arquivo não exige mexer no código.
+export interface CheckoutEntry {
+  checkoutUrl: string
+  ready: boolean
+  price?: number
+}
+export type CheckoutMap = Record<string, CheckoutEntry>
+export const CHECKOUT_IDS: string[] = [...OFFER_IDS, 'combo', ...COLLECTIONS.map((c) => c.id), 'bump']
+const isCheckoutId = (id: string): boolean => CHECKOUT_IDS.includes(id)
+
+// valida o que vier do arquivo: só ids conhecidos, só https, ready precisa ser exatamente true, price inteiro positivo
+export function parseCheckouts(raw: unknown): CheckoutMap {
+  const out: CheckoutMap = {}
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out
+  for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!isCheckoutId(id) || !v || typeof v !== 'object') continue
+    const e = v as Record<string, unknown>
+    const url = typeof e.checkoutUrl === 'string' ? e.checkoutUrl.trim() : ''
+    const entry: CheckoutEntry = { checkoutUrl: /^https:\/\/[^\s]+$/i.test(url) ? url : '', ready: e.ready === true }
+    if (typeof e.price === 'number' && Number.isInteger(e.price) && e.price > 0 && e.price < 10_000_000) entry.price = e.price
+    out[id] = entry
+  }
+  return out
+}
+export const readyIdsOf = (map: CheckoutMap): Set<string> => new Set(Object.entries(map).filter(([, e]) => e.ready).map(([id]) => id))
+// link de compra: só com ready:true E link. Senão null (a tela mostra "Disponível em breve" + "Quero ser avisada")
+export const buyUrlOf = (map: CheckoutMap, id: string): string | null => {
+  const e = map[id]
+  return e && e.ready && e.checkoutUrl ? e.checkoutUrl : null
+}
+
+// preços do arquivo (opcional): aplica sobre os dados e volta ao valor base quando o campo some
+let basePrices: { offers: Record<string, number>; bump: number; combo: number | null; collections: Record<string, number | null> } | null = null
+export function applyCheckoutPrices(map: CheckoutMap): void {
+  basePrices ??= {
+    offers: Object.fromEntries(OFFERS.map((o) => [o.id, o.priceCents])),
+    bump: BUMP.priceCents,
+    combo: COMBO.comboPriceCents,
+    collections: Object.fromEntries(COLLECTIONS.map((c) => [c.id, c.collectionPriceOverrideCents])),
+  }
+  for (const o of OFFERS) o.priceCents = map[o.id]?.price ?? basePrices.offers[o.id]
+  BUMP.priceCents = map.bump?.price ?? basePrices.bump
+  COMBO.comboPriceCents = map.combo?.price ?? basePrices.combo
+  for (const c of COLLECTIONS) c.collectionPriceOverrideCents = map[c.id]?.price ?? basePrices.collections[c.id]
+}
+
+export function itemsFor(plan: PlanId | null, hasBump: boolean, offers: string[] = [], bundles: string[] = [], ready: ReadonlySet<string> = new Set()): ItemId[] {
   const set = new Set<ItemId>(plan ? ENTITLEMENTS[plan] : [])
   if (hasBump) set.add(BUMP.itemId)
   for (const id of offers) if (isOfferId(id) && OFFER_BY_ID[id].enabled) set.add(id)
+  for (const b of bundles) if (isBundleId(b)) for (const id of bundleItems(b, ready)) set.add(id)
   return [...set]
 }
 
@@ -1416,6 +1492,8 @@ export interface PurchaseView {
   plan: PlanId | null
   bump: boolean
   offers?: OfferId[]
+  // direitos de combo/coleção comprados neste pagamento ('combo' ou o id da coleção). Os itens são resolvidos na leitura.
+  bundles?: BundleId[]
   // ids de produto liberados por ESTE pagamento (kit, bump, ofertas). Estorno/chargeback revoga só estes.
   entitlements?: ItemId[]
   status: PurchaseStatus

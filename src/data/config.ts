@@ -7,22 +7,25 @@ export { OFFERS }
 
 export type AccessMode = 'demo' | 'server'
 
-const mode: AccessMode = import.meta.env.VITE_ACCESS_MODE === 'server' ? 'server' : 'demo'
+// PRÉVIA = build separado (`npm run build:preview`). No build de produção isto é false e o código de demonstração sai do bundle.
+export const PREVIEW: boolean = __PREVIEW__
+const mode: AccessMode = PREVIEW ? 'demo' : 'server'
 
 export const CONFIG = {
   brand: 'Fábrica de Panetones',
   // TODO: trocar pelo WhatsApp de suporte real (DDI + DDD + número, só dígitos). 5500000000000 é um placeholder.
   whatsapp: '5500000000000',
   supportMessage: 'Oi! Comprei a Fábrica de Panetones Caseiros e preciso de ajuda com o acesso.',
-  // 'demo': qualquer e-mail entra com o código 123456, tudo no navegador. 'server': usa /api/* (VITE_ACCESS_MODE=server).
+  // 'server' (produção, padrão): usa /api/*. 'demo' só existe no build de prévia.
   mode,
-  demo: mode === 'demo',
-  demoCode: '123456',
+  demo: PREVIEW,
 }
+// código de teste da prévia (só é usado dentro de trechos que o build de produção elimina)
+export const DEMO_CODE = '123456'
 
 // Catálogo de ofertas (aba /catalogo, bolinha vermelha, banner na home). DESLIGADO em produção até ordem do Levi.
-// Ligado no modo demonstração/prévia. Para ligar em produção: VITE_CATALOG_ENABLED=true no build e ofertas com enabled: true em shared/catalog.ts.
-export const CATALOG_ENABLED: boolean = CONFIG.demo || import.meta.env.VITE_CATALOG_ENABLED === 'true'
+// Ligado na prévia. Para ligar em produção: VITE_CATALOG_ENABLED=true no build e ofertas com enabled: true em shared/catalog.ts.
+export const CATALOG_ENABLED: boolean = PREVIEW || import.meta.env.VITE_CATALOG_ENABLED === 'true'
 
 export function supportUrl(message: string = CONFIG.supportMessage): string {
   return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(message)}`
@@ -39,3 +42,12 @@ function demoOffersOn(): boolean {
   }
 }
 if (demoOffersOn()) for (const o of OFFERS) o.enabled = true
+
+// ---- gate do "Leve tudo" e das coleções (ver shared/catalog.ts: comboGate, collectionGate)
+// Mínimo de itens prontos (available) para mostrar o botão de compra. Vazio/inválido = padrão (combo 10; coleção = todos os itens dela).
+const minFromEnv = (v: unknown): number | null => {
+  const n = Number(v)
+  return v !== undefined && v !== '' && Number.isFinite(n) && n >= 1 ? Math.floor(n) : null
+}
+export const COMBO_MIN_AVAILABLE: number | null = minFromEnv(import.meta.env.VITE_COMBO_MIN_AVAILABLE)
+export const COLLECTION_MIN_AVAILABLE: number | null = minFromEnv(import.meta.env.VITE_COLLECTION_MIN_AVAILABLE)

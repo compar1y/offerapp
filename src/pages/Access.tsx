@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { CONFIG } from '../data/config'
+import { CONFIG, DEMO_CODE, PREVIEW } from '../data/config'
 import { cancelPending, checkAccess, requestCode, useStore, verifyCode } from '../lib/store'
 import { SupportButton } from '../components/ui'
 
@@ -43,7 +43,7 @@ export function Login() {
         <Link className="btn btn-link" to="/compra-confirmada">
           Acabei de comprar
         </Link>
-        {CONFIG.demo && <p className="demo-note">Modo demonstração: use qualquer e-mail e o código {CONFIG.demoCode}.</p>}
+        {PREVIEW && <p className="demo-note">Modo demonstração: use qualquer e-mail e o código {DEMO_CODE}.</p>}
       </form>
       <SupportButton />
     </div>
@@ -137,7 +137,7 @@ export function Code() {
           Acabei de comprar e o código não chega
         </Link>
         <p className="hint">Não chegou ou comprou com outro e-mail? Fale com o suporte pelo botão Ajuda.</p>
-        {CONFIG.demo && <p className="demo-note">Modo demonstração: o código é {CONFIG.demoCode}.</p>}
+        {PREVIEW && <p className="demo-note">Modo demonstração: o código é {DEMO_CODE}.</p>}
       </form>
       <SupportButton />
     </div>
@@ -214,7 +214,7 @@ export function Confirmed() {
         <Link className="btn btn-link" to="/entrar">
           Já tenho acesso: entrar
         </Link>
-        {CONFIG.demo && <p className="demo-note">Modo demonstração: um e-mail que começa com "aguardando" simula a espera da liberação (cerca de 12 s). Código: {CONFIG.demoCode}.</p>}
+        {PREVIEW && <p className="demo-note">Modo demonstração: um e-mail que começa com "aguardando" simula a espera da liberação (cerca de 12 s). Código: {DEMO_CODE}.</p>}
       </form>
       <SupportButton />
     </div>

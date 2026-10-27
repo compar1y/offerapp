@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { brl } from '../../shared/catalog'
 import { owns, trackCombo, useStore } from '../lib/store'
-import { comboView, type ComboView } from '../lib/offers'
+import { comboView, pendingFromBundles, type ComboView } from '../lib/offers'
 import { OfferMedia } from './ui'
 
 const SLICES = 8
@@ -44,55 +44,68 @@ function Wheel({ angle, spinning }: { angle: number; spinning: boolean }) {
 
 function ComboCard({ v, from }: { v: ComboView; from: string }) {
   const s = useStore()
+  const hasPrice = v.priceCents !== null && v.priceCents > 0
   return (
     <div className="combo-card">
-      <div className="combo-mocks">
+      <div className="combo-mocks" aria-hidden>
         {v.items.slice(0, 5).map((o) => (
           <div className="combo-mock" key={o.id}>
             <OfferMedia offer={o} className="pic-combo" />
           </div>
         ))}
-        {v.items.length > 5 && <span className="combo-more">+{v.items.length - 5}</span>}
       </div>
-      <ul className="combo-list">
-        {v.items.map((o) => (
-          <li key={o.id}>
-            {o.title} <span>{owns(s, o.id) ? 'você já tem' : brl(o.priceCents)}</span>
-          </li>
-        ))}
-      </ul>
-      {v.priceCents !== null && v.priceCents > 0 ? (
+      <p className="combo-count" role="status">
+        <strong>{v.total} materiais</strong>
+        <span>
+          {v.ready} de {v.total} prontos hoje
+        </span>
+      </p>
+      {hasPrice ? (
         <p className="combo-price">
           {v.strike && (
-            <s className="combo-sum" aria-label={`Soma dos preços individuais: ${brl(v.sumCents)}`}>
-              {brl(v.sumCents)}
-            </s>
+            <span className="combo-sum-line">
+              <span className="combo-sum-label">soma dos itens</span>
+              <s className="combo-sum" aria-label={`Soma dos preços individuais: ${brl(v.sumCents)}`}>
+                {brl(v.sumCents)}
+              </s>
+            </span>
           )}
-          <strong>{brl(v.priceCents)}</strong>
-          <span className="combo-price-note">{v.demoPrice ? 'preço de demonstração, não é o valor real' : 'pagamento único'}</span>
+          <strong>{brl(v.priceCents ?? 0)}</strong>
+          <span className="combo-price-note">{v.demoPrice ? 'preço previsto' : 'pagamento único'}</span>
+          {v.installments && <span className="combo-price-note">ou 12x no cartão (a parcela aparece no checkout)</span>}
         </p>
-      ) : (
-        <p className="combo-price">
-          <span className="combo-price-note">Preço ainda não definido.</span>
-        </p>
-      )}
-      {v.buyable ? (
-        <a className="btn btn-primary btn-block" href={v.checkoutUrl} target="_blank" rel="noreferrer" onClick={() => trackCombo('combo.click', from)}>
-          Quero levar tudo
+      ) : null}
+      {v.buyable && v.checkoutUrl ? (
+        <a className="btn btn-buy btn-block" href={v.checkoutUrl} target="_blank" rel="noreferrer" onClick={() => trackCombo('combo.click', from)}>
+          <span aria-hidden>🛒</span> Levar tudo
         </a>
       ) : (
         <>
-          <span className="flag flag-soon combo-soon">Em breve</span>
+          <p className="v-soon">Disponível em breve</p>
           <button className={`btn btn-block ${s.comboInterest ? 'btn-done' : 'btn-secondary'}`} disabled={s.comboInterest} onClick={() => trackCombo('combo.interest', from)}>
-            {s.comboInterest ? 'Anotado ✓ Em breve' : 'Quero ser avisada'}
+            {s.comboInterest ? 'Anotado ✓ Avisamos você' : 'Quero ser avisada'}
           </button>
         </>
       )}
+      <details className="v-details">
+        <summary>Ver os {v.total} materiais</summary>
+        <ul className="combo-list">
+          {v.items.map((o) => (
+            <li key={o.id}>
+              <span className="combo-li-title">
+                {o.title}
+                {!owns(s, o.id) && !v.readyIds.has(o.id) && <em className="soon-note">{pendingFromBundles(s).has(o.id) ? 'já é seu: entra automático quando sair' : 'entra automático quando sair'}</em>}
+              </span>
+              <span>{owns(s, o.id) ? 'você já tem' : brl(o.priceCents)}</span>
+            </li>
+          ))}
+        </ul>
+      </details>
     </div>
   )
 }
 
-// Seção do catálogo: roleta (antes do giro) e card do combo (depois do giro). Sem preço definido, mostra direto o card "Em breve".
+// Seção "Leve tudo": roleta (antes do giro) e card do combo (depois do giro). Sem preço definido, mostra direto o card.
 export function ComboSection() {
   const s = useStore()
   const v = comboView(s)
@@ -122,41 +135,35 @@ export function ComboSection() {
     timer.current = window.setTimeout(() => setPhase('done'), 3500)
   }
   return (
-    <section className="combo" aria-label="Super oferta Leve tudo">
-      <span className="combo-eyebrow">SUPER OFERTA</span>
-      <h2 className="combo-title">{v.title}</h2>
-      <p className="combo-sub">Todos os materiais do catálogo juntos, por um preço único.</p>
+    <section id="leve-tudo" className="sec combo" aria-label="Leve tudo">
+      <h2 className="sec-title">{v.title}</h2>
+      <p className="sec-lead">Todos os materiais do catálogo, por um preço único.</p>
       {phase !== 'done' ? (
-        <>
+        <div className="combo-card combo-spin">
           <Wheel angle={angle} spinning={phase === 'spinning'} />
-          <button className="btn btn-spin" onClick={spin} disabled={phase === 'spinning'}>
+          <button className="btn btn-open btn-block" onClick={spin} disabled={phase === 'spinning'}>
             {phase === 'spinning' ? 'Girando...' : 'Girar a roleta'}
           </button>
-          <p className="combo-fine">Todas as fatias valem o mesmo desconto: o preço do combo.</p>
-        </>
+          <p className="combo-fine">Todas as fatias valem o mesmo desconto.</p>
+        </div>
       ) : (
-        <>
-          {hasPrice && <p className="combo-result">Todas as fatias valem o mesmo desconto: o preço do combo.</p>}
-          <ComboCard v={v} from="catalog" />
-        </>
+        <ComboCard v={v} from="catalog" />
       )}
     </section>
   )
 }
 
-// Card chamativo da home
+// Chamada da home para o Leve tudo
 export function ComboBanner() {
   const s = useStore()
   const v = comboView(s)
   if (!v) return null
-  const hasPrice = v.priceCents !== null && v.priceCents > 0
   return (
-    <section className="block">
-      <Link to="/catalogo" className="combo-banner" onClick={() => trackCombo('combo.click', 'home-banner')}>
-        <span className="combo-eyebrow">SUPER OFERTA</span>
-        <strong className="combo-banner-title">{v.title}</strong>
-        <span className="combo-banner-text">Todos os materiais do catálogo juntos, por um preço único.{hasPrice ? ' Gire a roleta e veja.' : ' Em breve.'}</span>
-        <span className="btn btn-spin">{hasPrice && !s.comboSpun ? 'Girar a roleta' : 'Ver o Leve tudo'}</span>
+    <section className="sec" aria-label="Leve tudo">
+      <h2 className="sec-title">{v.title}</h2>
+      <Link to="/catalogo#leve-tudo" className="combo-banner" onClick={() => trackCombo('combo.click', 'home-banner')}>
+        <span className="combo-banner-text">Todos os materiais do catálogo, por um preço único.</span>
+        <span className="btn btn-open">Ver o Leve tudo</span>
       </Link>
     </section>
   )
@@ -166,17 +173,18 @@ export function ComboBanner() {
 export function ComboSlot({ prominent }: { prominent: boolean }) {
   const s = useStore()
   const [open, setOpen] = useState(false)
-  if (!comboView(s)) return null
+  const v = comboView(s)
+  if (!v) return null
   if (prominent || open) return <ComboSection />
   return (
-    <section className="combo-compact" aria-label="Leve tudo">
-      <div>
-        <strong>Leve tudo</strong>
-        <span>Todos os materiais do catálogo num preço único.</span>
+    <section id="leve-tudo" className="sec" aria-label="Leve tudo">
+      <h2 className="sec-title">{v.title}</h2>
+      <div className="combo-compact">
+        <span>Todos os materiais do catálogo, por um preço único.</span>
+        <button className="btn btn-secondary btn-block" onClick={() => setOpen(true)}>
+          Ver o Leve tudo
+        </button>
       </div>
-      <button className="btn btn-secondary" onClick={() => setOpen(true)}>
-        Ver o Leve tudo
-      </button>
     </section>
   )
 }

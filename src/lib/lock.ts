@@ -1,16 +1,18 @@
 import { BUMP, brl, type Item } from '../../shared/catalog'
 import { supportUrl } from '../data/config'
+import { buyUrl } from './checkouts'
 
-// o que o botão de um produto adicional bloqueado faz: abre o checkout configurado (BUMP.checkoutUrl) ou, se vazio, vira "Quero ser avisada".
-// Só as Fichas de Socorro (bump) e as ofertas adicionais ficam bloqueadas; os materiais do kit nunca têm botão de compra.
+// o que o botão das Fichas de Socorro (bump) faz quando ela não está no acesso: abre o checkout do public/checkouts.json (id "bump", com ready:true)
+// ou, sem link, mostra "Disponível em breve" + "Quero ser avisada". Os materiais do kit nunca têm botão de compra.
 export function lockInfo(): { label: string; buy: string; price: string; href: string; note: string; buyable: boolean } {
+  const href = buyUrl('bump') ?? ''
   return {
-    buyable: !!BUMP.checkoutUrl,
-    label: BUMP.checkoutUrl ? `Adicionar as Fichas de Socorro por ${brl(BUMP.priceCents)}` : `Fichas de Socorro · ${brl(BUMP.priceCents)} · em breve aqui`,
+    buyable: !!href,
+    label: href ? `Adicionar as Fichas de Socorro por ${brl(BUMP.priceCents)}` : `Fichas de Socorro · ${brl(BUMP.priceCents)} · disponível em breve`,
     buy: 'Comprar as Fichas de Socorro',
     price: brl(BUMP.priceCents),
-    href: BUMP.checkoutUrl,
-    note: BUMP.checkoutUrl ? '' : 'A compra pelo app ainda não está aberta. Toque em "Quero ser avisada" e registramos o seu interesse.',
+    href,
+    note: href ? '' : 'A compra pelo app abre em breve. Toque em "Quero ser avisada" e avisamos você.',
   }
 }
 

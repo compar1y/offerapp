@@ -8,24 +8,41 @@ Branch de trabalho: `app-v2` (a partir de `app-v1-demo`). Nada foi publicado e n
 
 ```bash
 npm install
-npm run dev          # modo demonstração (padrão): tudo no navegador, sem servidor
-npm run build && npm run preview   # prévia de produção, abra com largura de 390px
-npm run check        # lint + tipos do servidor + teste do servidor + build
+npm run dev            # prévia com demonstração (sem servidor): para olhar o layout
+npm run build          # build de PRODUÇÃO (modo servidor, sem nada de demo) + verificação automática
+npm run build:preview  # build da PRÉVIA/demonstração (para apresentar o layout)
+npm run preview        # serve o que estiver em dist/, abra com largura de 390px
+npm run check          # lint + tipos do servidor + teste do servidor + build de produção + verificação + build da prévia
 ```
 
-### Modo demonstração (padrão)
+### Dois builds: produção e prévia
+
+| | `npm run build` (padrão, produção) | `npm run build:preview` (prévia) |
+|---|---|---|
+| Modo | servidor (`/api/*`), login real por e-mail e código | demonstração, tudo no navegador |
+| Barra "opções de teste", "Sem Fichas", "Ligar ofertas", "Já comprei" | não existe (o código é eliminado do build) | existe |
+| Código de acesso `123456` e avisos "modo demonstração" | não existem | existem |
+| PDF de exemplo (`public/demo/`) | removido de `dist/` | incluído |
+| Catálogo (`/catalogo`, `/caminho`, bolinha vermelha) | desligado até `VITE_CATALOG_ENABLED=true` | ligado |
+
+A diferença vem da constante de build `__PREVIEW__` (`vite.config.ts`). `scripts/verify-prod-bundle.mjs` roda no fim de `npm run build` e FALHA se o `dist/` tiver qualquer resto de demo (`123456`, "Sem Fichas", "Ligar ofertas", "modo demonstração", pasta `demo/`) ou se faltar `checkouts.json`.
+
+**Vercel:** o projeto de produção usa o comando padrão (`npm run build`). Uma prévia de demonstração na Vercel precisa do Build Command `npm run build:preview` (sem isso ela sai como produção e pede servidor).
+
+### Prévia/demonstração (build `--mode preview`)
 
 - Qualquer e-mail entra com o código `123456`.
-- Quem entra sempre tem o kit completo. Aparece uma barra de teste com dois botões: "Sem Fichas / Com Fichas" e "Ligar ofertas / Ofertas ligadas" (o das ofertas recarrega a página). Só existe nesse modo.
-- Os botões "Abrir PDF" e "Baixar" abrem só `public/demo/amostra-modo-demonstracao.pdf` (um PDF pequeno de exemplo). Nenhum PDF pago está na pasta `public/` nem no git.
+- Quem entra sempre tem o kit completo. A barra de teste tem "Sem Fichas / Com Fichas", "Ligar ofertas / Ofertas ligadas" e "Já comprei: N" (0, 1 ou 3 itens do catálogo, para ver o Leve tudo em destaque).
+- Os botões "Abrir PDF" e "Baixar" abrem só `public/demo/amostra-modo-demonstracao.pdf`. Nenhum PDF pago está em `public/` nem no git.
 - O formulário "qual sua maior dificuldade agora?" grava no próprio navegador.
+- Para ver os botões "Comprar" na prévia sem Wiapy: copie `checkouts.example.json` (links fictícios `pay.exemplo.test`) por cima de `public/checkouts.json` só na sua máquina, e não commite. `npm run checkouts:gen` recria os dois arquivos a partir do catálogo.
 
-### Modo servidor
+### Modo servidor (produção e desenvolvimento local)
 
 ```bash
 cp .env.example .env.local      # preencha os segredos (openssl rand -hex 32)
 npm run dev:api                 # roda as funções de api/ em http://localhost:8787
-VITE_ACCESS_MODE=server npm run dev   # outro terminal: o Vite encaminha /api para a porta 8787
+npm run dev:server              # outro terminal: Vite em modo servidor, encaminha /api para a porta 8787
 ```
 
 Para desenvolvimento local sem conta nenhuma: `DATA_FILE=.data/db.json` (padrão), `FILES_DIR=../pdfs-app` e `DEV_LOG_CODES=1` (imprime o código de login no terminal em vez de mandar e-mail).
@@ -69,7 +86,7 @@ Existe UM ticket só: **kit completo, R$ 37,90**, checkout `https://pay.wiapy.co
 
 Quem comprou nunca vê bônus travado. Se alguém sem o kit liberado abrir um material do kit por link direto, o app mostra a mensagem "ainda não está liberado no seu acesso" (com aviso de pagamento aguardando, se houver PIX pendente) e um botão para o suporte no WhatsApp, sem botão de compra.
 
-Para mudar o que o kit libera, edite só `ENTITLEMENTS` em `shared/catalog.ts`. Para preencher os campos que faltam, edite `PLANS.completo` e `BUMP` (`wiapyProductId` e o `checkoutUrl` do bump estão vazios). Botão de compra sem `checkoutUrl` abre o WhatsApp de suporte.
+Para mudar o que o kit libera, edite só `ENTITLEMENTS` em `shared/catalog.ts`. Para preencher os campos que faltam, edite `PLANS.completo` e `BUMP` (`wiapyProductId` e o `checkoutUrl` do bump estão vazios). Botão de compra sem `checkoutUrl` abre o WhatsApp de suporte (só o do kit/bump antigo; as ofertas do catálogo usam `checkouts.json`).
 
 **Quais checkouts liberam o kit (variável `FULL_KIT_CHECKOUT_IDS`):** lista separada por vírgula, comparada com `checkout.id` do webhook. Padrão (se a variável estiver vazia): `r2PHgYwK6CVi` (código público) e `6accaf7eb11ba1ecaf89b37e` (id interno do mesmo checkout), porque a doc da Wiapy não diz qual dos dois vem em `checkout.id`. Qualquer outro checkout é IGNORADO: nada é liberado e fica o evento `purchase.ignored_checkout` (com o motivo) em `/api/admin/events`. Checagem extra opcional: `FULL_KIT_REQUIRE_AMOUNT=1` só libera se o valor do checkout for exatamente 3790 centavos.
 
@@ -104,25 +121,43 @@ Para ligar uma oferta: preencha `checkoutUrl` e `wiapyProductId`, cadastre o arq
 
 ## Catálogo de ofertas como sistema (`/catalogo`, `/caminho`)
 
-Fonte: `shared/catalog.ts` (OFFERS com `catalog: true`, TRACKS, HOOKS, COLLECTIONS, COMBO, OFFER_VISUAL). Documentos de decisão: `../OFERTAS-30-TIER-S.md` (as 30 ideias, notas, tier S, pilha de valor, mapa, guia visual) e `../CATALOGO-OFERTAS-APP.md` (tabela final do que está no app).
+Fonte: `shared/catalog.ts` (OFFERS com `catalog: true`, TRACKS, HOOKS, COLLECTIONS, COMBO, OFFER_VISUAL). Documentos de decisão: `../OFERTAS-30-TIER-S.md` e `../CATALOGO-OFERTAS-APP.md`. Para lançar: `../CHECKLIST-LANCAMENTO.md`.
 
-**Desligado em produção.** O catálogo só existe se `CATALOG_ENABLED` for verdadeiro: sempre no modo demonstração/prévia; em produção só com `VITE_CATALOG_ENABLED=true` no build (decisão do Levi, mandar só quando ele mandar). Desligado, nenhuma rota, bolinha, banner ou card do catálogo aparece.
+**Desligado em produção.** O catálogo só existe se `CATALOG_ENABLED` for verdadeiro: sempre na prévia; em produção só com `VITE_CATALOG_ENABLED=true` no build (só quando o Levi mandar). Desligado, nenhuma rota, bolinha, banner ou card do catálogo aparece.
 
-- **17 ofertas ligadas (`enabled`)**, todas "Em breve" (`status: 'soon'`) com "Quero ser avisada" até existir produto, checkout e arquivo: 10 do tier S (Vulcão, Vitrine com Fotos, Caixas de Doces de Natal = Destaque e primeira do catálogo, Segredo dos Recheios, 15 Receitas que VÃO EXPLODIR, 20 Sobremesas com Panetone, Ceia Doce, Mini Panetones, Rabanada de Padaria, Doces para Revender) e 7 de Natal/Ano Novo (Cesta de Natal Caseira, Biscoitos Decorados, Dia de Produção em Escala, Mesa Doce de Ano Novo, Chocotone e Panetone de Colher, Natal das Crianças, Janeiro Também Tem Panetone). Páscoa, Dia das Mães, Junina, Premium, Ponto Perfeito, Calendário 2027, Artes Prontas e Kit Etiquetas ficam fora (desligadas ou ausentes).
-- **Acesso imediato:** pendente não libera; pago libera uma vez; estorno/chargeback revoga; direitos calculados na leitura. Toda oferta comprada abre direto em `/produto/<id>`.
-- **Cada card:** chip do tipo de entregável (caderno, planilha, vídeo-aula...), imagem do produto, 5 a 7 bullets, pilha de valor (2 a 3 bônus, "valor somado dos itens" calculado por `offerValueFromCents`, sem "preço antigo", sem relógio), `testimonials` (vazio; a seção "O que dizem os clientes" só aparece com depoimento real cadastrado), linha da trilha ("Faltam N") e ganchos.
-- **Sistema:** 4 trilhas (Panetone de confeitaria, Ceia completa, Encomendas de dezembro, Natal e Ano Novo), 12 ganchos (inclui as pontes Mini→Caixas e Vitrine→Ceia Doce), 5 coleções (Primeira Fornada, Panetone de Confeitaria, Ceia Completa, Presentes que Vendem, Encomendas de Dezembro). Tela `/caminho` ("Seu caminho"): bolinhas ✓ liberado, ● próximo passo, 🔒 bloqueado; "Fiz essa" destaca o próximo passo; a compra nunca é bloqueada. Na home aparecem no máximo 2 espaços de oferta (próximo passo + coleção, ou "Leve tudo"). "Leve tudo" fica em destaque só com 3+ itens liberados (antes, linha compacta).
-- **Combo "Leve tudo":** `COMBO` (preço, checkout e `wiapyProductId` vazios). Soma = ofertas ligadas. O preço de R$197 que aparece na prévia existe só no modo demonstração. Sem preço real definido, mostra "Em breve" + "Quero ser avisada". Coleções seguem a mesma regra (`priceCents` nulo, checkout vazio).
-- **Webhook:** `detectOffers` libera a oferta por `wiapyProductId`/`titleHints`; um `wiapyProductId` de coleção libera os itens da coleção; o do `COMBO` libera todas as ofertas ligadas. Bump (Fichas de Socorro) é por cliente (`bump` no direito), fora da soma do combo.
-- **Eventos** (`POST /api/event`, só estes nomes): `catalog.view`, `offer.view`, `offer.click`, `offer.interest`, `offer.dismiss`, `item.done`, `item.undone`, `combo.view|spin|click|interest`, `journey.view`, `hook.click`, `collection.view|click|interest`. Leitura em `GET /api/admin/events`.
-- **Guia visual por oferta:** cada oferta do tier S tem `accentColor`, paleta (`primary`, `secondary`, `bg`) e fonte do título (`OFFER_VISUAL`; ofertas sem guia usam `DEFAULT_VISUAL`). Aplicado no card, no detalhe e na bolinha da etapa no mapa. A marca "Fábrica de Panetones" fica só no cabeçalho. Contraste AA conferido em teste (`server/test/smoke.ts`, grupo 24) e no QA de tela. As fontes vêm do Google Fonts, só a do título, 1 peso, `display=swap`, carregadas só quando o card/detalhe está perto da tela, com fonte reserva; o service worker não guarda requisições de outro domínio, então offline vale a fonte reserva (o app continua inteiro). Atenção LGPD: a requisição de fonte vai para o Google; a alternativa é hospedar as fontes em `public/` (não feito).
-- **Imagens:** o app não tem foto decorativa. Imagem só em cards de acesso, produtos bloqueados/à venda (mockup) e ícones funcionais. Por oferta: `public/img/catalogo/<id>.webp` (produto, 640x960 com fundo transparente; 800x600 só nas ofertas `imageRatio: '4:3'`) e `<id>-bonus.webp` (faixa 900x300 dos bônus, transparente). Prontos hoje: os mockups de 9 ofertas do tier S (Vulcão, Vitrine, Caixas, Recheios, 15 Receitas, Sobremesas, Ceia Doce, Mini Panetones, Revender; WebP com alfa, 134 a 203 KB). Faltam: Rabanada (será refeita), as 10 faixas de bônus e as 7 ofertas de Natal/Ano Novo. Sem arquivo, a demonstração mostra um placeholder transparente e a produção não mostra imagem. Lista em `../IMAGENS-FALTANDO.md`; `npm run catalogo:imagens` confere e atualiza `src/data/catalog-images.json` (roda também antes do build). Para converter: `cwebp`/Pillow com qualidade alta e alfa preservado, mantendo a proporção.
+- **17 ofertas ligadas (`enabled`)**: 10 do tier S (Vulcão, Vitrine com Fotos, Caixas de Doces de Natal = Destaque, Segredo dos Recheios, 15 Receitas que VÃO EXPLODIR, 20 Sobremesas com Panetone, Ceia Doce, Mini Panetones, Rabanada de Padaria, Doces para Revender) e 7 de Natal/Ano Novo. Se não há link nem `ready:true` em `checkouts.json`, o card mostra "Disponível em breve" + "Quero ser avisada".
+- **Acesso imediato:** pendente não libera; pago libera uma vez; estorno/chargeback revoga; direitos calculados na leitura.
+- **Telas (390 px, pouco texto):** `Início` ("Meus produtos" em carrossel, "Para você" = um destaque, coleção, Fichas), `Ofertas` (lista vertical de cards com imagem grande, título, UMA frase, preço e botão; seções "Para você", "Coleções", "Leve tudo", "Todos os materiais") e `Caminho` (trilhas e coleções em carrosséis com rolagem suave e snap). Bullets, pilha de valor, bônus, garantia e "O que você recebe" ficam SÓ na tela de detalhe `/produto/<id>`. Um destaque principal por tela.
+- **Botões:** "Comprar" é verde claro (#3fcf6b, texto escuro, contraste 7,3), com carrinho e preço. "Acessar" e os botões principais são verde escuro (#14632f, texto branco, contraste 7,3). Ficam distintos de propósito (ANEXO item 16). "Quero ser avisada" é contorno verde.
+- **Identidade por oferta só na capa** (fundo e destaque do card de imagem). A UI geral tem uma paleta só. Fonte Inter hospedada em `public/fonts/` (sem Google Fonts, sem requisição a terceiros; licença OFL ao lado). O service worker só guarda woff2 do próprio domínio.
+- **Imagens:** só em cards de acesso, produtos bloqueados/à venda e ícones funcionais. `public/img/catalogo/<id>.webp` (produto, 640x960 transparente; 800x600 em `dia-producao-escala`) e `<id>-bonus.webp` (faixa 900x300 transparente, só no detalhe da oferta, na seção "Bônus que vêm junto"). 27 de 27 arquivos prontos (17 produtos + 10 faixas). `npm run catalogo:imagens` confere e atualiza `src/data/catalog-images.json` (roda antes do build). Ver `../IMAGENS-FALTANDO.md`.
+- **Sistema:** 4 trilhas, 12 ganchos, 5 coleções. "Leve tudo" fica em destaque só com 3+ itens liberados (antes, linha compacta). Bump (Fichas de Socorro) é por cliente, fora da soma do combo.
+- **Webhook:** `detectOffers` libera a oferta por `wiapyProductId`/`titleHints`; `detectBundles` reconhece o combo e as coleções.
+- **Eventos** (`POST /api/event`, só estes nomes): `catalog.view`, `offer.view|click|interest|dismiss`, `item.done|undone`, `combo.view|spin|click|interest`, `journey.view`, `hook.click`, `collection.view|click|interest`.
+
+### `public/checkouts.json`: links de compra e "pronto" de cada oferta
+
+Arquivo ÚNICO que diz o que dá para comprar. Por id: `{ "checkoutUrl": "https://pay.wiapy.com/...", "ready": true, "price": 2790 }` (`price` opcional, em centavos; se existir, vale no lugar do preço do catálogo). Ids aceitos (30): as 23 ofertas de `OFFERS`, `combo`, as 5 coleções e `bump`. `npm run checkouts:gen` cria o arquivo padrão (tudo vazio e `ready:false`) e o `checkouts.example.json` com links fictícios.
+
+- **"Comprar" abre o link direto** (nova aba) só quando `ready === true` E há link `https`. Qualquer outra coisa vira "Disponível em breve" + "Quero ser avisada" (visual final, sem cara de beta). Link sem `ready:true` NÃO vende; `ready:true` sem link também não.
+- **Colar o link e marcar `ready:true` liga o botão sem rebuild de código.** O app busca `./checkouts.json?t=<agora>` com `cache: 'no-store'` ao abrir e quando volta para a aba; o service worker NUNCA guarda esse arquivo (`sw.js` bloqueia) e a Vercel manda `Cache-Control: no-store` (`vercel.json`). Atenção: na Vercel o arquivo é estático, então editar exige um novo deploy estático (commit do arquivo), mas nenhum build de lógica do app.
+- Arquivo ausente, ilegível ou id desconhecido: nada fica pronto (seguro). Só `ready: true` exato vale; `price` precisa ser inteiro positivo.
+- **O servidor lê o mesmo arquivo** (`CHECKOUTS_FILE`, padrão `public/checkouts.json`, incluído nas funções pelo `vercel.json`), com cache de `CHECKOUTS_CACHE_MS` (padrão 30000; 0 = sempre relê). É isso que decide, no `/api/me`, quais itens de um combo/coleção já estão liberados.
+- O `checkoutUrl` do kit completo (R$ 37,90) continua em `PLANS.completo` (não vem do arquivo).
+
+### Preços, gate e direitos do combo e das coleções
+
+- **Leve tudo = R$ 97,00** (`COMBO.comboPriceCents`, 9700). A soma riscada é SEMPRE calculada a partir das ofertas ligadas do catálogo (hoje R$ 557,20 para as 17), nunca digitada. "ou 12x" só aparece se `COMBO.comboInstallments === 12` (padrão `null`; só depois de o Caixa confirmar na Wiapy).
+- **Coleção = soma dos itens x 0,65**, arredondada para o valor mais próximo terminado em ,00 ou ,90 (empate para baixo), função pura `collectionPriceByRule` com testes. Override opcional: `collectionPriceOverrideCents`. A soma riscada aparece com o rótulo "soma dos itens". Valores de hoje: Primeira Fornada R$ 34,00 (soma 52,80), Panetone de Confeitaria R$ 60,90 (93,70), Ceia Completa R$ 57,90 (88,90), Presentes que Vendem R$ 72,90 (111,90), Encomendas de Dezembro R$ 85,00 (131,00).
+- **Honestidade:** o card mostra "N de M prontos hoje" (pronto = `ready:true` em `checkouts.json`); item ainda não pronto mostra "entra automático quando sair". O preço de demonstração só existe na prévia.
+- **Gate do botão de compra:** combo e coleção só mostram "Comprar" com link E itens prontos >= mínimo. Combo: `VITE_COMBO_MIN_AVAILABLE` (padrão 10). Coleção: `VITE_COLLECTION_MIN_AVAILABLE` (padrão: todos os itens da coleção). Senão: "Disponível em breve" + "Quero ser avisada".
+- **Direitos:** comprar o combo ou uma coleção grava o direito (`bundles: ['combo']` ou o id da coleção). O `/api/me` resolve os itens na leitura: os que já estão prontos são liberados na hora; os outros são liberados sozinhos quando o `ready` virar `true`. Estorno/chargeback revoga tudo. Coberto por `npm run test:api`.
 
 ### Para ligar uma oferta do catálogo
-1. `checkoutUrl` e `wiapyProductId` (Wiapy), 2. arquivo em `files` + `npm run upload:files` (PDF pago nunca no git nem em `public/`), 3. mockup e faixa de bônus em `public/img/catalogo/`, 4. `status: 'available'`, 5. `VITE_CATALOG_ENABLED=true` quando o Levi mandar.
+1. Criar o checkout na Wiapy e anotar o `wiapyProductId` em `shared/catalog.ts`. 2. Arquivo em `files` + `npm run upload:files` (PDF pago nunca no git nem em `public/`). 3. Em `public/checkouts.json`: link e `ready: true`. 4. `VITE_CATALOG_ENABLED=true` no build quando o Levi mandar (e `COMBO.enabled` para o Leve tudo).
 
-### Variáveis do webhook (opcionais)
-`BUMP_ORDERBUMP_IDS` (ids ou trechos de título que contam como bump), `FULL_KIT_AMOUNT_CENTS` (valor do kit, padrão 3790), `BUMP_TOTAL_CENTS` (kit + bump, padrão 4580), `FULL_KIT_CHECKOUT_IDS`, `FULL_KIT_REQUIRE_AMOUNT`.
+### Variáveis opcionais (webhook e catálogo)
+`BUMP_ORDERBUMP_IDS`, `FULL_KIT_AMOUNT_CENTS`, `BUMP_TOTAL_CENTS`, `FULL_KIT_CHECKOUT_IDS`, `FULL_KIT_REQUIRE_AMOUNT`, `CHECKOUTS_FILE`, `CHECKOUTS_CACHE_MS`, `VITE_CATALOG_ENABLED`, `VITE_COMBO_MIN_AVAILABLE`, `VITE_COLLECTION_MIN_AVAILABLE`.
 
 ## Estados de compra e liberação
 
@@ -156,7 +191,7 @@ Fluxo: o app chama `GET /api/file/<arquivo>` com a sessão; o servidor confere s
 
 ## Passo a passo para ligar de verdade
 
-1. Repositório GitHub e projeto na Vercel (conta do Levi). Definir `VITE_ACCESS_MODE=server` no build.
+1. Repositório GitHub e projeto na Vercel (conta do Levi). Comando de build padrão (`npm run build`): já sai em modo servidor, sem demo.
 2. Armazenamento de dados: criar um Redis (Upstash, direto ou pelo Marketplace da Vercel) e copiar `KV_REST_API_URL` e `KV_REST_API_TOKEN`. A Vercel não tem disco gravável: sem esses dois, o servidor responde 503.
 3. Arquivos: criar o Blob privado e subir os PDFs (seção acima).
 4. E-mail do código: conta no Resend, domínio verificado, `RESEND_API_KEY` e `MAIL_FROM`.

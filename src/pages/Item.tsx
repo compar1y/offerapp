@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
-import { ITEM_BY_ID, OFFER_BY_ID, brl, fileKey, type FileEntry, type ItemId, type OfferId } from '../../shared/catalog'
+import { ITEM_BY_ID, OFFER_BY_ID, fileKey, type FileEntry, type ItemId } from '../../shared/catalog'
 import { MOCKUPS } from '../data/images'
-import { CONFIG, supportUrl } from '../data/config'
+import { PREVIEW } from '../data/config'
 import { openFile, owns, toggleDone, toggleSeen, trackOffer, useStore } from '../lib/store'
-import { DeliverableChip, Layout, OfferBlock, OfferMedia, Picture } from '../components/ui'
-import { visibleOffers } from '../lib/offers'
+import { DeliverableChip, Layout, OfferAction, OfferBlock, OfferMedia, Picture, Price } from '../components/ui'
+import { buyUrl, visibleOffers } from '../lib/offers'
 import { lockInfo, noKitInfo } from '../lib/lock'
-import { themeStyle, themed, useTitleFont } from '../lib/theme'
+import { themeStyle } from '../lib/theme'
+import { Section } from '../components/ui'
 import { HookBox, OfferBullets, OfferStack, Testimonials, TrackLine } from '../components/System'
 
 const KIND_LABEL = { pdf: 'PDF', txt: 'Texto (TXT)', docx: 'Word (DOCX)', xlsx: 'Planilha (Excel)' }
@@ -16,7 +17,6 @@ export function Item() {
   const { id } = useParams()
   const s = useStore()
   const [msg, setMsg] = useState('')
-  useTitleFont<HTMLDivElement>(id as OfferId, true)
   const item = id ? ITEM_BY_ID[id as ItemId] : undefined
   if (!item) return <Navigate to="/" replace />
   const unlocked = owns(s, item.id)
@@ -33,12 +33,12 @@ export function Item() {
     setMsg('')
     const r = await openFile(fileKey(f), download)
     if (!r.ok) setMsg(r.error ?? 'Não foi possível abrir.')
-    else if (CONFIG.demo) setMsg('Modo demonstração: abriu um PDF de exemplo, não o material real.')
+    else if (PREVIEW) setMsg('Modo demonstração: abriu um PDF de exemplo, não o material real.')
   }
 
   return (
     <Layout title={item.badge} back="/">
-      <div className={offer && themed(offer.id) ? 'themed' : undefined} style={offer ? themeStyle(offer.id) : undefined}>
+      <div style={offer ? themeStyle(offer.id) : undefined}>
       <section className="block">
         <div className={`detail-media ${unlocked || inKit ? '' : 'detail-locked'}`}>
           {offer ? <OfferMedia offer={offer} className="pic-detail" /> : mock ? <Picture img={mock} className="pic-detail" lazy={false} /> : null}
@@ -52,14 +52,20 @@ export function Item() {
           <span className={unlocked || inKit ? 'tag' : 'tag tag-buy'}>{unlocked ? `${item.badge} · NO SEU KIT` : inKit ? item.badge : offer ? item.badge : `${item.badge} · ADICIONAL`}</span>
           {offer && <DeliverableChip offer={offer} />}
           <h1>{item.title}</h1>
-          <p className="lead">{item.description}</p>
-          {offer && <OfferBullets offer={offer} />}
-          {offer && <TrackLine id={offer.id} />}
-          <ul className="bullets">
-            {item.includes.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
+          <p className="lead">{offer && !unlocked ? offer.promise : item.description}</p>
+          {offer && !unlocked && <Price offer={offer} soon={!buyUrl(offer.id)} />}
+          {offer && !unlocked && <OfferAction offer={offer} from="detail" />}
+          {(!offer || unlocked) && (
+            <>
+              {offer && <OfferBullets offer={offer} />}
+              {offer && <TrackLine id={offer.id} />}
+              <ul className="bullets">
+                {item.includes.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       </section>
 
@@ -119,38 +125,21 @@ export function Item() {
           </div>
         </section>
       ) : offer ? (
-        <section className="block block-info">
-          <div className="upsell">
-            <span className="tag tag-buy">COMPRA ADICIONAL</span>
-            <OfferStack offer={offer} soon={offer.status === 'soon' || !offer.checkoutUrl} />
-            <Testimonials offer={offer} />
-            <p>
-              <strong>Este material não está no seu kit.</strong> Pagamento único no checkout da Wiapy.
-            </p>
-            {offer.status === 'soon' || !offer.checkoutUrl ? (
-              s.interested[offer.id] ? (
-                <p className="demo-note" role="status">
-                  Anotado. Obrigado pelo interesse! Esse material ainda está em preparação.
-                </p>
-              ) : (
-                <button className="btn btn-primary btn-block" onClick={() => trackOffer('offer.interest', offer.id, 'detail')}>
-                  Quero ser avisada
-                </button>
-              )
-            ) : (
-              <a
-                className="btn btn-buy btn-block"
-                href={offer.checkoutUrl || supportUrl(`Oi! Quero comprar o ${offer.title} (${brl(offer.priceCents)}).`)}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => trackOffer('offer.click', offer.id, 'detail')}
-              >
-                🛒 Comprar por {brl(offer.priceCents)}
-              </a>
-            )}
-            <p className="hint">Nada é cobrado ao tocar em outros botões do app.</p>
-          </div>
-        </section>
+        <>
+          <Section title="O que você recebe">
+            <OfferBullets offer={offer} />
+            <OfferStack offer={offer} soon={!buyUrl(offer.id)} />
+          </Section>
+          <Testimonials offer={offer} />
+          <section className="sec" aria-label="Onde este material entra">
+            <TrackLine id={offer.id} />
+            <HookBox id={offer.id} where="detail" />
+          </section>
+          <section className="sec" aria-label="Comprar">
+            <OfferAction offer={offer} from="detail-end" />
+            <p className="hint">Pagamento único no checkout da Wiapy. Nada é cobrado ao tocar em outros botões do app.</p>
+          </section>
+        </>
       ) : (
         <section className="block block-info">
           <div className="upsell">
@@ -160,11 +149,11 @@ export function Item() {
             </p>
             {lock.buyable ? (
               <a className="btn btn-buy btn-block" href={lock.href} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', 'bump', 'detail')}>
-                🛒 {lock.buy} · {lock.price}
+                <span aria-hidden>🛒</span> Comprar · {lock.price}
               </a>
             ) : s.interested.bump ? (
               <p className="demo-note" role="status">
-                Anotado ✓ Avisamos que você quer as Fichas assim que a compra pelo app abrir.
+                Anotado ✓ Avisamos você assim que a compra pelo app abrir.
               </p>
             ) : (
               <button className="btn btn-secondary btn-block" onClick={() => trackOffer('offer.interest', 'bump', 'detail')}>

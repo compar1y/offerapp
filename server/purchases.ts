@@ -6,9 +6,10 @@
 //   carrinho abandonado           : só gera evento
 // Os direitos são calculados na leitura, a partir das compras com status paid (inclui liberação manual e CSV).
 
-import { ENTITLEMENTS, itemsFor, type ItemId, type OfferId, type MeResponse, type PlanId, type PurchaseStatus, type PurchaseView } from '../shared/catalog.js'
+import { ENTITLEMENTS, itemsFor, type BundleId, type ItemId, type OfferId, type MeResponse, type PlanId, type PurchaseStatus, type PurchaseView } from '../shared/catalog.js'
+import { readyIds } from './checkouts.js'
 import { getKV } from './kv.js'
-import { detectBumpVia, detectOffers, isFullKit, isStandaloneExtra, type ParsedWiapy } from './wiapy.js'
+import { detectBumpVia, detectBundles, detectOffers, isFullKit, isStandaloneExtra, type ParsedWiapy } from './wiapy.js'
 
 export interface Purchase {
   orderId: string
@@ -16,6 +17,8 @@ export interface Purchase {
   plan: PlanId | null
   bump: boolean
   offers: OfferId[]
+  // direitos de combo/coleção ('combo' ou id da coleção). Os produtos são resolvidos na leitura (buildMe), só os prontos (available)
+  bundles?: BundleId[]
   // snapshot dos ids liberados por este pagamento (o acesso real é calculado na leitura, ver buildMe)
   entitlements: ItemId[]
   status: PurchaseStatus
@@ -119,6 +122,7 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
     const bumpVia = detectBumpVia(p)
     const bump = bumpVia !== null
     const offers = detectOffers(p)
+    const bundles = detectBundles(p)
     const needsReview = false
     const created: Purchase = {
       orderId,
@@ -126,7 +130,8 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
       plan,
       bump,
       offers,
-      entitlements: itemsFor(plan, bump, offers),
+      bundles,
+      entitlements: itemsFor(plan, bump, offers, bundles, await readyIds()),
       status,
       source: 'wiapy',
       amountCents: p.amountCents,
@@ -139,7 +144,7 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
     }
     await saveOrder(created)
     if (bump) await logEvent({ name: 'purchase.bump_detected', origin, email: p.email, orderId, props: { via: bumpVia, status } })
-    await logEvent({ name: `purchase.${status}`, origin, email: p.email, orderId, props: { ...props, plan, bump, offers } })
+    await logEvent({ name: `purchase.${status}`, origin, email: p.email, orderId, props: { ...props, plan, bump, offers, bundles } })
     return { ok: true, action: 'created', status }
   }
 
@@ -159,7 +164,7 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
 }
 
 // ---- liberação manual / CSV
-export async function grantManual(args: { email: string; plan?: PlanId | null; bump?: boolean; offers?: OfferId[]; source: 'manual' | 'csv'; orderId?: string; note?: string }): Promise<Purchase> {
+export async function grantManual(args: { email: string; plan?: PlanId | null; bump?: boolean; offers?: OfferId[]; bundles?: BundleId[]; source: 'manual' | 'csv'; orderId?: string; note?: string }): Promise<Purchase> {
   const email = normEmail(args.email)
   const now = new Date().toISOString()
   const orderId = args.orderId ?? `manual-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
@@ -174,7 +179,8 @@ export async function grantManual(args: { email: string; plan?: PlanId | null; b
     plan: args.plan ?? null,
     bump: !!args.bump,
     offers: args.offers ?? [],
-    entitlements: itemsFor(args.plan ?? null, !!args.bump, args.offers ?? []),
+    bundles: args.bundles ?? [],
+    entitlements: itemsFor(args.plan ?? null, !!args.bump, args.offers ?? [], args.bundles ?? [], await readyIds()),
     status: 'paid',
     source: args.source,
     amountCents: null,
@@ -186,7 +192,7 @@ export async function grantManual(args: { email: string; plan?: PlanId | null; b
     history: [{ status: 'paid', at: now }],
   }
   await saveOrder(p)
-  await logEvent({ name: args.source === 'csv' ? 'csv.grant' : 'manual.grant', origin: args.source, email, orderId, props: { plan: p.plan, bump: p.bump, offers: p.offers, note: args.note } })
+  await logEvent({ name: args.source === 'csv' ? 'csv.grant' : 'manual.grant', origin: args.source, email, orderId, props: { plan: p.plan, bump: p.bump, offers: p.offers, bundles: p.bundles, note: args.note } })
   return p
 }
 
@@ -211,18 +217,20 @@ export async function revokeManual(email: string, orderId?: string): Promise<num
 // ---- leitura para o app
 const planPower = (p: PlanId) => ENTITLEMENTS[p].length
 
-export function buildMe(email: string, purchases: Purchase[]): MeResponse {
+export function buildMe(email: string, purchases: Purchase[], ready: ReadonlySet<string> = new Set()): MeResponse {
   const paid = purchases.filter((p) => p.status === 'paid' && !p.needsReview)
   let plan: PlanId | null = null
   for (const p of paid) if (p.plan && (!plan || planPower(p.plan) > planPower(plan))) plan = p.plan
   const items = new Set<ItemId>()
-  for (const p of paid) for (const i of itemsFor(p.plan, p.bump, p.offers ?? [])) items.add(i)
+  for (const p of paid) for (const i of itemsFor(p.plan, p.bump, p.offers ?? [], p.bundles ?? [], ready)) items.add(i)
   const views: PurchaseView[] = purchases.map((p) => ({
     orderId: p.orderId,
     plan: p.plan,
     bump: p.bump,
     offers: p.offers ?? [],
-    entitlements: p.entitlements ?? itemsFor(p.plan, p.bump, p.offers ?? []),
+    bundles: p.bundles ?? [],
+    // o acesso real é recalculado a cada leitura: o snapshot guardado é só histórico, por isso aqui também resolvemos na hora
+    entitlements: itemsFor(p.plan, p.bump, p.offers ?? [], p.bundles ?? [], ready),
     status: p.status,
     source: p.source,
     createdAt: p.createdAt,
@@ -232,5 +240,5 @@ export function buildMe(email: string, purchases: Purchase[]): MeResponse {
 
 export async function meFor(email: string): Promise<MeResponse> {
   const e = normEmail(email)
-  return buildMe(e, await purchasesOf(e))
+  return buildMe(e, await purchasesOf(e), await readyIds())
 }
