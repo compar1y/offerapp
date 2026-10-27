@@ -6,6 +6,8 @@ Como ligar um botão de compra: criar o checkout na Wiapy, colar o link em `publ
 
 ## 1. Checkouts da Wiapy a criar
 
+Contagem real de ids em `public/checkouts.json`: **25** = 23 ofertas (17 na biblioteca + 6 fora da biblioteca, só para entrega e webhook) + combo + bump. As coleções foram removidas do app. Para lançar a biblioteca bastam 19 checkouts (17 ofertas + combo + bump).
+
 ### 1.1 Order bump
 
 | id em `checkouts.json` | Produto | Preço | Feito (link colado) | `ready` |
@@ -20,17 +22,8 @@ Como ligar um botão de compra: criar o checkout na Wiapy, colar o link em `publ
 
 "ou 12x" só aparece se `COMBO.comboInstallments = 12`; ligar depois que o Caixa confirmar o parcelamento na Wiapy.
 
-### 1.3 Coleções (preço = soma dos itens x 0,65, arredondado para o valor mais próximo terminado em ,00 ou ,90)
 
-| id | Coleção | Itens | Soma dos itens | Preço | Regra do botão | Feito | `ready` |
-|---|---|---|---|---|---|---|---|
-| `primeira-fornada` | Primeira Fornada | 2 | R$ 52,80 | R$ 34,00 | link + todos os itens prontos | [ ] | [ ] |
-| `panetone-confeitaria` | Panetone de Confeitaria | 3 | R$ 93,70 | R$ 60,90 | link + todos os itens prontos | [ ] | [ ] |
-| `ceia-completa` | Ceia Completa | 3 | R$ 88,90 | R$ 57,90 | link + todos os itens prontos | [ ] | [ ] |
-| `presentes-que-vendem` | Presentes que Vendem | 3 | R$ 111,90 | R$ 72,90 | link + todos os itens prontos | [ ] | [ ] |
-| `encomendas-dezembro` | Encomendas de Dezembro | 3 | R$ 131,00 | R$ 85,00 | link + todos os itens prontos | [ ] | [ ] |
-
-### 1.4 As 17 ofertas do catálogo
+### 1.3 As 17 ofertas do catálogo
 
 | # | id em `checkouts.json` | Oferta | Preço sugerido | Entregável | `wiapyProductId` (preencher em `shared/catalog.ts`) | Link colado | PDF/arquivo no armazenamento privado | `ready` |
 |---|---|---|---|---|---|---|---|---|
@@ -65,7 +58,7 @@ Observação: o preço no checkout deve ser igual ao do app. Para vender por out
 - [ ] WhatsApp de suporte: trocar o placeholder em `src/data/config.ts` (campo `whatsapp`) pelo número real (DDI + DDD + número, só dígitos).
 - [ ] Garantia de 7 dias: conferir o texto exibido no app contra o que está configurado em cada checkout da Wiapy.
 - [ ] Checkout das +20 Fichas de Socorro (R$ 7,90) como order bump do kit e/ou avulso (id `bump`).
-- [ ] Ligar o catálogo: `VITE_CATALOG_ENABLED=true` no build de produção e `COMBO.enabled` para a Biblioteca completa, SÓ quando o Levi mandar. Mínimos opcionais: `VITE_COMBO_MIN_AVAILABLE`, `VITE_COLLECTION_MIN_AVAILABLE`.
+- [ ] Ligar o catálogo: `VITE_CATALOG_ENABLED=true` no build de produção e `COMBO.enabled` para a Biblioteca completa, SÓ quando o Levi mandar. Mínimo opcional: `VITE_COMBO_MIN_AVAILABLE`.
 - [ ] Importar os clientes antigos (`POST /api/admin/import-csv`) e validar login, liberação e estorno com um pedido de teste real.
 - [ ] Vercel: produção usa o Build Command padrão (`npm run build`). Uma prévia de demonstração precisa de `npm run build:preview`. Atenção: editar `public/checkouts.json` na Vercel exige um novo deploy estático (sem rebuild de lógica).
 - [ ] Validar o primeiro deploy das funções da Vercel (limite de 12 funções no plano Hobby: já há 12).

@@ -2,8 +2,8 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { COPY, OFFER_BY_ID, shortTitle } from '../../shared/catalog'
 import { ComboSlot } from '../components/Combo'
-import { Collections } from '../components/System'
 import { Carousel, Layout, OfferMedia, Section } from '../components/ui'
+import { ProgressRing } from '../components/Game'
 import { buyUrl, catalogOffers } from '../lib/offers'
 import { themeStyle } from '../lib/theme'
 import { trackJourney, useStore } from '../lib/store'
@@ -15,7 +15,7 @@ const MARK: Record<StepView['state'], { sym: string; label: string }> = {
   locked: { sym: '○', label: 'Mais adiante' },
 }
 
-// Tela "Seu caminho": Trilhas (um carrossel por trilha, uma peça por produto), Para o seu caminho (coleções) e Biblioteca completa.
+// Tela "Seu caminho": Trilhas (um carrossel por trilha, uma peça por produto), e Biblioteca completa.
 // Nada é bloqueado: "mais adiante" só quer dizer que o material não está no seu acesso.
 export function Journey() {
   const s = useStore()
@@ -25,6 +25,14 @@ export function Journey() {
     trackJourney(have)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  const doneSteps = (tv: (typeof views)[number]) => tv.steps.filter((x) => s.done[x.offer]).length
+  const stageLine = (tv: (typeof views)[number]): string => {
+    const done = tv.steps.filter((x) => s.done[x.offer])
+    if (done.length === 0) return ''
+    const next = tv.steps.find((x) => !s.done[x.offer] && x.state === 'owned') ?? tv.steps.find((x) => !s.done[x.offer])
+    const last = shortTitle(done[done.length - 1].offer)
+    return next ? `Etapa concluída: ${last}. Próxima: ${shortTitle(next.offer)}.` : `Etapa concluída: ${last}. Trilha completa!`
+  }
   const inCatalog = new Set(catalogOffers().map((o) => o.id))
   return (
     <Layout title="Seu caminho">
@@ -36,10 +44,20 @@ export function Journey() {
         <div className="journey">
           {views.map((tv) => (
             <section className="track" key={tv.track.id} aria-label={`Trilha ${tv.track.title}`}>
-              <h3 className="track-title">{tv.track.title}</h3>
-              <p className="track-sub">
-                {tv.track.tagline} · {tv.ownedCount} de {tv.steps.length}
-              </p>
+              <div className="track-head">
+                <ProgressRing pct={(doneSteps(tv) / tv.steps.length) * 100} size={52} label={`${doneSteps(tv)} de ${tv.steps.length} etapas feitas na trilha ${tv.track.title}`}>
+                  <small>
+                    {doneSteps(tv)}/{tv.steps.length}
+                  </small>
+                </ProgressRing>
+                <div>
+                  <h3 className="track-title">{tv.track.title}</h3>
+                  <p className="track-sub">
+                    {tv.track.tagline} · {tv.ownedCount} de {tv.steps.length}
+                  </p>
+                </div>
+              </div>
+              {stageLine(tv) && <p className="stage-line">{stageLine(tv)}</p>}
               <Carousel label={`Trilha ${tv.track.title}`}>
                 {tv.steps.map((st) => {
                   const o = OFFER_BY_ID[st.offer]
@@ -75,7 +93,6 @@ export function Journey() {
           ))}
         </div>
       </Section>
-      <Collections from="journey" />
       <ComboSlot prominent={leveTudoProminent(s)} />
     </Layout>
   )

@@ -17,7 +17,7 @@ export interface Purchase {
   plan: PlanId | null
   bump: boolean
   offers: OfferId[]
-  // direitos de combo/coleção ('combo' ou id da coleção). Os produtos são resolvidos na leitura (buildMe), só os prontos (available)
+  // direito do combo ('combo'). Os produtos são resolvidos na leitura (buildMe), só os prontos (available)
   bundles?: BundleId[]
   // snapshot dos ids liberados por este pagamento (o acesso real é calculado na leitura, ver buildMe)
   entitlements: ItemId[]

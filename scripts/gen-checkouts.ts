@@ -14,12 +14,12 @@ if (!existsSync(pub)) {
   console.log('criado public/checkouts.json (tudo ready:false)')
 } else console.log('public/checkouts.json já existe: não mexi')
 
-// exemplo: 12 das 17 ofertas prontas (passa do mínimo de 10 do Leve tudo) + combo + a coleção Primeira fornada + bump, com link; o resto sem link
+// exemplo: 12 das 17 ofertas prontas (passa do mínimo de 10 da Biblioteca completa) + combo + bump, com link; o resto sem link
 const example: Record<string, { checkoutUrl: string; ready: boolean }> = {}
 const offerIds: string[] = OFFERS.filter((o) => o.catalog).map((o) => o.id)
 CHECKOUT_IDS.forEach((id) => {
   const idx = offerIds.indexOf(id)
-  const on = (idx >= 0 && idx < 12) || id === 'combo' || id === 'bump' || id === 'primeira-fornada'
+  const on = (idx >= 0 && idx < 12) || id === 'combo' || id === 'bump'
   example[id] = { checkoutUrl: on ? `https://pay.exemplo.test/${id}` : '', ready: on }
 })
 await writeFile(ex, JSON.stringify(example, null, 2) + '\n')

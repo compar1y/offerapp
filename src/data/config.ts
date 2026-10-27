@@ -43,11 +43,10 @@ function demoOffersOn(): boolean {
 }
 if (demoOffersOn()) for (const o of OFFERS) o.enabled = true
 
-// ---- gate do "Leve tudo" e das coleções (ver shared/catalog.ts: comboGate, collectionGate)
-// Mínimo de itens prontos (available) para mostrar o botão de compra. Vazio/inválido = padrão (combo 10; coleção = todos os itens dela).
+// ---- gate da Biblioteca completa (ver shared/catalog.ts: comboGate)
+// Mínimo de itens prontos (available) para mostrar o botão de compra. Vazio/inválido = padrão (10).
 const minFromEnv = (v: unknown): number | null => {
   const n = Number(v)
   return v !== undefined && v !== '' && Number.isFinite(n) && n >= 1 ? Math.floor(n) : null
 }
 export const COMBO_MIN_AVAILABLE: number | null = minFromEnv(import.meta.env.VITE_COMBO_MIN_AVAILABLE)
-export const COLLECTION_MIN_AVAILABLE: number | null = minFromEnv(import.meta.env.VITE_COLLECTION_MIN_AVAILABLE)

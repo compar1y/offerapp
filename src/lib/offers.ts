@@ -41,7 +41,7 @@ export function unseenOffers(s: State): Offer[] {
   return catalogOffers().filter((o) => o.badgeNew && !s.viewed[o.id] && !owns(s, o.id))
 }
 
-// direitos de combo/coleção que a cliente já pagou (vêm do /api/me) e os itens deles que ainda não saíram.
+// direito do combo que a cliente já pagou (vêm do /api/me) e os itens deles que ainda não saíram.
 // Esses itens entram sozinhos quando `available` virar true: o app só mostra o aviso.
 export { buyUrl, isReady }
 export const ownedBundles = (s: State): BundleId[] => {

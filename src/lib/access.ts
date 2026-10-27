@@ -5,7 +5,7 @@
 import { DEMO_CODE, PREVIEW } from '../data/config'
 import { itemsFor, type ItemId, type MeResponse, type PlanId, type PurchaseView } from '../../shared/catalog'
 
-export type AppEventName = 'offer.click' | 'offer.dismiss' | 'offer.interest' | 'offer.view' | 'catalog.view' | 'combo.view' | 'combo.spin' | 'combo.click' | 'combo.interest' | 'journey.view' | 'hook.click' | 'collection.view' | 'collection.click' | 'collection.interest' | 'item.done' | 'item.undone'
+export type AppEventName = 'offer.click' | 'offer.dismiss' | 'offer.interest' | 'offer.view' | 'catalog.view' | 'combo.view' | 'combo.spin' | 'combo.click' | 'combo.interest' | 'journey.view' | 'hook.click' | 'item.done' | 'item.undone'
 
 export interface Result {
   ok: boolean

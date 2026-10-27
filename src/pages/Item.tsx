@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { COPY, ITEM_BY_ID, OFFER_BY_ID, fileKey, offerCopy, type FileEntry, type ItemId } from '../../shared/catalog'
 import { MOCKUPS } from '../data/images'
@@ -10,6 +10,8 @@ import { lockInfo, noKitInfo } from '../lib/lock'
 import { themeStyle } from '../lib/theme'
 import { bumpContextOf, contextOf } from '../lib/context'
 import { Section } from '../components/ui'
+import { ContaPanel, FornadaPanel, IngredientChecklist, SocorroPanel, StarButton } from '../components/Game'
+import { gameDone, markLastItem } from '../lib/game'
 import { HookBox, OfferBullets, OfferStack, Testimonials, TrackLine } from '../components/System'
 
 const KIND_LABEL = { pdf: 'PDF', txt: 'Texto (TXT)', docx: 'Word (DOCX)', xlsx: 'Planilha (Excel)' }
@@ -19,6 +21,10 @@ export function Item() {
   const s = useStore()
   const [msg, setMsg] = useState('')
   const item = id ? ITEM_BY_ID[id as ItemId] : undefined
+  const mineId = item && owns(s, item.id) && item.id !== 'bump' ? item.id : null
+  useEffect(() => {
+    if (mineId) markLastItem(mineId)
+  }, [mineId])
   if (!item) return <Navigate to="/" replace />
   const unlocked = owns(s, item.id)
   const lock = lockInfo()
@@ -44,7 +50,7 @@ export function Item() {
         <div className={`detail-media ${unlocked || inKit ? '' : 'detail-locked'}`}>
           {offer ? <OfferMedia offer={offer} className="pic-detail" /> : mock ? <Picture img={mock} className="pic-detail" lazy={false} /> : null}
           {!unlocked && !inKit && (
-            <span className="lock-badge lock-big" aria-label="Bloqueado">
+            <span className="lock-badge lock-big" aria-label={COPY.button.locked}>
               🔒
             </span>
           )}
@@ -53,13 +59,14 @@ export function Item() {
           <span className={unlocked || inKit ? 'tag' : 'tag tag-buy'}>{unlocked ? `${item.badge} · NO SEU KIT` : item.badge}</span>
           {offer && <DeliverableChip offer={offer} />}
           <h1>{item.title}</h1>
+          {unlocked && item.id !== 'bump' && <StarButton item={item.id} />}
           {offer && !unlocked && (
             <>
               {offerCopy(offer.id).question && <p className="ask">{offerCopy(offer.id).question}</p>}
               <Context ctx={contextOf(s, offer.id)} />
               <p className="lead">{offerCopy(offer.id).cardLine}</p>
               <Price offer={offer} soon={!buyUrl(offer.id)} big />
-              <OfferAction offer={offer} from="detail" variant="detail" />
+              <OfferAction offer={offer} from="detail" />
             </>
           )}
           {offer && unlocked && <p className="lead">{item.description}</p>}
@@ -108,8 +115,17 @@ export function Item() {
               {msg}
             </p>
           )}
+          {(inKit || !!offer) && item.id !== 'bonus-07' && <IngredientChecklist item={item.id} />}
           {(inKit || !!offer) && (
-            <button className={`btn btn-block ${s.done[item.id] ? 'btn-done' : 'btn-secondary'}`} aria-pressed={!!s.done[item.id]} onClick={() => toggleDone(item.id)}>
+            <button
+              className={`btn btn-block ${s.done[item.id] ? 'btn-done' : 'btn-secondary'}`}
+              aria-pressed={!!s.done[item.id]}
+              onClick={() => {
+                const was = !!s.done[item.id]
+                toggleDone(item.id)
+                if (!was) gameDone(item.id)
+              }}
+            >
               {s.done[item.id] ? 'Fiz essa ✓ (toque para desmarcar)' : 'Fiz essa'}
             </button>
           )}
@@ -144,8 +160,8 @@ export function Item() {
             <TrackLine id={offer.id} />
             <HookBox id={offer.id} where="detail" />
           </section>
-          <section className="sec" aria-label="Quero isso">
-            <OfferAction offer={offer} from="detail-end" variant="detail" />
+          <section className="sec" aria-label="Desbloquear">
+            <OfferAction offer={offer} from="detail-end" />
             <p className="hint">Pagamento único no checkout da Wiapy. Nada é cobrado ao tocar em outros botões do app.</p>
           </section>
         </>
@@ -161,8 +177,8 @@ export function Item() {
               <span>{lock.buyable ? COPY.price.once : COPY.price.planned}</span>
             </p>
             {lock.buyable ? (
-              <a className="btn btn-buy btn-block btn-want" href={lock.href} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', 'bump', 'detail')}>
-                {COPY.button.detail} · {lock.price}
+              <a className="btn btn-buy btn-block btn-want btn-pulse" href={lock.href} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', 'bump', 'detail')}>
+                {lock.buy}
               </a>
             ) : s.interested.bump ? (
               <p className="demo-note" role="status">
@@ -179,6 +195,9 @@ export function Item() {
         </section>
       )}
 
+      {unlocked && (inKit || !!offer) && s.done[item.id] && <FornadaPanel item={item.id} />}
+      {unlocked && item.id === 'bonus-07' && <ContaPanel />}
+      {unlocked && item.id === 'bump' && <SocorroPanel />}
       {offer && unlocked && <HookBox id={offer.id} where="detail" />}
       {footer && <OfferBlock offer={footer} from="item-footer" />}
       </div>

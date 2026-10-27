@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { COPY, brl } from '../../shared/catalog'
+import { COPY, brl, unlockPrice } from '../../shared/catalog'
 import { owns, trackCombo, useStore } from '../lib/store'
 import { comboView, pendingFromBundles, type ComboView } from '../lib/offers'
 import { OfferMedia } from './ui'
@@ -68,12 +68,14 @@ function ComboCard({ v, from }: { v: ComboView; from: string }) {
         </p>
       ) : null}
       {v.buyable && v.checkoutUrl ? (
-        <a className="btn btn-buy btn-block" href={v.checkoutUrl} target="_blank" rel="noreferrer" onClick={() => trackCombo('combo.click', from)}>
-          {COPY.button.combo}
+        <a className="btn btn-buy btn-block btn-pulse" href={v.checkoutUrl} target="_blank" rel="noreferrer" onClick={() => trackCombo('combo.click', from)}>
+          {COPY.button.unlockAll(unlockPrice(v.priceCents ?? 0))}
         </a>
       ) : (
         <>
-          <p className="v-soon">{COPY.button.soon}</p>
+          <button className="btn btn-block btn-soon" disabled>
+            {COPY.button.soon}
+          </button>
           <button className={`btn btn-block ${s.comboInterest ? 'btn-done' : 'btn-secondary'}`} disabled={s.comboInterest} onClick={() => trackCombo('combo.interest', from)}>
             {s.comboInterest ? COPY.button.notified : COPY.button.notify}
           </button>

@@ -4,7 +4,7 @@
 import { loadCheckouts, subscribeCheckouts } from './checkouts'
 import { useSyncExternalStore } from 'react'
 import { provider, getDemoFlags, setDemoFlags, type OpenFileResult } from './access'
-import { ITEM_BY_ID, findFile, type CollectionId, type ItemId, type MeResponse, type OfferId } from '../../shared/catalog'
+import { ITEM_BY_ID, findFile, type ItemId, type MeResponse, type OfferId } from '../../shared/catalog'
 
 export interface State {
   ready: boolean
@@ -23,8 +23,6 @@ export interface State {
   // combo "Leve tudo": já girou a roleta / já pediu aviso
   comboSpun: boolean
   comboInterest: boolean
-  // coleções em que a cliente pediu aviso
-  collectionInterest: Partial<Record<CollectionId, boolean>>
   demoBump: boolean
   demoOffers: boolean
   demoHave: number
@@ -32,8 +30,8 @@ export interface State {
 
 const UI_KEY = 'panetone-app:v2'
 
-type UiState = Pick<State, 'welcomed' | 'seen' | 'done' | 'dismissed' | 'interested' | 'viewed' | 'comboSpun' | 'comboInterest' | 'collectionInterest'>
-const UI_EMPTY: UiState = { welcomed: false, seen: {}, done: {}, dismissed: {}, interested: {}, viewed: {}, comboSpun: false, comboInterest: false, collectionInterest: {} }
+type UiState = Pick<State, 'welcomed' | 'seen' | 'done' | 'dismissed' | 'interested' | 'viewed' | 'comboSpun' | 'comboInterest'>
+const UI_EMPTY: UiState = { welcomed: false, seen: {}, done: {}, dismissed: {}, interested: {}, viewed: {}, comboSpun: false, comboInterest: false }
 
 function loadUi(): UiState {
   try {
@@ -47,7 +45,7 @@ function loadUi(): UiState {
 
 function saveUi() {
   try {
-    localStorage.setItem(UI_KEY, JSON.stringify({ welcomed: state.welcomed, seen: state.seen, done: state.done, dismissed: state.dismissed, interested: state.interested, viewed: state.viewed, comboSpun: state.comboSpun, comboInterest: state.comboInterest, collectionInterest: state.collectionInterest }))
+    localStorage.setItem(UI_KEY, JSON.stringify({ welcomed: state.welcomed, seen: state.seen, done: state.done, dismissed: state.dismissed, interested: state.interested, viewed: state.viewed, comboSpun: state.comboSpun, comboInterest: state.comboInterest }))
   } catch {
     /* segue em memória */
   }
@@ -60,6 +58,8 @@ function set(patch: Partial<State>) {
   state = { ...state, ...patch }
   listeners.forEach((l) => l())
 }
+
+export const getState = (): State => state
 
 export function useStore(): State {
   return useSyncExternalStore(
@@ -183,7 +183,7 @@ export function trackCombo(name: 'combo.view' | 'combo.spin' | 'combo.click' | '
   void provider.trackEvent(name, { from }).catch(() => undefined)
 }
 
-// sistema de catálogo: mapa "Seu caminho", ganchos e coleções. Só registram, nunca bloqueiam.
+// sistema de catálogo: mapa "Seu caminho" e ganchos. Só registram, nunca bloqueiam.
 export function trackJourney(count: number) {
   void provider.trackEvent('journey.view', { count: String(count) }).catch(() => undefined)
 }
@@ -192,14 +192,6 @@ export function trackHook(fromItem: string, to: OfferId, where: string) {
   void provider.trackEvent('hook.click', { itemId: fromItem, to, from: where }).catch(() => undefined)
 }
 
-export function trackCollection(name: 'collection.view' | 'collection.click' | 'collection.interest', id: CollectionId, from: string) {
-  if (name === 'collection.interest') {
-    state = { ...state, collectionInterest: { ...state.collectionInterest, [id]: true } }
-    saveUi()
-    set({})
-  }
-  void provider.trackEvent(name, { collectionId: id, from }).catch(() => undefined)
-}
 
 // só no modo demonstração. Ligar/desligar as ofertas recarrega a página (OFFERS é lida ao iniciar o app).
 export async function changeDemo(patch: Partial<{ bump: boolean; offers: boolean; have: number }>) {

@@ -1,6 +1,6 @@
-// Lê o MESMO public/checkouts.json que o app (campo ready de cada id) para resolver os direitos de combo/coleção na leitura (/api/me).
+// Lê o MESMO public/checkouts.json que o app (campo ready de cada id) para resolver os direitos de combo na leitura (/api/me).
 // CHECKOUTS_FILE troca o caminho (opcional). O resultado fica em memória por CHECKOUTS_CACHE_MS (padrão 30 s; 0 = sempre relê).
-// Arquivo ausente ou inválido = nada pronto (os itens de combo/coleção só entram quando o arquivo disser ready:true).
+// Arquivo ausente ou inválido = nada pronto (os itens do combo só entram quando o arquivo disser ready:true).
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parseCheckouts, readyIdsOf, type CheckoutMap } from '../shared/catalog.js'

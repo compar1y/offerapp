@@ -1117,7 +1117,7 @@ export const OFFER_VISUAL: Partial<Record<OfferId, OfferVisual>> = {
   'rabanada-padaria': vis('#A8501B', '#A8501B', '#F4C27A', '#FFF4E0', 'Rye', 400, 'display', 'Merriweather Sans'),
   'doces-para-revender': vis('#00796B', '#00796B', '#FF7043', '#F1FAF8', 'Poppins', 800, 'sans', 'Open Sans'),
 }
-// nome curto para mapa, coleções e ganchos (o título completo é longo para caber numa etapa do mapa)
+// nome curto para mapa e ganchos (o título completo é longo para caber numa etapa do mapa)
 const SHORT: Partial<Record<OfferId, string>> = {
   'panetones-vulcao': 'Panetones Vulcão',
   'panetones-vitrine': 'Panetones de Vitrine',
@@ -1155,7 +1155,7 @@ export const titleFontUrl = (v: OfferVisual): string =>
 // valor somado dos itens da pilha: preço do produto + valor de cada bônus (calculado). Só é comparativo; o rótulo na tela é sempre "valor somado dos itens".
 export const offerValueFromCents = (o: Offer): number => o.priceCents + (o.bonus ?? []).reduce((t, b) => t + b.valueCents, 0)
 
-// ---- CATÁLOGO COMO SISTEMA (OFERTAS-MAPA-DE-COMBINACOES.md): trilhas, ganchos e coleções.
+// ---- CATÁLOGO COMO SISTEMA (OFERTAS-MAPA-DE-COMBINACOES.md): trilhas e ganchos.
 // Regras: a compra nunca é bloqueada (a trilha só orienta e destaca o próximo passo); sem relógio, sem escassez, sem número de ganho.
 
 export type TrackId = 'aprender' | 'ceia' | 'vender' | 'temporadas'
@@ -1234,64 +1234,7 @@ export const HOOKS: Hook[] = [
 export const hooksFrom = (id: ItemId): Hook[] => HOOKS.filter((h) => h.from === id)
 export const hookBetween = (from: ItemId, to: ItemId): Hook | undefined => HOOKS.find((h) => h.from === from && h.to === to)
 
-// COLEÇÕES por objetivo. Preço = regra (soma dos itens x 0,65, arredondada para ,00 ou ,90) ou override manual opcional.
-export type CollectionId = 'primeira-fornada' | 'panetone-confeitaria' | 'ceia-completa' | 'presentes-que-vendem' | 'encomendas-dezembro'
-
-export interface Collection {
-  id: CollectionId
-  title: string
-  goal: string
-  items: OfferId[]
-  // preço manual (opcional, em centavos). Sem override, o preço é calculado pela regra collectionPriceByRule (soma dos itens x 0,65)
-  collectionPriceOverrideCents: number | null
-  // mínimo de itens prontos para mostrar o botão de compra. null = todos os itens da coleção. Env: VITE_COLLECTION_MIN_AVAILABLE
-  minAvailable: number | null
-  // TODO Caixa: id do produto/checkout da coleção na Wiapy (libera todos os itens quando o webhook reconhecer)
-  wiapyProductId: string
-}
-
-// "Primeira fornada" é a coleção de entrada (ticket baixo)
-export const COLLECTIONS: Collection[] = [
-  { id: 'primeira-fornada', title: 'Primeira Fornada', goal: 'Para começar: o panetone com recheio e a rabanada', items: ['panetones-vulcao', 'rabanada-padaria'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
-  { id: 'panetone-confeitaria', title: 'Panetone de Confeitaria', goal: 'Do recheio ao acabamento de vitrine', items: ['panetones-vulcao', 'segredo-recheios', 'panetones-vitrine'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
-  { id: 'ceia-completa', title: 'Ceia Completa', goal: 'A mesa doce de Natal do começo ao fim', items: ['sobremesas-natal', 'ceia-doce', 'rabanada-padaria'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
-  { id: 'presentes-que-vendem', title: 'Presentes que Vendem', goal: 'Caixas, minis e divulgação para oferecer de presente', items: ['caixas-doces-natal', 'mini-panetones', 'doces-para-revender'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
-  { id: 'encomendas-dezembro', title: 'Encomendas de Dezembro', goal: 'Receitas, caixas e divulgação para a temporada', items: ['receitas-explodir-vendas', 'caixas-doces-natal', 'doces-para-revender'], collectionPriceOverrideCents: null, minAvailable: null, wiapyProductId: '' },
-]
-export const COLLECTION_BY_ID = Object.fromEntries(COLLECTIONS.map((c) => [c.id, c])) as Record<CollectionId, Collection>
-export const isCollectionId = (x: unknown): x is CollectionId => typeof x === 'string' && x in COLLECTION_BY_ID
-
-// soma dos preços dos itens (calculada). Riscada na tela só quando o preço da coleção é menor, sempre com o rótulo "soma dos itens".
-export const collectionSumCents = (c: Collection): number => c.items.reduce((t, id) => t + OFFER_BY_ID[id].priceCents, 0)
-// "Faltam N": itens da coleção que o cliente ainda não tem (pelos entitlements)
-export const collectionMissing = (c: Collection, owned: readonly string[]): OfferId[] => c.items.filter((id) => !owned.includes(id))
-
-// ---- preço da coleção por regra
-// Regra: soma dos itens x 0,65 (35% menos), arredondada para o valor MAIS PRÓXIMO terminado em ,00 ou ,90. Empate vai para BAIXO.
-// Função pura em centavos inteiros (sem ponto flutuante): compara as distâncias em centésimos de centavo (soma x 65).
-export const COLLECTION_DISCOUNT_FACTOR = 0.65
-export function roundToNiceCents(sumCents: number): number {
-  const scaled = Math.round(sumCents) * 65 // alvo em centésimos de centavo: sumCents x 0,65 x 100
-  const base = Math.floor(scaled / 10000) // reais inteiros do alvo
-  let best = -1
-  let bestDist = Infinity
-  for (let r = Math.max(0, base - 1); r <= base + 1; r++) {
-    for (const end of [0, 90]) {
-      const cand = r * 100 + end
-      const dist = Math.abs(cand * 100 - scaled)
-      if (dist < bestDist) {
-        best = cand
-        bestDist = dist
-      } // empate: mantém o primeiro (o menor), então vai para baixo
-    }
-  }
-  return best
-}
-export const collectionPriceByRule = (c: Collection): number => roundToNiceCents(collectionSumCents(c))
-// preço final da coleção: override manual (se houver) ou a regra
-export const collectionPrice = (c: Collection): number => (c.collectionPriceOverrideCents && c.collectionPriceOverrideCents > 0 ? c.collectionPriceOverrideCents : collectionPriceByRule(c))
-
-// ---- prontos hoje e gate de compra (combo e coleções)
+// ---- prontos hoje e gate de compra da Biblioteca completa (combo)
 // "Pronto" vem de UMA fonte: public/checkouts.json (campo ready de cada id), lido em runtime pelo app e pelo servidor.
 export const comboItemIds = (): OfferId[] => comboOffers().map((o) => o.id)
 export const readyCount = (ids: readonly OfferId[], ready: ReadonlySet<string>): number => ids.filter((id) => ready.has(id)).length
@@ -1313,18 +1256,12 @@ export const comboGate = (map: CheckoutMap, minOverride?: number | null): Gate =
   const r = readyCount(ids, readyIdsOf(map))
   return { ready: r, total: ids.length, min, open: gateOpen(buyUrlOf(map, 'combo'), r, min) }
 }
-export const collectionGate = (c: Collection, map: CheckoutMap, minOverride?: number | null): Gate => {
-  const min = effectiveMin(minOverride ?? c.minAvailable, c.items.length)
-  const r = readyCount(c.items, readyIdsOf(map))
-  return { ready: r, total: c.items.length, min, open: gateOpen(buyUrlOf(map, c.id), r, min) }
-}
-
-// ---- direitos de combo/coleção (BUNDLES)
-// Comprar o "Leve tudo" ou uma coleção grava um DIREITO (o id do bundle), não uma lista fixa de produtos. A lista é resolvida na LEITURA (/api/me):
+// ---- direito da Biblioteca completa (BUNDLE)
+// Comprar a Biblioteca completa grava um DIREITO (o id do bundle 'combo'), não uma lista fixa de produtos. A lista é resolvida na LEITURA (/api/me):
 // libera na hora os itens ligados (enabled) E prontos (ready no checkouts.json). Os que ainda não saíram entram sozinhos quando ready virar true.
-export type BundleId = 'combo' | CollectionId
-export const isBundleId = (x: unknown): x is BundleId => x === 'combo' || isCollectionId(x)
-const bundleIds = (bundle: BundleId): OfferId[] => (bundle === 'combo' ? comboItemIds() : COLLECTION_BY_ID[bundle].items)
+export type BundleId = 'combo'
+export const isBundleId = (x: unknown): x is BundleId => x === 'combo'
+const bundleIds = (bundle: BundleId): OfferId[] => (bundle === 'combo' ? comboItemIds() : [])
 export function bundleItems(bundle: BundleId, ready: ReadonlySet<string>): OfferId[] {
   return bundleIds(bundle).filter((id) => OFFER_BY_ID[id].enabled && ready.has(id))
 }
@@ -1418,8 +1355,8 @@ export const BUMP: Bump = {
 // UM arquivo, por id: { "<id>": { "checkoutUrl": "https://...", "ready": true, "price": 3790 } }
 //   checkoutUrl : link do checkout Wiapy (https). Vazio = sem compra.
 //   ready       : true = o produto está entregue/publicado. Só com ready:true E link o botão vira "Comprar".
-//                 Também é o "available" do gate do combo/coleções e libera os itens já pagos por combo/coleção.
-//   price       : opcional, em centavos. Troca o preço mostrado (oferta, bump, combo ou coleção). A soma riscada continua calculada.
+//                 Também é o "available" do gate do combo e libera os itens já pagos pelo combo.
+//   price       : opcional, em centavos. Troca o preço mostrado (oferta, bump ou combo). A soma riscada continua calculada.
 // O app lê o arquivo em runtime (fetch sem cache) e o servidor lê a mesma cópia: trocar o arquivo não exige mexer no código.
 export interface CheckoutEntry {
   checkoutUrl: string
@@ -1427,7 +1364,7 @@ export interface CheckoutEntry {
   price?: number
 }
 export type CheckoutMap = Record<string, CheckoutEntry>
-export const CHECKOUT_IDS: string[] = [...OFFER_IDS, 'combo', ...COLLECTIONS.map((c) => c.id), 'bump']
+export const CHECKOUT_IDS: string[] = [...OFFER_IDS, 'combo', 'bump']
 const isCheckoutId = (id: string): boolean => CHECKOUT_IDS.includes(id)
 
 // valida o que vier do arquivo: só ids conhecidos, só https, ready precisa ser exatamente true, price inteiro positivo
@@ -1452,18 +1389,16 @@ export const buyUrlOf = (map: CheckoutMap, id: string): string | null => {
 }
 
 // preços do arquivo (opcional): aplica sobre os dados e volta ao valor base quando o campo some
-let basePrices: { offers: Record<string, number>; bump: number; combo: number | null; collections: Record<string, number | null> } | null = null
+let basePrices: { offers: Record<string, number>; bump: number; combo: number | null } | null = null
 export function applyCheckoutPrices(map: CheckoutMap): void {
   basePrices ??= {
     offers: Object.fromEntries(OFFERS.map((o) => [o.id, o.priceCents])),
     bump: BUMP.priceCents,
     combo: COMBO.comboPriceCents,
-    collections: Object.fromEntries(COLLECTIONS.map((c) => [c.id, c.collectionPriceOverrideCents])),
   }
   for (const o of OFFERS) o.priceCents = map[o.id]?.price ?? basePrices.offers[o.id]
   BUMP.priceCents = map.bump?.price ?? basePrices.bump
   COMBO.comboPriceCents = map.combo?.price ?? basePrices.combo
-  for (const c of COLLECTIONS) c.collectionPriceOverrideCents = map[c.id]?.price ?? basePrices.collections[c.id]
 }
 
 export function itemsFor(plan: PlanId | null, hasBump: boolean, offers: string[] = [], bundles: string[] = [], ready: ReadonlySet<string> = new Set()): ItemId[] {
@@ -1477,6 +1412,8 @@ export function itemsFor(plan: PlanId | null, hasBump: boolean, offers: string[]
 export function brl(cents: number): string {
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
+// preço no botão: sem os centavos quando são ,00 (R$ 97); com centavos nos demais (R$ 27,90)
+export const unlockPrice = (cents: number): string => brl(cents).replace(/,00$/, '')
 
 // Lista PADRÃO de checkouts que liberam o kit completo (a variável FULL_KIT_CHECKOUT_IDS do servidor sobrescreve).
 // Contém o código público e o id interno do MESMO checkout R$ 37,90.
@@ -1492,7 +1429,7 @@ export interface PurchaseView {
   plan: PlanId | null
   bump: boolean
   offers?: OfferId[]
-  // direitos de combo/coleção comprados neste pagamento ('combo' ou o id da coleção). Os itens são resolvidos na leitura.
+  // direito da Biblioteca completa comprado neste pagamento ('combo'). Os itens são resolvidos na leitura.
   bundles?: BundleId[]
   // ids de produto liberados por ESTE pagamento (kit, bump, ofertas). Estorno/chargeback revoga só estes.
   entitlements?: ItemId[]
@@ -1533,38 +1470,33 @@ export interface OfferCopy {
 }
 
 export const COPY = {
-  nav: { home: 'Início', library: 'Biblioteca', journey: 'Seu caminho', account: 'Conta' },
+  nav: { home: 'Início', library: 'Biblioteca', journey: 'Seu caminho', game: 'Fornada', account: 'Conta' },
   library: {
     title: 'Biblioteca',
     lead: 'Materiais para o seu próximo passo na cozinha. Você escolhe quando. Nada é cobrado ao abrir.',
   },
   sections: {
     forYou: 'Para você',
-    collections: 'Para o seu caminho',
-    collectionsLead: 'Materiais que andam juntos. Pegue um por um ou a coleção inteira, como fizer mais sentido.',
-    all: 'Todos os materiais',
-    allLead: 'A biblioteca inteira, na ordem em que costuma fazer sentido.',
     rescue: 'Para quando a massa não crescer',
     rescueLead: 'Se o panetone murchou, solou ou o recheio desandou, comece por aqui.',
     mine: 'Meus produtos',
   },
   button: {
-    card: 'Ver como ajuda', // cards e lista: leva ao detalhe, sem checkout
-    detail: 'Quero isso', // detalhe: leva ao checkout (com o preço ao lado)
-    collection: 'Quero esta coleção',
-    combo: 'Quero a biblioteca completa',
+    card: 'Ver como ajuda', // links de gancho ("O próximo passo natural"): levam ao detalhe
+    unlock: (price: string) => `Desbloquear por ${price}`, // card e detalhe, com checkout pronto: abre o checkout direto
+    unlockAll: (price: string) => `Desbloquear tudo por ${price}`, // Biblioteca completa
     comboSee: 'Ver a biblioteca completa',
     open: 'Acessar',
     soon: 'Disponível em breve',
     notify: 'Quero ser avisada',
     notified: 'Anotado ✓ Avisamos você',
+    locked: 'Bloqueado, desbloqueie para acessar', // texto acessível do cadeado 🔒 nos cards de material não adquirido
   },
   price: { once: 'pagamento único', planned: 'preço previsto', sum: 'valor somado dos itens' },
   context: {
     done: (title: string) => `Você marcou “${title}” como feita`,
     opened: (title: string) => `Você marcou “${title}” como visto`,
     trail: (track: string, n: number, total: number) => `Sua trilha “${track}”: ${n} de ${total}`,
-    collectionHave: (n: number, total: number) => `Você já tem ${n} de ${total} desta coleção`,
     nextStep: 'Seu próximo passo',
   },
   combo: {
@@ -1584,17 +1516,6 @@ export const COPY = {
     afterOpened: 'Se a massa deu trabalho, as fichas mostram por onde começar a corrigir.',
   },
 } as const
-
-export interface CollectionCopy {
-  need: string
-}
-export const COLLECTION_COPY: Record<CollectionId, CollectionCopy> = {
-  'primeira-fornada': { need: 'Para começar com o pé direito: um panetone de recheio marcante e uma rabanada de padaria.' },
-  'panetone-confeitaria': { need: 'Para quando você quer o panetone com cara de confeitaria, do recheio ao acabamento.' },
-  'ceia-completa': { need: 'Antes da ceia de Natal, a mesa doce pensada do começo ao fim.' },
-  'presentes-que-vendem': { need: 'Para quem quer presentear com caixas e minis, e depois contar isso para as pessoas.' },
-  'encomendas-dezembro': { need: 'Para quando as encomendas começarem a chegar e você quiser tudo no lugar.' },
-}
 
 export const OFFER_COPY: Partial<Record<OfferId, OfferCopy>> = {
   'panetones-vulcao': {

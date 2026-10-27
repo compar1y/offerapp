@@ -9,9 +9,12 @@ import { HomeOffers } from '../components/System'
 import { DifficultyForm } from '../components/DifficultyForm'
 import { WelcomeModal } from '../components/WelcomeModal'
 import { useEffect, useState } from 'react'
+import { GameEntry, WelcomeBack } from '../components/Game'
+import { useGame } from '../lib/game'
 
 export function Home() {
   const s = useStore()
+  const game = useGame()
   const { seen, total } = progress(s)
   const main = ITEM_BY_ID.main
   const bonuses = ITEMS.filter((i) => i.kind === 'bonus' && !i.extra)
@@ -46,6 +49,8 @@ export function Home() {
   const mineItems: Item[] = [main, ...bonuses, ...extra, ...(owns(s, 'bump') ? [bump] : []), ...mine.map((o) => ITEM_BY_ID[o.id])]
   const media = (i: Item) => (i.kind === 'offer' ? <OfferMedia offer={OFFER_BY_ID[i.id as keyof typeof OFFER_BY_ID]} className="pic-tile" /> : <Picture img={MOCKUPS[i.id as keyof typeof MOCKUPS]} className="pic-tile" lazy={i.id !== 'main'} />)
 
+  const favItems = mineItems.filter((i) => game.fav.includes(i.id))
+
   return (
     <Layout>
       <WelcomeModal />
@@ -77,10 +82,25 @@ export function Home() {
         )}
       </header>
 
+      {hasMain && <WelcomeBack />}
+      {hasMain && <GameEntry />}
+
       {hasMain && (
         <Section title="Meus produtos">
           <Carousel label="Meus produtos">
             {mineItems.map((i) => (
+              <div className="car-item car-tile" key={i.id}>
+                <ProductTile to={`/produto/${i.id}`} media={media(i)} title={i.title} state="Acessar" seen={!!s.seen[i.id]} />
+              </div>
+            ))}
+          </Carousel>
+        </Section>
+      )}
+
+      {hasMain && favItems.length > 0 && (
+        <Section title="Minhas favoritas">
+          <Carousel label="Minhas favoritas">
+            {favItems.map((i) => (
               <div className="car-item car-tile" key={i.id}>
                 <ProductTile to={`/produto/${i.id}`} media={media(i)} title={i.title} state="Acessar" seen={!!s.seen[i.id]} />
               </div>

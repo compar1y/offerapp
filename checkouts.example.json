@@ -95,26 +95,6 @@
     "checkoutUrl": "https://pay.exemplo.test/combo",
     "ready": true
   },
-  "primeira-fornada": {
-    "checkoutUrl": "https://pay.exemplo.test/primeira-fornada",
-    "ready": true
-  },
-  "panetone-confeitaria": {
-    "checkoutUrl": "",
-    "ready": false
-  },
-  "ceia-completa": {
-    "checkoutUrl": "",
-    "ready": false
-  },
-  "presentes-que-vendem": {
-    "checkoutUrl": "",
-    "ready": false
-  },
-  "encomendas-dezembro": {
-    "checkoutUrl": "",
-    "ready": false
-  },
   "bump": {
     "checkoutUrl": "https://pay.exemplo.test/bump",
     "ready": true

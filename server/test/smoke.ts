@@ -517,10 +517,10 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   ok('acesso imediato: webhook paid -> código -> sessão -> direito (kit, bump, oferta), espera neutra com limite, compra antiga não é revelada')
 }
 
-// SISTEMA DE CATÁLOGO: pilha de valor, bullets, depoimentos, trilhas, ganchos, coleções e eventos novos
+// SISTEMA DE CATÁLOGO: pilha de valor, bullets, depoimentos, trilhas, ganchos e eventos novos
 {
   const cat = await import('../../shared/catalog.js')
-  const { OFFERS: OF, OFFER_BY_ID: BY, TRACKS, HOOKS, COLLECTIONS, offerValueFromCents, collectionMissing, collectionSumCents, trackNext, hooksFrom, isCollectionId } = cat
+  const { OFFERS: OF, OFFER_BY_ID: BY, TRACKS, HOOKS, offerValueFromCents, trackNext, hooksFrom } = cat
   const tierS = OF.filter((o) => o.tierS)
   assert.equal(tierS.length, 10)
   // pilha de valor: 2 a 3 bônus, soma calculada (nunca digitada) e no máximo ~2,5x o preço
@@ -539,7 +539,6 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   const texts: string[] = []
   for (const o of tierS) texts.push(o.headline, o.promise, ...(o.bullets ?? []), ...o.stack!.steps, o.stack!.before, o.stack!.after, ...o.bonus!.map((b) => b.title))
   for (const h of HOOKS) texts.push(h.text)
-  for (const c of COLLECTIONS) texts.push(c.title, c.goal)
   for (const t of TRACKS) texts.push(t.title, t.tagline)
   const bad = /últim[ao]s? (unidades?|vagas?)|só hoje|acaba (hoje|em)|esgot|restam|mais pedida|preço antigo|faturamento|ganhe \d|R\$\s?\d[\d.,]*\s*(por|\/|ao)\s*(dia|mês|semana)|renda garantida|garantid[oa] de (lucro|renda|venda)/i
   for (const t of texts) assert.ok(!bad.test(t), `texto proibido: ${t}`)
@@ -552,22 +551,11 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.ok(has('panetones-vitrine', 'ceia-doce'), 'ponte Vitrine -> Ceia Doce')
   assert.ok(HOOKS.some((h) => h.kind === 'bridge'))
   assert.equal(hooksFrom('panetones-vulcao').length, 1)
-  assert.ok(TRACKS.some((t) => /Encomendas de dezembro/i.test(t.title) || /Encomendas de dezembro/i.test(t.tagline)) || COLLECTIONS.some((c) => c.title === 'Encomendas de Dezembro'))
+  assert.ok(TRACKS.some((t) => /Encomendas de dezembro/i.test(t.title) || /Encomendas de dezembro/i.test(t.tagline)))
   assert.ok(!texts.some((t) => /Lucro em dezembro/i.test(t)))
-  // coleções: 5, itens existem, Primeira Fornada = Vulcão + Rabanada, sem preço = sem compra
-  assert.equal(COLLECTIONS.length, 5)
-  assert.deepEqual(COLLECTIONS.find((c) => c.id === 'primeira-fornada')!.items, ['panetones-vulcao', 'rabanada-padaria'])
-  for (const c of COLLECTIONS) {
-    for (const id of c.items) assert.ok(BY[id], `coleção ${c.id}: ${id}`)
-    assert.equal(c.collectionPriceOverrideCents, null)
-    assert.equal(c.minAvailable, null)
-    assert.equal(collectionSumCents(c), c.items.reduce((t, id) => t + BY[id].priceCents, 0))
-  }
-  const pf = COLLECTIONS.find((c) => c.id === 'primeira-fornada')!
-  assert.deepEqual(collectionMissing(pf, ['panetones-vulcao']), ['rabanada-padaria'])
-  assert.deepEqual(collectionMissing(pf, ['panetones-vulcao', 'rabanada-padaria']), [])
-  assert.equal(isCollectionId('primeira-fornada'), true)
-  assert.equal(isCollectionId('x'), false)
+  // coleções foram removidas do app (ordem do Levi): nenhuma exportação de coleção no catálogo
+  assert.equal('COLLECTIONS' in cat, false)
+  assert.equal('collectionPrice' in cat, false)
   // próximo passo da trilha
   const aprender = TRACKS[0]
   assert.equal(trackNext(aprender, [])!.offer, aprender.steps[0].offer)
@@ -578,62 +566,26 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.equal((await ev({ name: 'hook.click', itemId: 'panetones-vulcao', to: 'segredo-recheios', from: 'detail' })).status, 200)
   assert.equal((await ev({ name: 'hook.click', itemId: 'panetones-vulcao', to: 'nao-existe' })).status, 400)
   assert.equal((await ev({ name: 'hook.click', to: 'segredo-recheios' })).status, 400)
-  for (const name of ['collection.view', 'collection.click', 'collection.interest']) {
-    assert.equal((await ev({ name, collectionId: 'primeira-fornada', from: 'catalog' })).status, 200, name)
-    assert.equal((await ev({ name, collectionId: 'nao-existe' })).status, 400, name)
-  }
+  assert.equal((await ev({ name: 'collection.view', collectionId: 'primeira-fornada' })).status, 400, 'evento de coleção não existe mais')
   assert.equal((await ev({ name: 'journey.view' }, {})).status, 401)
-  // webhook: coleção e "Leve tudo" liberam os itens (só com wiapyProductId configurado); vazio não libera nada
+  // webhook: a "Biblioteca completa" (combo) libera os itens (só com wiapyProductId configurado); vazio não libera nada
   const { detectOffers, detectBundles } = await import('../wiapy.js')
   const fake = (checkoutId: string) => parseWiapyPayload(payload({ id: 'x', status: 'paid', checkoutId, amount: 1000 }))
-  assert.deepEqual(detectBundles(fake('pid-colecao-teste')), [])
-  pf.wiapyProductId = 'pid-colecao-teste'
-  assert.deepEqual(detectBundles(fake('pid-colecao-teste')), ['primeira-fornada'], 'coleção comprada grava o direito da coleção')
-  assert.deepEqual(detectOffers(fake('pid-colecao-teste')), [], 'e não uma lista fixa de produtos')
-  pf.wiapyProductId = ''
+  assert.deepEqual(detectOffers(fake('pid-combo-teste')), [], 'o combo grava o direito, não uma lista fixa de produtos')
   COMBO.wiapyProductId = 'pid-combo-teste'
   assert.deepEqual(detectBundles(fake('pid-combo-teste')), ['combo'])
   COMBO.wiapyProductId = ''
   assert.deepEqual(detectBundles(fake('pid-combo-teste')), [])
   void cat
-  ok('sistema de catálogo: pilha de valor calculada, bullets 5-7, depoimentos vazios, trilhas/ganchos/pontes/coleções, eventos novos, coleção e combo gravam o direito pelo webhook, sem renda/escassez')
+  ok('sistema de catálogo: pilha de valor calculada, bullets 5-7, depoimentos vazios, trilhas/ganchos/pontes, eventos novos, combo grava o direito pelo webhook, sem renda/escassez')
 }
 
-// PREÇOS, GATE e DIREITOS de combo/coleção
+// PREÇOS, GATE e DIREITOS do combo (Biblioteca completa)
 {
   const C = await import('../../shared/catalog.js')
-  const { roundToNiceCents, collectionPrice, collectionPriceByRule, collectionSumCents, comboOffers, comboGate, collectionGate, effectiveMin, gateOpen, bundleItems, bundlePending, COLLECTIONS: COLS, DEFAULT_COMBO_MIN_AVAILABLE } = C
+  const { comboOffers, comboGate, effectiveMin, gateOpen, bundleItems, bundlePending, DEFAULT_COMBO_MIN_AVAILABLE } = C
   const { applyWiapyEvent } = await import('../purchases.js')
   void applyWiapyEvent
-  // regra: soma x 0,65, valor mais próximo terminado em ,00 ou ,90; empate para baixo
-  const table: [number, number][] = [[5280, 3400], [9370, 6090], [8890, 5790], [11190, 7290], [13100, 8500], [1300, 800], [300, 190], [100, 90], [0, 0]]
-  for (const [sum, want] of table) assert.equal(roundToNiceCents(sum), want, `soma ${sum}`)
-  assert.equal(roundToNiceCents(1300), 800, 'empate (8,45) vai para baixo: 8,00')
-  assert.equal(roundToNiceCents(300), 190, 'empate (1,95) vai para baixo: 1,90')
-  for (let sum = 0; sum <= 40000; sum += 10) {
-    const r = roundToNiceCents(sum)
-    assert.ok(r % 100 === 0 || r % 100 === 90, `termina em ,00 ou ,90: ${sum} -> ${r}`)
-    assert.ok(Math.abs(r - sum * 0.65) <= 50, `perto do alvo: ${sum} -> ${r}`)
-  }
-  const expected: Record<string, [number, number]> = {
-    'primeira-fornada': [5280, 3400],
-    'panetone-confeitaria': [9370, 6090],
-    'ceia-completa': [8890, 5790],
-    'presentes-que-vendem': [11190, 7290],
-    'encomendas-dezembro': [13100, 8500],
-  }
-  for (const c of COLS) {
-    assert.equal(collectionSumCents(c), expected[c.id][0], `soma ${c.id}`)
-    assert.equal(collectionPrice(c), expected[c.id][1], `preço ${c.id}`)
-    assert.ok(collectionPrice(c) < collectionSumCents(c), 'sempre abaixo da soma')
-  }
-  const pf = COLS[0]
-  pf.collectionPriceOverrideCents = 2990
-  assert.equal(collectionPrice(pf), 2990, 'override manual vence a regra')
-  assert.equal(collectionPriceByRule(pf), 3400, 'a regra segue calculável')
-  pf.collectionPriceOverrideCents = null
-  assert.equal(collectionPrice(pf), 3400)
-
   // combo: R$ 97,00 contra a soma das ofertas enabled do catálogo (nunca digitada)
   const items = comboOffers()
   assert.equal(items.length, 17)
@@ -686,21 +638,21 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.equal(buyUrlOf(pc, 'panetones-vitrine'), null, 'ready sem link: sem botão Comprar')
   assert.equal(buyUrlOf(parseCheckouts({ 'ceia-doce': { checkoutUrl: 'https://pay.exemplo.test/ok', ready: false } }), 'ceia-doce'), null, 'link sem ready: sem botão Comprar')
   assert.equal(buyUrlOf({}, 'combo'), null)
-  // ids do arquivo: as 23 ofertas, combo, 5 coleções e bump
-  assert.equal(CHECKOUT_IDS.length, OFFERS.length + 1 + COLS.length + 1)
-  assert.ok(CHECKOUT_IDS.includes('combo') && CHECKOUT_IDS.includes('bump') && COLS.every((c) => CHECKOUT_IDS.includes(c.id)))
+  // ids do arquivo: as 23 ofertas, combo e bump (25 checkouts; as coleções saíram)
+  assert.equal(CHECKOUT_IDS.length, OFFERS.length + 2)
+  assert.equal(CHECKOUT_IDS.length, 25)
+  assert.ok(CHECKOUT_IDS.includes('combo') && CHECKOUT_IDS.includes('bump'))
+  assert.ok(!CHECKOUT_IDS.includes('primeira-fornada'), 'sem coleções nos checkouts')
   // preços do arquivo: aplicam e voltam ao valor base quando o campo some
   const baseVulcao = OFFER_BY_ID['panetones-vulcao'].priceCents
-  applyCheckoutPrices(parseCheckouts({ 'panetones-vulcao': { checkoutUrl: '', ready: false, price: 2990 }, bump: { checkoutUrl: '', ready: false, price: 990 }, combo: { checkoutUrl: '', ready: false, price: 8900 }, 'primeira-fornada': { checkoutUrl: '', ready: false, price: 2900 } }))
+  applyCheckoutPrices(parseCheckouts({ 'panetones-vulcao': { checkoutUrl: '', ready: false, price: 2990 }, bump: { checkoutUrl: '', ready: false, price: 990 }, combo: { checkoutUrl: '', ready: false, price: 8900 } }))
   assert.equal(OFFER_BY_ID['panetones-vulcao'].priceCents, 2990)
   assert.equal(C.BUMP.priceCents, 990)
   assert.equal(C.COMBO.comboPriceCents, 8900)
-  assert.equal(collectionPrice(COLS[0]), 2900)
   applyCheckoutPrices({})
   assert.equal(OFFER_BY_ID['panetones-vulcao'].priceCents, baseVulcao)
   assert.equal(C.BUMP.priceCents, 790)
   assert.equal(C.COMBO.comboPriceCents, 9700)
-  assert.equal(collectionPrice(COLS[0]), 3400)
 
   // o public/checkouts.json que vai para produção: estrutura válida (ids conhecidos; ready:true exige link https). Não fixa o conteúdo.
   const real = JSON.parse(await readFile(new URL('../../public/checkouts.json', import.meta.url), 'utf8')) as Record<string, { checkoutUrl?: unknown; ready?: unknown; price?: unknown }>
@@ -716,10 +668,8 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.equal(CHECKOUT_IDS.every((id) => id in exMap), true)
   assert.equal(C.readyCount(items.map((o) => o.id), readyIdsOf(exMap)), 12)
   assert.equal(comboGate(exMap).open, true, 'exemplo: combo com link e 12 prontos abre')
-  assert.equal(collectionGate(COLS[0], exMap).open, true, 'exemplo: Primeira fornada (2 de 2) com link abre')
-  assert.equal(collectionGate(COLS[1], exMap).open, false, 'exemplo: coleção sem link não abre')
 
-  // gate (combo e coleções) pelo mapa
+  // gate do combo pelo mapa
   const ids = items.map((o) => o.id)
   const mapWith = (n: number, withLink = true, extra: Record<string, string> = {}) => {
     const m: Record<string, { checkoutUrl: string; ready: boolean }> = {}
@@ -738,20 +688,7 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.equal(effectiveMin(10, 7), 7, 'o mínimo nunca passa do total')
   assert.equal(effectiveMin(null, 3), 3)
   assert.equal(gateOpen(null, 99, 1), false)
-  // coleções: padrão = todos os itens
-  const cf = COLS[1]
-  const cmapWith = (n: number, link: string) => {
-    const m: Record<string, { checkoutUrl: string; ready: boolean }> = {}
-    for (const id of cf.items.slice(0, n)) m[id] = { checkoutUrl: '', ready: true }
-    m[cf.id] = { checkoutUrl: link, ready: true }
-    return parseCheckouts(m)
-  }
-  assert.deepEqual(collectionGate(cf, cmapWith(2, 'https://pay.exemplo.test/col')), { ready: 2, total: 3, min: 3, open: false })
-  assert.equal(collectionGate(cf, cmapWith(3, 'https://pay.exemplo.test/col')).open, true)
-  assert.equal(collectionGate(cf, cmapWith(2, 'https://pay.exemplo.test/col'), 2).open, true, 'COLLECTION_MIN_AVAILABLE configurável')
-  assert.equal(collectionGate(cf, cmapWith(3, '')).open, false, 'sem link: não abre')
-
-  // direitos: comprar o combo/coleção grava o direito; /api/me libera os prontos e os demais saem sozinhos quando available vira true
+  // direitos: comprar o combo grava o direito; /api/me libera os prontos e os demais saem sozinhos quando available vira true
   const BP = 'pid-combo-direito'
   C.COMBO.wiapyProductId = BP
   const EC = 'combo-cliente@example.com'
@@ -785,32 +722,20 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.deepEqual((await meFor(EC)).items, [], 'paid atrasado não volta a liberar')
   C.COMBO.wiapyProductId = ''
 
-  // coleção
-  const CP = 'pid-colecao-direito'
-  pf.wiapyProductId = CP
-  const ECo = 'colecao-cliente@example.com'
-  await post(payload({ id: 'cl-1', status: 'paid', email: ECo, checkoutId: CP, amount: 3400 }))
-  assert.deepEqual((await purchasesOf(ECo))[0].bundles, ['primeira-fornada'])
-  assert.deepEqual((await meFor(ECo)).items, ['panetones-vulcao'], 'Vulcão pronto libera; Rabanada ainda não saiu')
-  await setReady('rabanada-padaria', true)
-  assert.deepEqual(new Set((await meFor(ECo)).items), new Set(['panetones-vulcao', 'rabanada-padaria']), 'Rabanada entra sozinha ao sair')
-  assert.ok(!(await meFor(ECo)).items.includes('panetones-vitrine'), 'a coleção não libera o que não é dela')
-  pf.wiapyProductId = ''
-
   // liberação manual com bundle
   const gb = await grant.POST(new Request('http://x', { method: 'POST', headers: adm, body: JSON.stringify({ email: 'bundle-manual@example.com', bundles: ['combo'] }) }))
   assert.equal(gb.status, 200)
-  assert.equal((await meFor('bundle-manual@example.com')).items.length, 4, 'vulcão, vitrine, recheios e rabanada prontos')
-  const gb2 = await grant.POST(new Request('http://x', { method: 'POST', headers: adm, body: JSON.stringify({ email: 'bundle-manual2@example.com', bundles: ['xyz'] }) }))
+  assert.equal((await meFor('bundle-manual@example.com')).items.length, 3, 'vulcão, vitrine e recheios prontos')
+  const gb2 = await grant.POST(new Request('http://x', { method: 'POST', headers: adm, body: JSON.stringify({ email: 'bundle-manual2@example.com', bundles: ['primeira-fornada'] }) }))
   assert.equal(gb2.status, 400)
 
-  for (const id of ['panetones-vulcao', 'panetones-vitrine', 'segredo-recheios', 'rabanada-padaria']) await setReady(id, false)
+  for (const id of ['panetones-vulcao', 'panetones-vitrine', 'segredo-recheios']) await setReady(id, false)
   assert.equal(readyIdsOf(await loadCheckouts()).size, 0)
   // arquivo ilegível: nada pronto, sem erro
   await writeFile(file, '{ isto não é json')
   assert.equal(readyIdsOf(await loadCheckouts()).size, 0)
   await flush()
-  ok('preços (combo R$ 97, coleções por regra com empate para baixo, override, preço do arquivo), checkouts.json (parse, https, ready, buyUrl, arquivo real e exemplo válidos), gate (link + prontos >= mínimo) e direitos de combo/coleção resolvidos na leitura (libera prontos, libera os outros ao sair, estorno revoga)')
+  ok('preços (combo R$ 97, sem coleções, preço do arquivo), checkouts.json (parse, https, ready, buyUrl, arquivo real e exemplo válidos), gate (link + prontos >= mínimo) e direitos do combo resolvidos na leitura (libera prontos, libera os outros ao sair, estorno revoga)')
 }
 
 // GUIA VISUAL por oferta: cor de destaque, paleta e fonte do título, com contraste AA
@@ -845,7 +770,7 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
 // COMUNICAÇÃO DAS OFERTAS: tom de próximo passo, contexto real, sem gatilho comercial, sem estatística inventada, sem escassez
 {
   const cat = await import('../../shared/catalog.js')
-  const { OFFERS: OF, COPY, OFFER_COPY, COLLECTION_COPY, COLLECTIONS, HOOKS, TRACKS, ITEMS, BUMP, offerContextFor, bumpContextFor } = cat
+  const { OFFERS: OF, COPY, OFFER_COPY, HOOKS, TRACKS, ITEMS, BUMP, offerContextFor, bumpContextFor } = cat
   const catalog = OF.filter((o) => o.catalog)
   assert.equal(catalog.length, 17)
   // cada oferta do catálogo tem todos os textos, e os ids de "relatesTo" existem
@@ -859,7 +784,6 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
     assert.ok(c.need.length <= 110 && c.cardLine.length <= 120, `${o.id}: frase longa demais para o card`)
     texts.push(c.need, c.cardLine, c.question, c.afterDone, c.afterOpened)
   }
-  for (const c of COLLECTIONS) texts.push(COLLECTION_COPY[c.id].need)
   for (const h of HOOKS) texts.push(h.text)
   const flat = (o: unknown): string[] => (typeof o === 'string' ? [o] : o && typeof o === 'object' ? Object.values(o as object).flatMap(flat) : [])
   texts.push(...flat(COPY.nav), ...flat(COPY.library), ...flat(COPY.sections), ...flat(COPY.button), ...flat(COPY.price), ...flat(COPY.bump), COPY.combo.title, COPY.combo.need, COPY.combo.short, COPY.hookLabel, COPY.context.nextStep)
@@ -868,8 +792,13 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   for (const t of texts) assert.ok(!banned.test(t), `texto proibido: ${t}`)
   // áreas e botões com a linguagem combinada
   assert.deepEqual([COPY.nav.library, COPY.nav.journey, COPY.sections.forYou], ['Biblioteca', 'Seu caminho', 'Para você'])
-  assert.equal(COPY.button.card, 'Ver como ajuda')
-  assert.equal(COPY.button.detail, 'Quero isso')
+  assert.equal(COPY.button.card, 'Ver como ajuda', 'só nos links de gancho')
+  assert.equal(COPY.button.unlock(cat.unlockPrice(2790)).replace(/\u00a0/g, ' '), 'Desbloquear por R$ 27,90')
+  assert.equal(COPY.button.unlock(cat.unlockPrice(9700)).replace(/\u00a0/g, ' '), 'Desbloquear por R$ 97')
+  assert.equal(COPY.button.unlockAll(cat.unlockPrice(cat.COMBO.comboPriceCents ?? 0)).replace(/\u00a0/g, ' '), 'Desbloquear tudo por R$ 97')
+  assert.equal(COPY.button.locked, 'Bloqueado, desbloqueie para acessar')
+  texts.push(COPY.button.unlock('R$ 1'), COPY.button.unlockAll('R$ 1'), COPY.button.locked)
+  for (const t of texts.slice(-3)) assert.ok(!banned.test(t), `texto proibido: ${t}`)
   assert.equal(COPY.price.sum, 'valor somado dos itens')
   assert.ok(HOOKS.some((h) => /próximo passo natural depois do Vulcão/i.test(h.text)), 'gancho como sugestão de caminho, não estatística')
   assert.ok(!HOOKS.some((h) => /geralmente|costuma|quem faz/i.test(h.text)), 'ganchos sem generalização')
@@ -903,6 +832,284 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.equal(BUMP.itemId, 'bump')
   assert.ok(TRACKS.length === 4)
   ok('comunicação: 17 ofertas com gancho, frase de card, pergunta e contexto; sem compre/oferta/desconto/estatística/escassez; contexto por feito > trilha > visto > necessidade')
+}
+
+// gamificação "Minha fornada": regras de PF, teto diário, níveis, sequência com descanso, desafios semanais
+{
+  const G = await import('../../shared/game.js')
+  const T0 = '2026-11-02' // segunda-feira
+  assert.equal(G.weekKey('2026-11-04'), '2026-11-02')
+  assert.equal(G.weekKey('2026-11-08'), '2026-11-02')
+  assert.equal(G.weekKey('2026-11-09'), '2026-11-09')
+  const ctx = (day: string, item: string, n: number): import('../../shared/game.js').DoneCtx => ({ today: day, item, title: item, id: `f${n}` })
+  const sumLog = (st: import('../../shared/game.js').GameState) => st.pfLog.reduce((t, e) => t + e.pf, 0)
+
+  // níveis: limites 0/100/300/700, nunca desce
+  assert.deepEqual([0, 99, 100, 299, 300, 699, 700, 5000].map(G.levelIndex), [0, 0, 1, 1, 2, 2, 3, 3])
+  assert.deepEqual(G.LEVELS.map((l) => l.name), ['Aprendiz', 'Fornada', 'Confeiteira', 'Mestra do Panetone'])
+  const lv = G.levelView(60)
+  assert.equal(lv.next?.faltam, 40)
+  assert.equal(lv.next?.name, 'Fornada')
+  assert.equal(G.levelView(10, 2).idx, 2, 'o nível alcançado nunca desce')
+  assert.equal(G.levelView(800).next, null)
+  assert.match(G.levelUpText(1), /Você agora é Fornada! Continue, a sua próxima parada é Confeiteira\./)
+
+  // primeira vez: +10, selo da receita, ramo +2; mesma receita no mesmo dia não repete
+  let st = G.emptyGame(T0)
+  const r = G.onDone(st, ctx(T0, 'panetones-vulcao', 1))
+  assert.equal(r.st.pf, 10)
+  assert.ok(r.st.seals['r:panetones-vulcao'])
+  assert.equal(r.st.branch.recheio, 2)
+  assert.equal(r.st.pfLog[0].txt, 'Fiz panetones-vulcao')
+  const again = G.onDone(r.st, ctx(T0, 'panetones-vulcao', 2))
+  assert.equal(again.st, r.st, 'mesmo dia, mesma receita: nada muda')
+
+  // teto: 60 PF por dia no total, e o extrato bate com o total
+  st = G.emptyGame(T0)
+  const ids = ['main', 'bonus-01', 'bonus-02', 'bonus-03', 'bonus-04', 'bonus-05', 'bonus-06', 'bonus-07', 'bonus-08', 'panetones-vulcao']
+  ids.forEach((id, i) => {
+    st = G.onDone(st, ctx(T0, id, i)).st
+  })
+  assert.equal(G.pfOnDay(st, T0), G.DAILY_CAP, 'teto de 60 PF por dia')
+  assert.equal(st.pf, sumLog(st), 'o total é a soma do extrato')
+  assert.ok(st.pfLog.every((e) => e.pf > 0))
+  const capped = G.onDone(st, ctx(T0, 'segredo-recheios', 99))
+  assert.equal(capped.st.pf, st.pf, 'passou do teto: ponto não entra')
+  assert.ok(capped.msgs.some((m) => /teto de 60 PF/.test(m)))
+  // dia seguinte: o teto zera
+  const next = G.onDone(capped.st, ctx('2026-11-03', 'segredo-recheios', 100))
+  assert.ok(next.st.pf > st.pf)
+
+  // sequência: 3 dias +10, descanso 1x por semana não quebra, 2º descanso na mesma semana reinicia, sem zerar
+  let sq = G.emptyGame(T0)
+  sq = G.onDone(sq, ctx('2026-11-02', 'main', 1)).st
+  sq = G.onDone(sq, ctx('2026-11-03', 'bonus-01', 2)).st
+  assert.equal(sq.streak.dias, 2)
+  assert.ok(!sq.seals.seq3)
+  const d3 = G.onDone(sq, ctx('2026-11-04', 'bonus-02', 3))
+  assert.equal(d3.st.streak.dias, 3)
+  assert.ok(d3.st.pfLog.some((e) => e.k.startsWith('seq3:') && e.pf === G.PF.seq3))
+  assert.ok(d3.st.seals.seq3)
+  // descanso: dia 5 pulado, dia 6 continua (dias 4)
+  const rest = G.onDone(d3.st, ctx('2026-11-06', 'bonus-03', 4))
+  assert.equal(rest.st.streak.dias, 4, 'um dia de descanso por semana não quebra a sequência')
+  assert.equal(rest.st.streak.descansoSemana, '2026-11-02')
+  assert.ok(rest.msgs.some((m) => /descanso/i.test(m)))
+  // segundo descanso na mesma semana (pula o dia 7, volta no dia 8 = domingo? usa 08 com dia 07 pulado): reinicia
+  const broke = G.onDone(rest.st, ctx('2026-11-08', 'bonus-04', 5))
+  assert.equal(broke.st.streak.dias, 1, 'reinício, nunca zero')
+  assert.ok(broke.st.streak.recomecou)
+  assert.equal(broke.st.streak.melhor, 4)
+  assert.equal(G.streakView(rest.st, '2026-11-12').dias, 0)
+  assert.match(G.streakView(rest.st, '2026-11-12').texto, /Recomeço/)
+  // 7 dias: +25 uma vez
+  let s7 = G.emptyGame(T0)
+  for (let i = 0; i < 9; i++) s7 = G.onDone(s7, ctx(`2026-11-${String(2 + i).padStart(2, '0')}`, ids[i], i)).st
+  assert.equal(s7.streak.dias, 9)
+  assert.equal(s7.pfLog.filter((e) => e.k.startsWith('seq7:')).length, 1)
+  assert.equal(s7.pfLog.filter((e) => e.k.startsWith('seq3:')).length, 1, 'bônus único por sequência')
+  assert.ok(s7.seals.seq7)
+  // sequência desligada: sem bônus
+  let off = G.setConfig(G.emptyGame(T0), { sequencia: false })
+  for (let i = 0; i < 4; i++) off = G.onDone(off, ctx(`2026-11-${String(2 + i).padStart(2, '0')}`, ids[i], i)).st
+  assert.equal(off.streak.dias, 0)
+  assert.ok(!off.pfLog.some((e) => e.k.startsWith('seq')))
+
+  // nível sobe, cartão de parabéns, não desce
+  let lvSt = G.emptyGame(T0)
+  for (let d = 0; d < 12; d++) {
+    const day = G.addDays(T0, d)
+    lvSt = G.onDone(lvSt, ctx(day, ids[d % ids.length], d)).st
+    lvSt = G.onNote(lvSt, { today: day, id: `f${d}`, texto: 'ficou bom', nota: 4 }).st
+  }
+  assert.ok(lvSt.pf >= 100)
+  assert.equal(lvSt.level, 1)
+  assert.equal(lvSt.levelCard, 1)
+  assert.ok(lvSt.seals['nivel:1'])
+  assert.equal(G.levelView(lvSt.pf, lvSt.level).idx, 1)
+
+  // 3ª vez: selo dourado "Receita de casa" +5, e refazer dá +3 uma vez por dia
+  let home = G.emptyGame(T0)
+  home = G.onDone(home, ctx('2026-11-02', 'panetones-vulcao', 1)).st
+  const redo = G.onDone(home, ctx('2026-11-03', 'panetones-vulcao', 2))
+  assert.ok(redo.st.pfLog.some((e) => e.k.startsWith('refeita:') && e.pf === 3))
+  assert.ok(!redo.st.seals['casa:panetones-vulcao'])
+  const third = G.onDone(redo.st, ctx('2026-11-04', 'panetones-vulcao', 3))
+  assert.ok(third.st.seals['casa:panetones-vulcao'])
+  assert.ok(third.st.pfLog.some((e) => e.k === 'casa:panetones-vulcao' && e.pf === 5))
+  assert.equal(G.makesOf(third.st, 'panetones-vulcao'), 3)
+  assert.ok(G.sealDef('casa:panetones-vulcao', (x) => x)?.gold)
+
+  // desafios: 3 por semana, lista fixa, +20 cada, +30 extra, máximo 90 por semana
+  const w1 = G.pickChallenges('2026-11-02', true)
+  assert.equal(new Set(w1).size, 3)
+  assert.ok(w1.every((id) => G.challengeById(id)))
+  assert.deepEqual(G.pickChallenges('2026-11-02', true), w1, 'sem sorteio: a escolha da semana é fixa')
+  assert.notDeepEqual(G.pickChallenges('2026-11-09', true), w1)
+  assert.ok(!G.pickChallenges('2026-11-02', false).includes('socorro') && !G.pickChallenges('2026-11-09', false).includes('socorro'))
+  let ch = G.emptyGame(T0)
+  ch = G.onMetaDia(ch, { today: '2026-11-02' }).st // abre a semana
+  const week = ch.challenges.itens
+  assert.deepEqual(week, G.pickChallenges('2026-11-02', false))
+  // força os 3 desafios da semana em dias diferentes (evita o teto) e confere o total
+  const cdone = (state: import('../../shared/game.js').GameState, ev: string, day: string, n: number) => {
+    if (ev === 'nova') return G.onDone(state, ctx(day, `bonus-0${(n % 8) + 1}`, n)).st
+    if (ev === 'foto') return G.onNote(state, { today: day, id: state.fornadas[0].id, foto: true }).st
+    if (ev === 'nota') return G.onNote(state, { today: day, id: state.fornadas[0].id, texto: 'anotei' }).st
+    if (ev === 'redo') return G.onDone(state, ctx(day, state.fornadas[0].item, n)).st
+    if (ev === 'enc') return G.onEncomenda(state, { today: day, id: `e${n}`, nome: 'Cliente', sabor: 'Clássico', qtd: 2, entrega: day }).st
+    if (ev === 'fav') return G.onFav(state, { today: day, item: 'main', title: 'main' }).st
+    if (ev === 'meta') return G.onMetaDia(state, { today: day }).st
+    if (ev === 'ingr') {
+      let s2 = state
+      for (const t of G.BASE_CHECKLIST) s2 = G.setChecklist(s2, 'bonus-05', { toggle: t })
+      return G.onDone(s2, ctx(day, 'bonus-05', n)).st
+    }
+    return state
+  }
+  let wk = G.onDone(G.emptyGame(T0), ctx('2026-11-02', 'main', 0)).st
+  wk = G.onDone(wk, ctx('2026-11-02', 'bonus-05', 1)).st // já feita antes: o checklist vale na refeita, sem estourar o teto do dia
+  assert.deepEqual(wk.challenges.itens, G.pickChallenges('2026-11-02', false))
+  const evs = G.pickChallenges('2026-11-02', false).map((id) => G.challengeById(id)!.ev)
+  const before = wk.pf
+  evs.forEach((ev, i) => {
+    wk = cdone(wk, ev, G.addDays('2026-11-02', i + 1), 10 + i)
+  })
+  const fromChallenges = wk.pfLog.filter((e) => e.k.startsWith('desafio')).reduce((t, e) => t + e.pf, 0)
+  assert.equal(fromChallenges, G.WEEKLY_CHALLENGE_MAX, '3 x 20 + 30 = 90')
+  assert.equal(G.WEEKLY_CHALLENGE_MAX, 90)
+  assert.equal(wk.challenges.feitos.length, 3)
+  assert.ok(wk.seals.desafio1 && wk.seals.desafio3)
+  assert.ok(wk.pf > before)
+  // fazer de novo o mesmo evento na semana não paga duas vezes
+  const repeat = cdone(wk, 'meta', G.addDays('2026-11-02', 6), 77)
+  assert.equal(repeat.pfLog.filter((e) => e.k.startsWith('desafio')).reduce((t, e) => t + e.pf, 0), 90)
+  // semana nova: troca os desafios, sem punição
+  const nx = G.onMetaDia(wk, { today: '2026-11-09' }).st
+  assert.equal(nx.challenges.semana, '2026-11-09')
+  assert.ok(nx.challenges.feitos.length <= 1 && nx.challenges.feitos.every((id) => nx.challenges.itens.includes(id)), 'a semana nova começa do zero')
+  assert.equal(nx.pf >= wk.pf, true)
+
+  // livro: foto +5, anotação +3 (uma vez por fornada); presente +10 uma vez
+  let bk = G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1)).st
+  const pf0 = bk.pf
+  bk = G.onNote(bk, { today: T0, id: 'f1', nota: 5, texto: 'deixei 5 min a mais', foto: true }).st
+  assert.equal(bk.pfLog.filter((e) => e.k.startsWith('nota:') || e.k.startsWith('foto:')).reduce((t, e) => t + e.pf, 0), 8)
+  assert.ok(bk.pf >= pf0 + 8)
+  assert.equal(G.onNote(bk, { today: T0, id: 'f1', texto: 'mudei' }).st.pf, bk.pf, 'anotação paga uma vez por fornada')
+  const gift = G.onGift(bk, { today: T0, id: 'f1', on: true })
+  assert.ok(gift.st.seals.presente)
+  assert.equal(G.onGift(gift.st, { today: T0, id: 'f1', on: true }).st.pf, gift.st.pf)
+
+  // encomendas: +10 na primeira, +5 por entregue (3 por dia), sem valores
+  let en = G.emptyGame(T0)
+  en = G.onEncomenda(en, { today: T0, id: 'e1', nome: 'Vizinha', sabor: 'Chocolate', qtd: 2, entrega: '2026-11-10' }).st
+  assert.equal(en.pf, 10)
+  assert.ok(en.seals.enc1)
+  for (let i = 2; i <= 5; i++) en = G.onEncomenda(en, { today: T0, id: `e${i}`, nome: 'N', sabor: 'S', qtd: 1, entrega: '2026-11-10' }).st
+  assert.equal(en.pf, 10 + 0 + 0, 'só a primeira conta pontos de registro')
+  const en2 = G.onEncomenda(en, { today: T0, id: 'e6', nome: 'N', sabor: 'S', qtd: 1, entrega: T0 }).st
+  assert.equal(en2.pf, en.pf)
+  let del = en2
+  for (let i = 1; i <= 5; i++) del = G.onEntregue(del, { today: '2026-11-03', id: `e${i}` }).st
+  assert.equal(del.pfLog.filter((e) => e.k.startsWith('ent:')).length, G.DELIVERED_PER_DAY, 'no máximo 3 entregas por dia contam ponto')
+  assert.equal(G.entreguesOf(del), 5)
+  assert.ok(!JSON.stringify(del.encomendas).match(/valor|preco|preço|lucro/i))
+
+  // socorro: +5, no máximo 2 por dia
+  let so = G.emptyGame(T0)
+  so = G.onSocorro(so, { today: T0, tipo: 'massa-nao-cresce', resolveu: true }).st
+  so = G.onSocorro(so, { today: T0, tipo: 'recheio-mole', resolveu: true }).st
+  const so3 = G.onSocorro(so, { today: T0, tipo: 'miolo-seco', resolveu: true })
+  assert.equal(so.pf, 10)
+  assert.equal(so3.st.pf, 10)
+  assert.equal(G.onSocorro(so, { today: '2026-11-03', tipo: 'miolo-seco', resolveu: false }).st.pf, 10, 'sem resolver não conta ponto')
+  assert.ok(so.seals['socorro:massa-nao-cresce'])
+
+  // outros marcos: meta do dia +2 (1x por dia), conta +15 (1x), checklist +2, sugestão +5, variedade 3/5/8
+  const md = G.onMetaDia(G.emptyGame(T0), { today: T0 })
+  assert.equal(md.st.pf, 2)
+  assert.equal(G.onMetaDia(md.st, { today: T0 }).st.pf, 2)
+  const ct = G.onConta(G.emptyGame(T0), { today: T0 })
+  assert.equal(ct.st.pf, 15)
+  assert.equal(G.onConta(ct.st, { today: T0 }).st.pf, 15)
+  let ck = G.emptyGame(T0)
+  for (const t of G.BASE_CHECKLIST) ck = G.setChecklist(ck, 'main', { toggle: t })
+  assert.ok(G.checklistComplete(ck.ingr.main))
+  const withCk = G.onDone(ck, ctx(T0, 'main', 1))
+  assert.equal(withCk.st.pfLog.filter((e) => !e.k.startsWith('desafio')).reduce((t, e) => t + e.pf, 0), 12, '+10 da receita e +2 do checklist antes de começar')
+  assert.ok(withCk.st.challenges.feitos.includes('ingr'), 'o checklist também fecha o desafio de ingredientes')
+  assert.equal(G.checklistComplete(withCk.st.ingr.main), false, 'a lista zera para a próxima fornada')
+  const sug = G.suggestionOf('2026-11-02', ['main', 'panetones-vulcao'])
+  assert.ok(sug && ['main', 'panetones-vulcao'].includes(sug.item))
+  assert.equal(G.suggestionOf('2026-11-02', []), null)
+  const withSug = G.onDone(G.emptyGame(T0), { ...ctx(T0, sug!.item, 1), sugestao: sug!.item })
+  assert.equal(withSug.st.pf, 15)
+  let vr = G.emptyGame(T0)
+  const catItems = ['main', 'panetones-vulcao', 'panetones-vitrine', 'natal-criancas', 'ceia-doce', 'caixas-doces-natal', 'bonus-07', 'bonus-06']
+  catItems.forEach((id, i) => {
+    vr = G.onDone(vr, ctx(G.addDays(T0, i * 2), id, i)).st
+  })
+  assert.ok(vr.seals.var3 && vr.seals.var5 && vr.seals.var8)
+  assert.equal(vr.pfLog.filter((e) => /^var\d$/.test(e.k)).length, 3)
+
+  // a bolinha: no máximo 1, some depois de aberta, nunca por venda
+  const titleOf = (x: string) => x
+  const sx = G.onDone(G.emptyGame(T0), ctx(T0, 'main', 1)).st
+  const step = G.nextStepOf(sx, { today: '2026-11-03', titleOf, seenNotDone: ['panetones-vulcao'] })
+  assert.equal(step?.to, '/fornada/livro', 'anotar a fornada de ontem vem primeiro')
+  assert.equal(G.dotCount(sx, step), 1)
+  assert.equal(G.dotCount({ ...sx, ack: step!.key }, step), 0, 'some depois que a cliente abre')
+  assert.equal(G.dotCount({ ...sx, semPressao: true }, step), 0)
+  assert.equal(G.dotCount(sx, null), 0)
+  assert.ok(!/compr|oferta|desconto|R\$/i.test(step!.text))
+  const onlyTrail = G.nextStepOf(G.emptyGame(T0), { today: T0, titleOf, seenNotDone: ['panetones-vulcao', 'main'] })
+  assert.equal(onlyTrail?.to, '/produto/panetones-vulcao')
+
+  // extras por nível (nunca por gastar PF), com texto real
+  assert.ok(G.EXTRAS.length >= 3)
+  assert.ok(G.EXTRAS.every((e) => e.blocks.length >= 2 && e.blocks.every((b) => b.p || b.ul?.length)))
+  assert.equal(G.extraUnlocked(G.EXTRAS[0], 0), false)
+  assert.equal(G.extraUnlocked(G.EXTRAS[0], 1), true)
+  assert.equal(G.extraUnlocked(G.EXTRAS[0], 0, true), true, 'sem pressão: tudo aberto')
+  assert.match(G.extraReason(G.EXTRAS[1]), /^Extra do app, liberado por progresso\./)
+
+  // Meu mês: números reais
+  const mv = G.monthView(vr, '2026-11')
+  assert.equal(mv.receitas, 8)
+  assert.match(mv.texto, /Em novembro você fez 8 receitas e ganhou \d+ selos\./)
+  assert.match(G.monthView(G.emptyGame(T0), '2026-11').texto, /ainda não há receitas/)
+
+  // textos fixos de aviso honesto e frases: sem promessa, sem escassez, sem renda
+  assert.equal(G.GAME_TEXT.pontos, 'Pontos de Fornada contam o que você marcou como feito. Não valem dinheiro e não são sorteio.')
+  assert.equal(G.GAME_TEXT.extras, 'Extra do app, liberado por progresso. Nada do que você comprou fica trancado.')
+  assert.equal(G.GAME_TEXT.encomendas, 'Este caderno é só seu. O app não calcula nem promete ganho.')
+  assert.equal(G.GAME_TEXT.privacidade, 'Suas fotos e anotações ficam no seu aparelho.')
+  assert.equal(G.PHRASES.length, 30)
+  const bannedGame = /lucro|renda\b|\bganhe\b|fatur|garanta|imperd|últim[ao]s\b|esgot|restam|vagas|desconto|promo[çc]|vai vender|corra|só hoje|punição|perdeu/i
+  const full = G.statsOf(G.emptyGame(T0), T0)
+  const stats = { ...full, semana: 4, hoje: 1, total: 12, dias: 8, fotos: 3, notas: 6, selos: 9, socorros: 1, encomendas: 3, entregues: 3, nivel: 2, variedade: 5, favs: 2, desafiosSemana: 2, casa: 1, presentes: 1, mes: 4 }
+  for (const p of G.PHRASES) {
+    assert.ok(!bannedGame.test(p.text(stats)), `frase proibida: ${p.text(stats)}`)
+  }
+  assert.ok(G.PHRASES.filter((p) => p.when(stats)).length >= 25, 'quase todas as frases têm condição real')
+  const quiet = { ...stats, semana: 0 }
+  assert.ok(bannedGame.test(G.PHRASES[22].text(quiet)) === false)
+  assert.ok(G.PHRASES.every((p, i) => p.id === `p${String(i + 1).padStart(2, '0')}`))
+  for (const t of [G.GAME_TEXT.extrato, G.GAME_TEXT.descanso, G.GAME_TEXT.semPressao, ...G.DAILY_GOALS, ...G.CHALLENGES.map((c) => c.txt), ...G.EXTRAS.flatMap((e) => [e.title, ...e.blocks.flatMap((b) => [b.h, b.p ?? '', ...(b.ul ?? [])])])]) assert.ok(!bannedGame.test(t), `texto proibido: ${t}`)
+  assert.ok(G.incentiveOf(G.statsOf(G.emptyGame(T0), T0), T0).length > 10)
+  // sem pressão e apagar tudo
+  const sp = G.setConfig(vr, { semPressao: true })
+  assert.equal(sp.semPressao, true)
+  assert.equal(sp.pf, vr.pf, 'os pontos continuam guardados, só ficam escondidos')
+  const wiped = G.eraseAll('2026-12-01')
+  assert.equal(wiped.pf, 0)
+  assert.deepEqual(wiped.fornadas, [])
+  assert.deepEqual(Object.keys(wiped.seals), ['nivel:0'])
+  // cada selo tem desenho funcional pronto e nome de arquivo mapeado para trocar por imagem
+  assert.deepEqual(Object.keys(G.SEAL_FILES).sort(), ['aprendiz', 'casa', 'confeiteira', 'conta', 'desafio', 'encomenda', 'fornada', 'mestra', 'presente', 'receita', 'sequencia', 'socorro', 'variedade'])
+  assert.ok(G.STATIC_SEALS.every((x) => x.icon in G.SEAL_FILES))
+  ok('gamificação: níveis 0/100/300/700, teto 60 PF/dia, sequência com descanso e recomeço, desafios 3x20+30=90, selos, livro, encomendas, socorro, extras por nível, bolinha única, frases e avisos honestos')
 }
 
 // buildMe sem plano

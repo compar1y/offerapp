@@ -5,7 +5,7 @@
 //   a lista de arquivos de products[] se chama `itens` (não `items`)
 // Tolerante: ignora campos extras e aceita o JSON com vírgulas faltando/sobrando (os exemplos da doc têm esse erro).
 
-import { BUMP, COLLECTIONS, COMBO, DEFAULT_FULL_KIT_CHECKOUT_IDS, OFFERS, PLANS, type BundleId, type OfferId } from '../shared/catalog.js'
+import { BUMP, COMBO, DEFAULT_FULL_KIT_CHECKOUT_IDS, OFFERS, PLANS, type BundleId, type OfferId } from '../shared/catalog.js'
 import { env } from './env.js'
 
 export type WiapyStatus = 'paid' | 'unpaid' | 'credit_card_declined' | 'refunded' | 'chargedback' | 'unknown'
@@ -151,12 +151,11 @@ export function detectOffers(p: ParsedWiapy): OfferId[] {
   return OFFERS.filter((o) => got.has(o.id)).map((o) => o.id)
 }
 
-// coleção ou "Leve tudo" comprados: gravam o DIREITO (id do bundle), não uma lista de produtos. Quem resolve os itens é a leitura (/api/me):
+// "Biblioteca completa" (combo) comprada: grava o DIREITO (id do bundle), não uma lista de produtos. Quem resolve os itens é a leitura (/api/me):
 // libera os prontos na hora e os que ainda não saíram, automaticamente, quando available virar true. Sem wiapyProductId configurado, nada acontece.
 export function detectBundles(p: ParsedWiapy): BundleId[] {
   const got: BundleId[] = []
   if (idInPayload(p, COMBO.wiapyProductId)) got.push('combo')
-  for (const c of COLLECTIONS) if (idInPayload(p, c.wiapyProductId)) got.push(c.id)
   return got
 }
 
@@ -211,7 +210,6 @@ export function isFullKit(p: ParsedWiapy): { ok: boolean; reason?: string } {
 export function isStandaloneExtra(p: ParsedWiapy): boolean {
   if (!p.checkoutId) return false
   if (BUMP.wiapyProductId && p.checkoutId === BUMP.wiapyProductId) return true
-  if (COLLECTIONS.some((c) => !!c.wiapyProductId && p.checkoutId === c.wiapyProductId)) return true
   if (COMBO.wiapyProductId && p.checkoutId === COMBO.wiapyProductId) return true
   return OFFERS.some((o) => o.enabled && !!o.wiapyProductId && p.checkoutId === o.wiapyProductId)
 }

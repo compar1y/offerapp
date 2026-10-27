@@ -3,8 +3,10 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { CATALOG_ENABLED, CONFIG, PREVIEW, supportUrl } from '../data/config'
 import type { Img } from '../data/images'
 import { catalogImage, offerCover } from '../data/images'
-import { COPY, brl, offerCopy, type DeliverableIcon, type Offer, type OfferContext, shortTitle } from '../../shared/catalog'
-import { buyUrl, pendingFromBundles, unseenOffers } from '../lib/offers'
+import { COPY, brl, offerCopy, unlockPrice, type DeliverableIcon, type Offer, type OfferContext, shortTitle } from '../../shared/catalog'
+import { buyUrl, pendingFromBundles } from '../lib/offers'
+import { useNextStep } from '../lib/game'
+import { GameToast, LevelUpCard, VisitTracker } from './Game'
 import { changeDemo, dismissOffer, owns, trackOffer, useStore } from '../lib/store'
 import { themeStyle } from '../lib/theme'
 import { contextOf } from '../lib/context'
@@ -26,14 +28,19 @@ export function Layout({ title, back, children }: { title?: string; back?: strin
           ☰
         </Link>
       </header>
-      <main className="content">{children}</main>
+      <main className="content">
+        <LevelUpCard />
+        {children}
+      </main>
+      <GameToast />
+      <VisitTracker />
       <SupportButton />
       <BottomNav />
     </div>
   )
 }
 
-// ---- navegação fixa (só com o catálogo ligado). O item "Biblioteca" leva a bolinha vermelha com o número de novidades não vistas.
+// ---- navegação fixa (só com o catálogo ligado). O item "Fornada" leva a bolinha vermelha com UM próximo passo útil (nunca vendas).
 const ICON = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true, width: 24, height: 24, viewBox: '0 0 24 24' } as const
 const IconHome = () => (
   <svg {...ICON}>
@@ -71,26 +78,37 @@ export function NewDot({ n }: { n: number }) {
   )
 }
 
+const IconOven = () => (
+  <svg {...ICON}>
+    <path d="M4 20h16" />
+    <path d="M5.5 20c0-7 2.5-12 6.5-12s6.5 5 6.5 12" />
+    <path d="M12 8V4M10 4h4" />
+  </svg>
+)
+
 export function BottomNav() {
-  const s = useStore()
+  const { dot } = useNextStep()
   if (!CATALOG_ENABLED) return null
-  const n = unseenOffers(s).length
   return (
     <nav className="bottomnav" aria-label="Navegação principal">
       <NavLink to="/" end className="bn-item">
         <IconHome />
         <span>{COPY.nav.home}</span>
       </NavLink>
-      <NavLink to="/catalogo" className="bn-item bn-catalog" aria-label={n > 0 ? `${COPY.nav.library}, ${n} ${n === 1 ? 'novidade' : 'novidades'}` : COPY.nav.library}>
-        <span className="bn-icon">
-          <IconGift />
-          <NewDot n={n} />
-        </span>
+      <NavLink to="/catalogo" className="bn-item bn-catalog">
+        <IconGift />
         <span>{COPY.nav.library}</span>
       </NavLink>
       <NavLink to="/caminho" className="bn-item">
         <IconPath />
         <span>{COPY.nav.journey}</span>
+      </NavLink>
+      <NavLink to="/fornada" className="bn-item bn-game" aria-label={dot > 0 ? `${COPY.nav.game}, 1 próximo passo` : COPY.nav.game}>
+        <span className="bn-icon">
+          <IconOven />
+          <NewDot n={dot} />
+        </span>
+        <span>{COPY.nav.game}</span>
       </NavLink>
       <NavLink to="/conta" className="bn-item">
         <IconUser />
@@ -189,7 +207,7 @@ export function Context({ ctx }: { ctx: OfferContext }) {
   )
 }
 
-// sugestão de próximo passo (home e rodapé de uma página): imagem, contexto, nome, uma frase e o convite para ver o detalhe. Sem checkout aqui.
+// sugestão de próximo passo (home e rodapé de uma página): imagem, contexto, nome, uma frase e o botão de desbloquear (preço só no botão).
 export function OfferBlock({ offer, from }: { offer: Offer; from: 'home-banner' | 'item-footer' }) {
   const s = useStore()
   const canDismiss = offer.kind !== 'seasonal'
@@ -199,6 +217,7 @@ export function OfferBlock({ offer, from }: { offer: Offer; from: 'home-banner' 
       <article className="vcard upsell offer" aria-label={`Sugestão: ${offer.title}`}>
         <Link to={`/produto/${offer.id}`} className="vcard-media">
           <OfferMedia offer={offer} className="pic-v" />
+          {!owns(s, offer.id) && <LockMark />}
         </Link>
         <div className="vcard-body">
           <h3 className="vcard-title">
@@ -206,10 +225,7 @@ export function OfferBlock({ offer, from }: { offer: Offer; from: 'home-banner' 
           </h3>
           <Context ctx={contextOf(s, offer.id)} />
           <p className="vcard-promise">{copy.cardLine}</p>
-          <Price offer={offer} soon={!buyUrl(offer.id)} />
-          <Link className="btn btn-buy btn-block" to={`/produto/${offer.id}`} onClick={() => trackOffer('offer.click', offer.id, from)}>
-            {COPY.button.card}
-          </Link>
+          <OfferAction offer={offer} from={from} />
           {canDismiss && (
             <button className="btn btn-link btn-block btn-quiet" onClick={() => dismissOffer(offer.id, from)}>
               Agora não
@@ -252,12 +268,20 @@ export function Price({ offer, soon, big = false }: { offer: Offer; soon?: boole
   )
 }
 
-// ação principal de uma oferta. Acessar (já é seu) e o convite ("Ver como ajuda" / "Quero isso") têm cor e rótulo diferentes.
+// cadeado no canto da capa: só em material pago que a pessoa ainda não tem. Quem já tem não vê cadeado.
+export function LockMark() {
+  return (
+    <span className="lockmark" role="img" aria-label={COPY.button.locked}>
+      🔒
+    </span>
+  )
+}
+
+// ação principal de uma oferta (card, home, detalhe). "Acessar" (já é seu) e "Desbloquear por R$ X" têm cor e rótulo diferentes.
 //   já tem                       -> "Acessar" (verde escuro)
-//   card (lista, home, coleção)  -> "Ver como ajuda": leva ao detalhe, nunca ao checkout
-//   detalhe, ready + link        -> "Quero isso · preço" (verde vivo, abre o checkout direto)
-//   detalhe, sem link            -> "Disponível em breve" + "Quero ser avisada"
-export function OfferAction({ offer, from, variant = 'card' }: { offer: Offer; from: string; variant?: 'card' | 'detail' }) {
+//   ready + link https           -> "Desbloquear por R$ X" (verde vivo, pulso suave, abre o checkout direto). Na lista o preço fica só no botão.
+//   sem link ou ready:false      -> "Disponível em breve" (parado, sem pulso) + "Quero ser avisada"
+export function OfferAction({ offer, from }: { offer: Offer; from: string }) {
   const s = useStore()
   if (owns(s, offer.id))
     return (
@@ -267,25 +291,18 @@ export function OfferAction({ offer, from, variant = 'card' }: { offer: Offer; f
     )
   if (pendingFromBundles(s).has(offer.id)) return <p className="v-note">Incluído na sua compra. Entra automático quando sair.</p>
   const url = buyUrl(offer.id)
-  if (variant === 'card')
-    return (
-      <>
-        {!url && <p className="v-soon">{COPY.button.soon}</p>}
-        <Link className="btn btn-buy btn-block" to={`/produto/${offer.id}`} onClick={() => trackOffer('offer.click', offer.id, from)}>
-          {COPY.button.card}
-        </Link>
-      </>
-    )
   if (url)
     return (
-      <a className="btn btn-buy btn-block btn-want" href={url} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', offer.id, from)}>
-        {COPY.button.detail} · {brl(offer.priceCents)}
+      <a className="btn btn-buy btn-block btn-want btn-pulse" href={url} target="_blank" rel="noreferrer" onClick={() => trackOffer('offer.click', offer.id, from)}>
+        {COPY.button.unlock(unlockPrice(offer.priceCents))}
       </a>
     )
   const asked = !!s.interested[offer.id]
   return (
     <>
-      <p className="v-soon">{COPY.button.soon}</p>
+      <button className="btn btn-block btn-soon" disabled>
+        {COPY.button.soon}
+      </button>
       <button className={`btn btn-block ${asked ? 'btn-done' : 'btn-secondary'}`} disabled={asked} onClick={() => trackOffer('offer.interest', offer.id, from)}>
         {asked ? COPY.button.notified : COPY.button.notify}
       </button>
@@ -301,6 +318,7 @@ export function OfferCard({ offer, hero = false, isNew = false, isNext = false, 
     <article id={`card-${offer.id}`} style={themeStyle(offer.id)} className={`vcard${hero ? ' vcard-hero' : ''}${focus ? ' vcard-focus' : ''}`} aria-label={offer.title}>
       <Link to={`/produto/${offer.id}`} className="vcard-media" aria-label={`Ver ${shortTitle(offer.id)}`}>
         <OfferMedia offer={offer} className="pic-v" />
+        {!owned && <LockMark />}
         <span className="vflags">
           {offer.featured && <span className="flag flag-featured">★ Destaque</span>}
           {isNew && !owned && <span className="flag flag-new">Novo</span>}
@@ -315,7 +333,6 @@ export function OfferCard({ offer, hero = false, isNew = false, isNext = false, 
         </h3>
         {!owned && <Context ctx={contextOf(s, offer.id)} />}
         <p className="vcard-promise">{owned ? offer.promise : offerCopy(offer.id).cardLine}</p>
-        {!owned && <Price offer={offer} soon={!buyUrl(offer.id)} />}
         <OfferAction offer={offer} from={from} />
       </div>
     </article>
