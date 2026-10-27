@@ -31,11 +31,18 @@ const verify = await import('../../api/auth/verify.js')
 const me = await import('../../api/me.js')
 const fileApi = await import('../../api/file/[id].js')
 const dl = await import('../../api/dl/[id].js')
-const grant = await import('../../api/admin/grant.js')
-const imp = await import('../../api/admin/import-csv.js')
+// as 4 rotas admin/* são UMA função (api/admin/[action].ts); estes adaptadores só colocam a ação na URL
+const adminApi = await import('../../api/admin/[action].js')
+const viaAdmin = (action: string, method: 'GET' | 'POST') => async (r: Request) => {
+  const search = new URL(r.url).search
+  return adminApi[method](new Request(`http://x/api/admin/${action}${search}`, { method, headers: r.headers, ...(method === 'POST' ? { body: await r.text() } : {}) }))
+}
+const grant = { POST: viaAdmin('grant', 'POST') }
+const imp = { POST: viaAdmin('import-csv', 'POST') }
 const feedback = await import('../../api/feedback.js')
 const eventApi = await import('../../api/event.js')
-const events = await import('../../api/admin/events.js')
+const events = { GET: viaAdmin('events', 'GET') }
+const revokeApi = { POST: viaAdmin('revoke', 'POST') }
 const { mkdir } = await import('node:fs/promises')
 
 let n = 0
@@ -259,7 +266,7 @@ assert.deepEqual(OFFERS.filter((o) => ['kit-lucrativo', 'kit-embalagem-etiqueta'
 ])
 assert.ok(OFFERS.every((o) => o.wiapyProductId === ''), 'nenhuma oferta tem id Wiapy ainda')
 assert.ok(OFFERS.every((o) => !('checkoutUrl' in o) && !('status' in o) && !('available' in o)), 'o link e o estado de cada oferta vêm só de public/checkouts.json')
-assert.ok(OFFERS.filter((o) => !o.catalog).every((o) => !o.enabled), 'fora do catálogo = desligada')
+assert.ok(OFFERS.filter((o) => !o.catalog && !o.tool).every((o) => !o.enabled), 'fora do catálogo = desligada (a ferramenta é a única exceção)')
 assert.equal(OFFER_BY_ID['kit-embalagem-etiqueta'].requiresDismissed, 'kit-lucrativo')
 assert.ok(/etiquetas/i.test(OFFER_BY_ID['kit-embalagem-etiqueta'].description) && /B[ôo]nus 01/.test(OFFER_BY_ID['kit-embalagem-etiqueta'].description))
 assert.deepEqual(itemsFor('completo', false, ['kit-lucrativo']).filter((i) => i === 'kit-lucrativo'), [], 'oferta desligada não libera item')
@@ -386,7 +393,7 @@ const inCatalog = OFFERS.filter((o) => o.catalog)
 assert.equal(inCatalog.length, 17, '10 do tier S + 7 de Natal/Ano Novo no catálogo')
 assert.ok(inCatalog.every((o) => o.enabled), 'todas as do catálogo estão enabled')
 assert.equal(OFFERS.filter((o) => o.tierS).length, 10)
-assert.ok(OFFERS.every((o) => o.deliverableType.trim() && o.imageType.trim() && ['2:3', '4:3'].includes(o.imageRatio)), 'todo item tem tipo de entregável e briefing de imagem')
+assert.ok(OFFERS.every((o) => o.deliverableType.trim() && o.imageType.trim() && ['2:3', '4:3', '4:5'].includes(o.imageRatio)), 'todo item tem tipo de entregável e briefing de imagem')
 assert.ok(inCatalog.every((o) => !/^pdf/i.test(o.deliverableType)), 'nenhum entregável é só "PDF"')
 assert.ok(new Set(inCatalog.map((o) => o.deliverableType)).size >= 7, 'formatos variados no catálogo')
 assert.deepEqual(OFFERS.filter((o) => o.tierS).map((o) => o.deliverableType), ['Caderno de receitas', 'Cartões de acabamento', 'Pasta de imprimíveis', 'Fichário de receitas', 'Planilha interativa', 'Cardápio imprimível', 'Calendário de parede', 'Kit de moldes para recortar', 'Vídeo-aulas', 'Kit de artes editáveis'])
@@ -638,9 +645,10 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.equal(buyUrlOf(pc, 'panetones-vitrine'), null, 'ready sem link: sem botão Comprar')
   assert.equal(buyUrlOf(parseCheckouts({ 'ceia-doce': { checkoutUrl: 'https://pay.exemplo.test/ok', ready: false } }), 'ceia-doce'), null, 'link sem ready: sem botão Comprar')
   assert.equal(buyUrlOf({}, 'combo'), null)
-  // ids do arquivo: as 23 ofertas, combo e bump (25 checkouts; as coleções saíram)
+  // ids do arquivo: as 24 ofertas (23 materiais + a ferramenta calculadora), combo e bump = 26 checkouts; as coleções saíram
   assert.equal(CHECKOUT_IDS.length, OFFERS.length + 2)
-  assert.equal(CHECKOUT_IDS.length, 25)
+  assert.equal(CHECKOUT_IDS.length, 26)
+  assert.ok(CHECKOUT_IDS.includes('calculadora'))
   assert.ok(CHECKOUT_IDS.includes('combo') && CHECKOUT_IDS.includes('bump'))
   assert.ok(!CHECKOUT_IDS.includes('primeira-fornada'), 'sem coleções nos checkouts')
   // preços do arquivo: aplicam e voltam ao valor base quando o campo some
@@ -1028,8 +1036,9 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
 
   // outros marcos: meta do dia +2 (1x por dia), conta +15 (1x), checklist +2, sugestão +5, variedade 3/5/8
   const md = G.onMetaDia(G.emptyGame(T0), { today: T0 })
-  assert.equal(md.st.pf, 2)
-  assert.equal(G.onMetaDia(md.st, { today: T0 }).st.pf, 2)
+  const semDesafio = (st: import('../../shared/game.js').GameState) => st.pfLog.filter((e) => !e.k.startsWith('desafio')).reduce((t, e) => t + e.pf, 0) // o desafio da semana depende do rodízio fixo
+  assert.equal(semDesafio(md.st), 2)
+  assert.equal(semDesafio(G.onMetaDia(md.st, { today: T0 }).st), 2)
   const ct = G.onConta(G.emptyGame(T0), { today: T0 })
   assert.equal(ct.st.pf, 15)
   assert.equal(G.onConta(ct.st, { today: T0 }).st.pf, 15)
@@ -1107,9 +1116,228 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
   assert.deepEqual(wiped.fornadas, [])
   assert.deepEqual(Object.keys(wiped.seals), ['nivel:0'])
   // cada selo tem desenho funcional pronto e nome de arquivo mapeado para trocar por imagem
-  assert.deepEqual(Object.keys(G.SEAL_FILES).sort(), ['aprendiz', 'casa', 'confeiteira', 'conta', 'desafio', 'encomenda', 'fornada', 'mestra', 'presente', 'receita', 'sequencia', 'socorro', 'variedade'])
+  assert.deepEqual(Object.keys(G.SEAL_FILES).sort(), ['aprendiz', 'casa', 'confeiteira', 'conta', 'contas', 'desafio', 'encomenda', 'fornada', 'mestra', 'presente', 'receita', 'sequencia', 'socorro', 'variedade', 'venda'])
   assert.ok(G.STATIC_SEALS.every((x) => x.icon in G.SEAL_FILES))
   ok('gamificação: níveis 0/100/300/700, teto 60 PF/dia, sequência com descanso e recomeço, desafios 3x20+30=90, selos, livro, encomendas, socorro, extras por nível, bolinha única, frases e avisos honestos')
+}
+
+// ---------------------------------------------------------------- Conta da Fornada (ferramenta R$ 19,90, fora do combo)
+{
+  const { signSession } = await import('../crypto.js')
+  const calcApi = await import('../../api/calc/[action].js')
+  const { CHECKOUT_IDS, comboOffers, comboItemIds, comboGate, parseCheckouts } = await import('../../shared/catalog.js')
+  const tk = (email: string) => ({ authorization: `Bearer ${signSession(email)}`, 'content-type': 'application/json' })
+  const call = (action: string, method: string, email: string | null, body?: unknown) =>
+    (calcApi as unknown as Record<string, (r: Request) => Promise<Response>>)[method](
+      new Request(`http://x/api/calc/${action}`, { method, headers: email ? tk(email) : { 'content-type': 'application/json' }, ...(body !== undefined ? { body: typeof body === 'string' ? body : JSON.stringify(body) } : {}) }),
+    )
+  const meOf = async (email: string) => (await (await me.GET(new Request('http://x/api/me', { headers: tk(email) }))).json()) as { items: string[]; tools: { calculadora: { owned: boolean; roundUsed: boolean; roundRecipe: number | null } } }
+  const evNames = async () => ((await (await events.GET(new Request('http://x/api/admin/events', { headers: adm }))).json()) as { name: string; email?: string; props?: Record<string, unknown> }[])
+
+  // 28. as 4 rotas admin são UMA função
+  {
+    const adm2 = { authorization: `Bearer ${A}`, 'content-type': 'application/json' }
+    assert.equal((await adminApi.GET(new Request('http://x/api/admin/nada', { headers: adm2 }))).status, 404)
+    assert.equal((await adminApi.GET(new Request('http://x/api/admin/grant', { headers: adm2 }))).status, 405, 'método errado')
+    assert.equal((await adminApi.GET(new Request('http://x/api/admin/events'))).status, 401, 'sem token')
+    await grant.POST(new Request('http://x', { method: 'POST', headers: adm2, body: JSON.stringify({ email: 'rev-admin@example.com', plan: 'completo' }) }))
+    assert.ok((await meFor('rev-admin@example.com')).items.includes('main'))
+    const rv = await revokeApi.POST(new Request('http://x', { method: 'POST', headers: adm2, body: JSON.stringify({ email: 'rev-admin@example.com' }) }))
+    assert.equal(rv.status, 200)
+    assert.deepEqual((await meFor('rev-admin@example.com')).items, [])
+    ok('admin: grant, import-csv, revoke e events numa função só (404 ação desconhecida, 405 método, 401 sem token)')
+  }
+
+  // 29. catálogo e combo: a ferramenta fica FORA do combo
+  {
+    const tool = OFFER_BY_ID.calculadora
+    assert.equal(tool.priceCents, 1990)
+    assert.ok(tool.tool && tool.enabled && !tool.catalog)
+    assert.ok(!comboOffers().some((o) => o.id === 'calculadora'), 'o combo não inclui a calculadora')
+    assert.ok(!comboItemIds().includes('calculadora'))
+    const somaSemTool = OFFERS.filter((o) => o.catalog && o.enabled).reduce((t, o) => t + o.priceCents, 0)
+    assert.equal(comboSumCents(comboOffers()), somaSemTool, 'a soma riscada não conta a calculadora')
+    assert.equal(CHECKOUT_IDS.length, 26)
+    assert.equal(OFFERS[0].id, 'calculadora', 'é a primeira da lista')
+    // o gate do combo (>= 10 prontos) não conta a calculadora: só ela pronta = 0 de 17
+    const soTool = parseCheckouts({ calculadora: { checkoutUrl: 'https://pay.exemplo.test/c', ready: true }, combo: { checkoutUrl: 'https://pay.exemplo.test/combo', ready: true } })
+    const gt = comboGate(soTool)
+    assert.equal(gt.ready, 0)
+    assert.equal(gt.total, 17)
+    assert.equal(gt.open, false)
+    // quem leva a Biblioteca completa NÃO ganha a ferramenta
+    assert.ok(!itemsFor(null, false, [], ['combo'], new Set(OFFERS.map((o) => o.id))).includes('calculadora'))
+    ok('Conta da Fornada: R$ 19,90, primeira da lista, fora do combo (itens, soma riscada e gate)')
+  }
+
+  // 30. webhook libera só a ferramenta (código público e id interno), idempotente, estorno revoga só ela
+  {
+    const CODE = 'CalcPub1234'
+    const INTERNAL = 'aabbccddeeff001122334455'
+    await writeFile(process.env.CHECKOUTS_FILE!, JSON.stringify({ calculadora: { checkoutUrl: `https://pay.wiapy.com/${CODE}`, ready: true } }))
+    const EM = 'calc-a@example.com'
+    const pg = (id: string, status: string, email: string, checkoutId: string, amount = 1990) => post(payload({ id, status, email, checkoutId, amount }))
+    await pg('c-1', 'unpaid', EM, CODE)
+    assert.ok(!(await meFor(EM)).items.includes('calculadora'), 'pendente não libera')
+    await pg('c-1', 'declined', EM, CODE)
+    assert.ok(!(await meFor(EM)).items.includes('calculadora'), 'recusado não libera')
+    await pg('c-1', 'paid', EM, CODE)
+    const m1 = await meOf(EM)
+    assert.deepEqual(m1.items, ['calculadora'], 'só a ferramenta, sem kit nem bump')
+    assert.equal(m1.tools.calculadora.owned, true)
+    await pg('c-1', 'paid', EM, CODE)
+    assert.equal((await purchasesOf(EM)).length, 1, 'idempotente por payment.id')
+    // id interno via env
+    process.env.CALC_CHECKOUT_IDS = INTERNAL
+    await pg('c-2', 'paid', 'calc-b@example.com', INTERNAL)
+    assert.deepEqual((await meFor('calc-b@example.com')).items, ['calculadora'])
+    delete process.env.CALC_CHECKOUT_IDS
+    // checkout desconhecido não libera
+    await pg('c-3', 'paid', 'calc-c@example.com', 'outroCheckout99')
+    assert.ok(!(await meFor('calc-c@example.com')).items.includes('calculadora'))
+    // valor diferente: só avisa (evento), libera mesmo assim
+    await pg('c-4', 'paid', 'calc-d@example.com', CODE, 990)
+    assert.ok((await meFor('calc-d@example.com')).items.includes('calculadora'))
+    assert.ok((await evNames()).some((e) => e.name === 'purchase.amount_mismatch' && e.email === 'calc-d@example.com'))
+    // cliente que tem kit + ferramenta: o estorno da ferramenta mantém o kit
+    const EK = 'calc-kit@example.com'
+    await post(payload({ id: 'k-1', status: 'paid', email: EK, checkoutId: 'r2PHgYwK6CVi', amount: 3790 }))
+    await pg('c-5', 'paid', EK, CODE)
+    const both = await meFor(EK)
+    assert.ok(both.items.includes('main') && both.items.includes('calculadora'))
+    await pg('c-5', 'refunded', EK, CODE)
+    const after = await meOf(EK)
+    assert.ok(after.items.includes('main') && !after.items.includes('calculadora'), 'estorno revoga só a ferramenta')
+    assert.equal(after.tools.calculadora.owned, false)
+    await pg('c-1', 'chargedback', EM, CODE)
+    assert.deepEqual((await meFor(EM)).items, [], 'chargeback também revoga')
+    await pg('c-1', 'paid', EM, CODE) // pago atrasado depois de estorno não volta (regra geral do webhook)
+    assert.deepEqual((await meFor(EM)).items, [])
+    ok('webhook: calculadora por código público e id interno, idempotente, pendente/recusado não libera, valor diferente só avisa, estorno/chargeback revoga só a ferramenta')
+  }
+
+  // 31. API: rodada grátis no servidor, sync com direito, export e apagar
+  {
+    const R = 'calc-round@example.com'
+    assert.equal((await call('round', 'POST', null, { recipe: 1, contaId: 'a' })).status, 401)
+    assert.equal((await call('round', 'GET', R)).status, 405)
+    assert.equal((await call('nada', 'POST', R, {})).status, 404)
+    assert.equal((await call('round', 'POST', R, { recipe: 0, contaId: 'a' })).status, 400)
+    assert.equal((await call('round', 'POST', R, { recipe: 5, contaId: '' })).status, 400)
+    assert.deepEqual((await meOf(R)).tools.calculadora, { owned: false, roundUsed: false, roundRecipe: null })
+    const r1 = await call('round', 'POST', R, { recipe: 3, contaId: 'conta-1' })
+    assert.equal(r1.status, 200)
+    assert.equal(((await r1.json()) as { started: boolean }).started, true)
+    const r1b = await call('round', 'POST', R, { recipe: 3, contaId: 'conta-1' })
+    assert.equal(((await r1b.json()) as { started: boolean }).started, false, 'mesma receita: idempotente')
+    assert.equal((await call('round', 'POST', R, { recipe: 4, contaId: 'conta-2' })).status, 409, 'outra receita sem trocar: usada')
+    const sw = await call('round', 'POST', R, { recipe: 4, contaId: 'conta-1', swap: true })
+    assert.equal(sw.status, 200, 'uma troca dentro de 24 h')
+    assert.equal((await call('round', 'POST', R, { recipe: 5, contaId: 'conta-1', swap: true })).status, 409, 'só uma troca')
+    assert.deepEqual((await meOf(R)).tools.calculadora, { owned: false, roundUsed: true, roundRecipe: 4 })
+    // corrida: duas chamadas ao mesmo tempo, só uma ganha
+    const RR = 'calc-race@example.com'
+    const race = await Promise.all([call('round', 'POST', RR, { recipe: 1, contaId: 'x' }), call('round', 'POST', RR, { recipe: 2, contaId: 'y' }), call('round', 'POST', RR, { recipe: 3, contaId: 'z' })])
+    assert.equal(race.filter((x) => x.status === 200).length, 1, 'a rodada grátis é uma só, contada no servidor')
+    // sem o direito: sync é 403, export e delete funcionam (só sessão)
+    assert.equal((await call('sync', 'GET', R)).status, 403)
+    assert.equal((await call('sync', 'PUT', R, { doc: {} })).status, 403)
+    const exp0 = await call('export', 'GET', R)
+    assert.equal(exp0.status, 200)
+    assert.match(exp0.headers.get('content-disposition') ?? '', /conta-da-fornada\.json/)
+    assert.equal((await call('delete', 'POST', R, {})).status, 200)
+    assert.equal((await call('sync', 'GET', null)).status, 401)
+
+    // com o direito
+    const P = 'calc-pago@example.com'
+    await grant.POST(new Request('http://x', { method: 'POST', headers: adm, body: JSON.stringify({ email: P, offers: ['calculadora'] }) }))
+    assert.ok((await meOf(P)).tools.calculadora.owned)
+    const { docVazio } = await import('../../shared/calc-sync.js')
+    const { contaVazia } = await import('../../shared/calc.js')
+    const g0 = (await (await call('sync', 'GET', P)).json()) as { doc: { versao: number; contas: unknown[] } }
+    assert.equal(g0.doc.versao, 0)
+    assert.equal(g0.doc.contas.length, 0)
+    const t1 = '2026-11-02T10:00:00.000Z'
+    const t2 = '2026-11-02T11:00:00.000Z'
+    const c1 = { ...contaVazia('Aparelho A', t1, 'c-um'), atualizadaEm: t1 }
+    const c2 = { ...contaVazia('Só no B', t1, 'c-dois'), atualizadaEm: t1 }
+    const docA = { ...docVazio(t1), contas: [c1] }
+    const putA = await call('sync', 'PUT', P, { doc: docA })
+    assert.equal(putA.status, 200)
+    const dA = ((await putA.json()) as { doc: { versao: number; contas: { id: string; nome: string }[] } }).doc
+    assert.equal(dA.versao, 1)
+    assert.equal(dA.contas.length, 1)
+    // segundo aparelho: edita a mesma conta (mais recente) e cria outra: merge por item
+    const docB = { ...docVazio(t1), contas: [{ ...c1, nome: 'Editada no B', atualizadaEm: t2 }, c2] }
+    const dB = ((await (await call('sync', 'PUT', P, { doc: docB })).json()) as { doc: { versao: number; contas: { id: string; nome: string }[] } }).doc
+    assert.equal(dB.versao, 2)
+    assert.equal(dB.contas.length, 2)
+    assert.equal(dB.contas.find((c) => c.id === 'c-um')?.nome, 'Editada no B', 'a mais recente vence')
+    // versão velha do A não sobrescreve a mais nova
+    const dA2 = ((await (await call('sync', 'PUT', P, { doc: docA })).json()) as { doc: { contas: { id: string; nome: string }[] } }).doc
+    assert.equal(dA2.contas.find((c) => c.id === 'c-um')?.nome, 'Editada no B')
+    assert.equal(dA2.contas.length, 2)
+    // inválido e grande demais
+    assert.equal((await call('sync', 'PUT', P, '{ não é json')).status, 400)
+    assert.equal((await call('sync', 'PUT', P, { doc: { v: 99 } })).status, 400)
+    const grande = { ...docVazio(t1), contas: Array.from({ length: 30 }, (_, i) => ({ ...contaVazia('x'.repeat(100), t1, `g${i}`), nota: 'y'.repeat(20000) })) }
+    const big = await call('sync', 'PUT', P, { doc: grande })
+    assert.ok([400, 413].includes(big.status), `grande demais recusado (${big.status})`)
+    // exportar traz a cópia; apagar remove só o servidor; contador da rodada continua
+    const ex = (await (await call('export', 'GET', P)).json()) as { doc: { contas: unknown[] } }
+    assert.equal(ex.doc.contas.length, 2)
+    assert.equal((await call('delete', 'POST', P, {})).status, 200)
+    assert.equal(((await (await call('sync', 'GET', P)).json()) as { doc: { contas: unknown[] } }).doc.contas.length, 0)
+    // estorno: perde o sync, mantém o export; dados continuam no servidor para quando ela voltar a ter acesso
+    await call('sync', 'PUT', P, { doc: docA })
+    await revokeApi.POST(new Request('http://x', { method: 'POST', headers: adm, body: JSON.stringify({ email: P }) }))
+    assert.equal((await call('sync', 'GET', P)).status, 403)
+    const exAfter = (await (await call('export', 'GET', P)).json()) as { doc: { contas: unknown[] } }
+    assert.equal(exAfter.doc.contas.length, 1, 'os dados dela ficam depois do estorno')
+    // limite por hora
+    const L = 'calc-limite@example.com'
+    await grant.POST(new Request('http://x', { method: 'POST', headers: adm, body: JSON.stringify({ email: L, offers: ['calculadora'] }) }))
+    let last = 200
+    for (let i = 0; i < 70 && last !== 429; i++) last = (await call('sync', 'GET', L)).status
+    assert.equal(last, 429, 'passou de 60 por hora')
+    // eventos
+    const names = (await evNames()).map((e) => e.name)
+    assert.ok(names.includes('calc.round.start') && names.includes('calc.sync') && names.includes('calc.delete'))
+    // /api/event aceita calc.* sem guardar número
+    const evr = await eventApi.POST(new Request('http://x/api/event', { method: 'POST', headers: tk(P), body: JSON.stringify({ name: 'calc.open', props: { from: 'card', valor: 123 } }) }))
+    assert.ok(evr.status < 300)
+    ok('api/calc: rodada grátis única no servidor (idempotente, 1 troca, corrida), sync só com direito, merge por item, tamanho, export/apagar, estorno mantém dados, limite 60/h')
+  }
+  // 32. gamificação da ferramenta: só por fazer de verdade
+  {
+    const G = await import('../../shared/game.js')
+    let st = G.emptyGame('2026-11-02')
+    let r = G.onContaFeita(st, { today: '2026-11-02', receita: 1 })
+    assert.equal(r.st.pf, G.PF.conta + G.PF.contaReceita, '+15 (Fiz minha conta) +5 (receita nova)')
+    assert.ok(r.st.seals.conta)
+    st = r.st
+    r = G.onContaFeita(st, { today: '2026-11-02', receita: 1 })
+    assert.equal(r.st.pf, st.pf, 'mesma receita de novo: 0')
+    r = G.onContaFeita(st, { today: '2026-11-02', receita: 2 })
+    assert.equal(r.st.pf, st.pf + 5)
+    st = r.st
+    r = G.onContaFeita(st, { today: '2026-11-02', receita: 3 })
+    assert.equal(r.st.pf, st.pf, 'máx. 2 receitas novas com pontos por dia')
+    assert.ok(r.st.contas && '3' in r.st.contas, 'mas a receita conta para o selo')
+    st = r.st
+    st = G.onContaFeita(st, { today: '2026-11-03', receita: 4 }).st
+    r = G.onContaFeita(st, { today: '2026-11-03', receita: 5 })
+    assert.ok(r.st.seals.conta5, 'selo Conta de 5 receitas')
+    assert.equal(r.st.pf - st.pf, G.PF.contaReceita + G.PF.conta5)
+    const again = G.onContaFeita(r.st, { today: '2026-11-04', receita: 6 })
+    assert.equal(again.st.pf - r.st.pf, G.PF.contaReceita, 'o selo só paga uma vez')
+    assert.equal(G.onContaFeita(G.emptyGame('2026-11-02'), { today: '2026-11-02', receita: null }).st.pf, G.PF.conta, 'conta livre: só o "Fiz minha conta"')
+    // o botão manual do Bônus 07 continua e é idempotente
+    assert.equal(G.onConta(r.st, { today: '2026-11-05' }).st, r.st)
+    assert.ok(G.sealDef('conta5', () => '')?.icon === 'contas')
+    ok('gamificação da Conta da Fornada: +15 uma vez, +5 por receita nova (máx. 2/dia), selo de 5 receitas (+10 uma vez), conta livre sem pontos extras, botão manual idempotente')
+  }
+
 }
 
 // buildMe sem plano

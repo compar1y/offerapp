@@ -1,7 +1,8 @@
 import { COPY, ITEMS, ITEM_BY_ID, OFFER_BY_ID, type Item } from '../../shared/catalog'
 import { MOCKUPS } from '../data/images'
-import { PREVIEW, supportUrl } from '../data/config'
+import { CALC_ENABLED, PREVIEW, supportUrl } from '../data/config'
 import { owns, progress, refreshSession, useStore, openFile } from '../lib/store'
+import { ToolCard } from '../components/ToolCard'
 import { Carousel, DemoBar, Layout, OfferBlock, OfferCard, OfferMedia, Picture, ProductTile, ProgressBar, Section } from '../components/ui'
 import { BumpCard } from './Catalog'
 import { ownedOffers, visibleOffers } from '../lib/offers'
@@ -9,6 +10,7 @@ import { HomeOffers } from '../components/System'
 import { DifficultyForm } from '../components/DifficultyForm'
 import { WelcomeModal } from '../components/WelcomeModal'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { GameEntry, WelcomeBack } from '../components/Game'
 import { useGame } from '../lib/game'
 
@@ -21,12 +23,13 @@ export function Home() {
   const extra = ITEMS.filter((i) => i.extra)
   const bump = ITEM_BY_ID.bump
   const hasMain = owns(s, 'main')
+  const hasTool = CALC_ENABLED && owns(s, 'calculadora')
   const pending = !!s.session?.purchases.some((p) => p.status === 'pending')
   const [msg, setMsg] = useState('')
 
   // sem o kit ainda (webhook atrasado ou PIX pendente): confere sozinho a cada 8 s, por até ~3 min
   useEffect(() => {
-    if (hasMain) return
+    if (hasMain || hasTool) return
     let n = 0
     const t = setInterval(() => {
       n += 1
@@ -34,7 +37,7 @@ export function Home() {
       else void refreshSession()
     }, 8000)
     return () => clearInterval(t)
-  }, [hasMain])
+  }, [hasMain, hasTool])
   const banner = visibleOffers(s, 'home-banner')[0]
   const cards = visibleOffers(s, 'home-card')
   const mine = ownedOffers(s)
@@ -46,7 +49,7 @@ export function Home() {
     else if (PREVIEW) setMsg('Modo demonstração: abriu um PDF de exemplo, não o produto.')
   }
 
-  const mineItems: Item[] = [main, ...bonuses, ...extra, ...(owns(s, 'bump') ? [bump] : []), ...mine.map((o) => ITEM_BY_ID[o.id])]
+  const mineItems: Item[] = [...(hasMain ? [main, ...bonuses, ...extra] : []), ...(owns(s, 'bump') ? [bump] : []), ...mine.map((o) => ITEM_BY_ID[o.id])]
   const media = (i: Item) => (i.kind === 'offer' ? <OfferMedia offer={OFFER_BY_ID[i.id as keyof typeof OFFER_BY_ID]} className="pic-tile" /> : <Picture img={MOCKUPS[i.id as keyof typeof MOCKUPS]} className="pic-tile" lazy={i.id !== 'main'} />)
 
   const favItems = mineItems.filter((i) => game.fav.includes(i.id))
@@ -74,6 +77,13 @@ export function Home() {
               </p>
             )}
           </>
+        ) : hasTool ? (
+          <>
+            <p className="lead">Sua Conta da Fornada está liberada.</p>
+            <Link className="btn btn-open btn-block" to="/conta-da-fornada">
+              Abrir a Conta da Fornada
+            </Link>
+          </>
         ) : (
           <p className="kit-line">
             <strong>{pending ? 'Aguardando a confirmação do pagamento' : 'Estamos liberando seu acesso'}</strong>
@@ -85,7 +95,7 @@ export function Home() {
       {hasMain && <WelcomeBack />}
       {hasMain && <GameEntry />}
 
-      {hasMain && (
+      {(hasMain || hasTool) && (
         <Section title="Meus produtos">
           <Carousel label="Meus produtos">
             {mineItems.map((i) => (
@@ -117,9 +127,10 @@ export function Home() {
         </Section>
       )}
 
-      {cards.length > 0 && (
+      {(cards.length > 0 || (CALC_ENABLED && !owns(s, 'calculadora'))) && (
         <Section title="Materiais adicionais">
           <div className="vlist">
+            {CALC_ENABLED && !owns(s, 'calculadora') && <ToolCard from="home-card" />}
             {cards.map((o) => (
               <OfferCard key={o.id} offer={o} from="home-card" />
             ))}

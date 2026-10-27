@@ -3,9 +3,9 @@
 //   server : fetch para /api/* (Vercel Functions em api/), sessão por token assinado.
 
 import { DEMO_CODE, PREVIEW } from '../data/config'
-import { itemsFor, type ItemId, type MeResponse, type PlanId, type PurchaseView } from '../../shared/catalog'
+import { NO_TOOLS, itemsFor, type ItemId, type MeResponse, type PlanId, type PurchaseView } from '../../shared/catalog'
 
-export type AppEventName = 'offer.click' | 'offer.dismiss' | 'offer.interest' | 'offer.view' | 'catalog.view' | 'combo.view' | 'combo.spin' | 'combo.click' | 'combo.interest' | 'journey.view' | 'hook.click' | 'item.done' | 'item.undone'
+export type AppEventName = 'offer.click' | 'offer.dismiss' | 'offer.interest' | 'offer.view' | 'catalog.view' | 'combo.view' | 'combo.spin' | 'combo.click' | 'combo.interest' | 'journey.view' | 'hook.click' | 'item.done' | 'item.undone' | 'calc.open' | 'calc.unlock.click' | 'calc.round.start' | 'calc.conta.done' | 'calc.export' | 'calc.import'
 
 export interface Result {
   ok: boolean
@@ -47,6 +47,8 @@ interface DemoState {
   offers: boolean
   // simula que a cliente já comprou as N primeiras ofertas de DEMO_OWNED (0, 1 ou 3)
   have: number
+  // simula que a cliente já comprou a Conta da Fornada
+  calc: boolean
 }
 
 function loadDemo(): DemoState {
@@ -54,12 +56,12 @@ function loadDemo(): DemoState {
     const raw = localStorage.getItem(DEMO_KEY)
     if (raw) {
       const j = JSON.parse(raw) as Partial<DemoState>
-      return { email: j.email ?? null, bump: !!j.bump, offers: !!j.offers, have: [0, 1, 3].includes(Number(j.have)) ? Number(j.have) : 0 }
+      return { email: j.email ?? null, bump: !!j.bump, offers: !!j.offers, have: [0, 1, 3].includes(Number(j.have)) ? Number(j.have) : 0, calc: !!j.calc }
     }
   } catch {
     /* sem armazenamento */
   }
-  return { email: null, bump: false, offers: false, have: 0 }
+  return { email: null, bump: false, offers: false, have: 0, calc: false }
 }
 
 function saveDemo(s: DemoState) {
@@ -70,13 +72,31 @@ function saveDemo(s: DemoState) {
   }
 }
 
-export function getDemoFlags(): { bump: boolean; offers: boolean; have: number } {
-  const { bump, offers, have } = loadDemo()
-  return { bump, offers, have }
+export function getDemoFlags(): { bump: boolean; offers: boolean; have: number; calc: boolean } {
+  const { bump, offers, have, calc } = loadDemo()
+  return { bump, offers, have, calc }
 }
 
-export function setDemoFlags(patch: Partial<{ bump: boolean; offers: boolean; have: number }>) {
+export function setDemoFlags(patch: Partial<{ bump: boolean; offers: boolean; have: number; calc: boolean }>) {
   saveDemo({ ...loadDemo(), ...patch })
+}
+
+// demonstração: a rodada grátis fica no navegador (no app real é contada no servidor)
+const demoRoundKey = (email: string) => `panetone-demo-round:v1:${email}`
+export function demoRound(email: string): { recipe: number | null; contaId: string } | null {
+  try {
+    return JSON.parse(localStorage.getItem(demoRoundKey(email)) ?? 'null') as { recipe: number | null; contaId: string } | null
+  } catch {
+    return null
+  }
+}
+export function demoSetRound(email: string, v: { recipe: number | null; contaId: string } | null) {
+  try {
+    if (v) localStorage.setItem(demoRoundKey(email), JSON.stringify(v))
+    else localStorage.removeItem(demoRoundKey(email))
+  } catch {
+    /* sem armazenamento */
+  }
 }
 
 const demoWaitSince: Record<string, number> = {}
@@ -114,8 +134,9 @@ export const demoProvider: AccessProvider = {
     const plan: PlanId = 'completo'
     const purchases: PurchaseView[] = [{ orderId: 'demo-1', plan, bump: false, status: 'paid', source: 'manual', createdAt: new Date().toISOString() }]
     if (s.bump) purchases.push({ orderId: 'demo-2', plan: null, bump: true, status: 'paid', source: 'manual', createdAt: new Date().toISOString() })
-    const items = itemsFor(plan, s.bump, DEMO_OWNED.slice(0, s.have))
-    return { email: s.email, plan, items, entitlements: items, purchases }
+    const items = itemsFor(plan, s.bump, [...DEMO_OWNED.slice(0, s.have), ...(s.calc ? ['calculadora'] : [])])
+    const round = demoRound(s.email)
+    return { email: s.email, plan, items, entitlements: items, purchases, tools: { calculadora: { ...NO_TOOLS.calculadora, owned: s.calc, roundUsed: !!round, roundRecipe: round?.recipe ?? null } } }
   },
   async logout() {
     saveDemo({ ...loadDemo(), email: null })
@@ -179,6 +200,9 @@ async function api<T>(path: string, init?: RequestInit & { auth?: boolean }): Pr
     return { status: 0, data: null }
   }
 }
+
+/** chamada autenticada à API (Conta da Fornada). status 0 = sem rede */
+export const authedApi = <T,>(path: string, init?: RequestInit): Promise<{ status: number; data: T | null }> => api<T>(path, { ...init, auth: true })
 
 export const serverProvider: AccessProvider = {
   mode: 'server',

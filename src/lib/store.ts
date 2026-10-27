@@ -26,6 +26,7 @@ export interface State {
   demoBump: boolean
   demoOffers: boolean
   demoHave: number
+  demoCalc: boolean
 }
 
 const UI_KEY = 'panetone-app:v2'
@@ -51,7 +52,7 @@ function saveUi() {
   }
 }
 
-let state: State = { ready: false, session: null, pendingEmail: null, demoBump: getDemoFlags().bump, demoOffers: getDemoFlags().offers, demoHave: getDemoFlags().have, ...loadUi() }
+let state: State = { ready: false, session: null, pendingEmail: null, demoBump: getDemoFlags().bump, demoOffers: getDemoFlags().offers, demoHave: getDemoFlags().have, demoCalc: getDemoFlags().calc, ...loadUi() }
 const listeners = new Set<() => void>()
 
 function set(patch: Partial<State>) {
@@ -194,14 +195,14 @@ export function trackHook(fromItem: string, to: OfferId, where: string) {
 
 
 // só no modo demonstração. Ligar/desligar as ofertas recarrega a página (OFFERS é lida ao iniciar o app).
-export async function changeDemo(patch: Partial<{ bump: boolean; offers: boolean; have: number }>) {
+export async function changeDemo(patch: Partial<{ bump: boolean; offers: boolean; have: number; calc: boolean }>) {
   setDemoFlags(patch)
   if (patch.offers !== undefined) {
     window.location.reload()
     return
   }
   const session = await provider.getSession()
-  set({ demoBump: getDemoFlags().bump, demoHave: getDemoFlags().have, session })
+  set({ demoBump: getDemoFlags().bump, demoHave: getDemoFlags().have, demoCalc: getDemoFlags().calc, session })
 }
 
 export function owns(s: State, id: ItemId): boolean {

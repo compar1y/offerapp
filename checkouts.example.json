@@ -1,4 +1,8 @@
 {
+  "calculadora": {
+    "checkoutUrl": "https://pay.exemplo.test/calculadora",
+    "ready": true
+  },
   "panetones-vulcao": {
     "checkoutUrl": "https://pay.exemplo.test/panetones-vulcao",
     "ready": true

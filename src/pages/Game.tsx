@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import * as G from '../../shared/game'
 import { ITEM_BY_ID, type ItemId } from '../../shared/catalog'
 import { Layout } from '../components/ui'
+import { SealLink } from '../components/ToolCard'
 import { ChallengesCard, DailyGoalCard, FornadaEditor, Honest, IncentiveLine, LevelChip, NextStepCard, SkillTree, StreakLine, WeeklyPick } from '../components/Game'
 import { Seal } from '../components/Seal'
 import { gameDelEncomenda, gameDelFornada, gameEncomenda, gameEntregue, gameMetaEnc, gameSeeExtra, titleOf, useGame } from '../lib/game'
@@ -129,6 +130,7 @@ export function Selos() {
                     <Seal icon={def.icon} grey={!got} gold={def.gold} size={64} />
                     <strong>{def.name}</strong>
                     <small>{got ? `Em ${br(got)}` : def.how}</small>
+                    {!got && (id === 'conta' || id === 'conta5') && <SealLink />}
                     <span className="sr-only">{got ? 'Conquistado' : 'Ainda não conquistado'}</span>
                   </li>
                 )

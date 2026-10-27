@@ -23,6 +23,8 @@ export type ItemId =
   | 'kit-embalagem-etiqueta'
   | 'fornada-pascoa'
   | 'ano-inteiro-encomendas'
+  // ferramenta (não é material): "Conta da Fornada", calculadora de custo e preço. R$ 19,90, pagamento único, fora da Biblioteca completa
+  | 'calculadora'
   | 'panetones-vulcao'
   | 'panetones-vitrine'
   | 'segredo-recheios'
@@ -249,6 +251,9 @@ export interface Offer {
   requiresDismissed?: OfferId
   // aparece na página /catalogo (e na bolinha de novidades), quando CATALOG_ENABLED estiver ligado
   catalog: boolean
+  // true = FERRAMENTA (software, sem arquivo): fora do catálogo, da Biblioteca completa (combo, soma riscada e gate) e das trilhas.
+  // É a única oferta que pode abrir antes das outras: aparece primeiro em "Meus produtos" e abre mesmo sem as 17 ofertas prontas.
+  tool?: boolean
   // selo "Destaque" e primeira posição no catálogo (escolha editorial, não é escassez)
   // formato do que o cliente recebe (rótulo curto no card, para não parecer que tudo é PDF) e o ícone funcional do chip
   deliverableType: string
@@ -256,7 +261,7 @@ export interface Offer {
   // o que o mockup do catálogo mostra (briefing da imagem) e a proporção do arquivo: vertical 640x960 (padrão) ou horizontal 800x600 (rabanada, dia de produção, ponto perfeito)
   // o arquivo fica em public/img/catalogo/<id>.webp (fundo transparente); ver README
   imageType: string
-  imageRatio: '2:3' | '4:3'
+  imageRatio: '2:3' | '4:3' | '4:5'
   // pilha de valor (só no top 10): passo a passo, antes/depois (descritivo, sem número de ganho), 3 bônus e o valor somado dos itens
   // o valor somado (offerValueFromCents) = preço do produto + valor de cada bônus, calculado, nunca digitado.
   // Rótulo na tela: "valor somado dos itens". Nunca "preço antigo", nunca relógio ou escassez.
@@ -281,6 +286,41 @@ export interface Offer {
 }
 
 export const OFFERS: Offer[] = [
+  {
+    id: 'calculadora',
+    kind: 'upsell',
+    enabled: true,
+    tool: true,
+    title: 'Conta da Fornada',
+    subtitle: 'calculadora de custo e preço',
+    description:
+      'Calculadora de custo e preço dentro do app. Você digita o que paga nos ingredientes e vê o custo da fornada, quanto sobra em cada panetone e o preço mínimo que vale cobrar. Já vem com as 100 receitas do Bônus 07; é um acesso à ferramenta, sem arquivo para baixar.',
+    includes: [
+      'Custo da fornada e de cada unidade, com os seus preços',
+      'Quanto sobra por unidade e o preço mínimo que cobre o custo',
+      'As 100 receitas do Bônus 07 já preenchidas',
+      'Quantas vender no mês para fechar a conta',
+      'Seus dados guardados no aparelho e na sua conta',
+    ],
+    priceCents: 1990,
+    // id interno do checkout na Wiapy (opcional): o código público sai do link em public/checkouts.json e CALC_CHECKOUT_IDS (servidor) soma ids extras
+    wiapyProductId: '',
+    titleHints: ['conta da fornada'],
+    placement: [],
+    catalog: false,
+    badgeNew: true,
+    headline: 'Antes de vender, descubra quanto sobra de verdade',
+    promise: 'Faça a conta com os seus preços: custo, sobra e o mínimo que vale cobrar.',
+    deliverableType: 'Ferramenta',
+    deliverableIcon: 'sheet',
+    imageType: 'Caderno de contas ao lado de um celular com a conta aberta',
+    imageRatio: '4:5',
+    testimonials: [],
+    featured: false,
+    tierS: false,
+    cover: null,
+    files: [],
+  },
   {
     id: 'panetones-vulcao',
     kind: 'upsell',
@@ -1119,6 +1159,7 @@ export const OFFER_VISUAL: Partial<Record<OfferId, OfferVisual>> = {
 }
 // nome curto para mapa e ganchos (o título completo é longo para caber numa etapa do mapa)
 const SHORT: Partial<Record<OfferId, string>> = {
+  calculadora: 'Conta da Fornada',
   'panetones-vulcao': 'Panetones Vulcão',
   'panetones-vitrine': 'Panetones de Vitrine',
   'caixas-doces-natal': 'Caixas de Doces',
@@ -1445,7 +1486,14 @@ export interface MeResponse {
   // o que a cliente pode abrir agora (mesma lista de items): cada produto fica 'liberado' se o id está aqui, senão 'bloqueado'
   entitlements: ItemId[]
   purchases: PurchaseView[]
+  // estado da ferramenta Conta da Fornada: owned = tem o direito (pago/liberado); a rodada grátis é contada no servidor
+  tools: ToolsState
 }
+
+export interface ToolsState {
+  calculadora: { owned: boolean; roundUsed: boolean; roundRecipe: number | null }
+}
+export const NO_TOOLS: ToolsState = { calculadora: { owned: false, roundUsed: false, roundRecipe: null } }
 
 
 // =====================================================================================================
@@ -1518,6 +1566,14 @@ export const COPY = {
 } as const
 
 export const OFFER_COPY: Partial<Record<OfferId, OfferCopy>> = {
+  calculadora: {
+    need: 'Para quando você precisa saber se o preço cobre a fornada.',
+    cardLine: 'Faça a conta com os seus preços: custo, sobra e o mínimo que vale cobrar.',
+    question: 'Quanto custou essa fornada? E quanto sobra em cada panetone?',
+    relatesTo: ['main', 'bonus-07', 'bonus-05'],
+    afterDone: 'O próximo passo é saber quanto custou essa fornada e quanto sobra em cada um.',
+    afterOpened: 'Se você olhou a tabela de custos, aqui está a conta com os seus preços.',
+  },
   'panetones-vulcao': {
     need: 'Para quando você quer um panetone que faça todo mundo parar para olhar.',
     cardLine: 'Recheio e cobertura que escorrem, com a montagem explicada para dar certo na sua cozinha.',

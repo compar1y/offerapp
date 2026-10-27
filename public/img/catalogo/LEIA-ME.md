@@ -16,3 +16,7 @@ Enquanto o arquivo não existe, o app mostra um placeholder discreto (só no mod
 3. `npm run check` e commit. (O `npm run build` já roda o passo 2 sozinho.)
 
 Para ver a lista do que falta: `npm run catalogo:imagens`.
+
+Conta da Fornada (ferramenta, não é material): `calculadora.webp`, 640x800 (4:5, `imageRatio: '4:5'`), alfa. O nome segue o id da oferta (`calculadora`), não o nome do arquivo do GPT (`conta-da-fornada.png`).
+
+Selos novos (em `public/selos/`, 256x256, alfa): `s11-conta-5-receitas.webp` (conquista "Conta de 5 receitas") e `s12-primeira-venda-anotada.webp` (mapeado em `SEAL_FILES` (`shared/game.ts`, chave `venda`), sem conquista ligada ainda).

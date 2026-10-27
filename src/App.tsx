@@ -8,7 +8,8 @@ import { Encomendas, ExtraView, Extras, Fornada, Livro, Mes, Pontos, Selos } fro
 import { Account } from './pages/Account'
 import { Catalog } from './pages/Catalog'
 import { Journey } from './pages/Journey'
-import { CATALOG_ENABLED } from './data/config'
+import { CALC_ENABLED, CATALOG_ENABLED } from './data/config'
+import { CalcApp } from './calc/CalcApp'
 
 function Private({ children }: { children: ReactNode }) {
   const { session } = useStore()
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/fornada/mes" element={<Kit><Mes /></Kit>} />
         <Route path="/fornada/extras" element={<Kit><Extras /></Kit>} />
         <Route path="/fornada/extras/:id" element={<Kit><ExtraView /></Kit>} />
+        {CALC_ENABLED && <Route path="/conta-da-fornada/*" element={<Private><CalcApp /></Private>} />}
         <Route path="/conta" element={<Private><Account /></Private>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

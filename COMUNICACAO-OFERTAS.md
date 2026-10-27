@@ -295,7 +295,7 @@ Gerado de `shared/game.ts`. Pontos só por ação que a cliente marca; nada de d
 
 **Níveis:** Aprendiz (0 PF), Fornada (100 PF), Confeiteira (300 PF), Mestra do Panetone (700 PF). O nível nunca desce.
 
-**Tabela de PF:** feita 10, refeita 3, casa 5, foto 5, nota 3, ingredientes 2, etapa 15, desafio 20, desafioTodos 30, seq3 10, seq7 25, primeiraEncomenda 10, entregue 5, socorro 5, metaDia 2, sugestao 5, conta 15, presente 10, variedade 10. Teto: 60 PF por dia (vale para tudo). Desafios: 3 por semana, 20 PF cada + 30 PF por fechar os 3 (máximo 90 PF por semana).
+**Tabela de PF:** feita 10, refeita 3, casa 5, foto 5, nota 3, ingredientes 2, etapa 15, desafio 20, desafioTodos 30, seq3 10, seq7 25, primeiraEncomenda 10, entregue 5, socorro 5, metaDia 2, sugestao 5, conta 15, presente 10, variedade 10, contaReceita 5, conta5 10. Teto: 60 PF por dia (vale para tudo). Desafios: 3 por semana, 20 PF cada + 30 PF por fechar os 3 (máximo 90 PF por semana).
 
 **Ramos de habilidade:** Massa, Recheio, Cobertura, Embalagem, Venda (3 níveis: Iniciante, Segura, Craque).
 
@@ -343,6 +343,7 @@ Gerado de `shared/game.ts`. Pontos só por ação que a cliente marca; nada de d
 | Salvei a fornada: Miolo seco | Use uma Ficha de Socorro e marque "Resolveu". |
 | Minha primeira encomenda | Registre a primeira encomenda no caderno. |
 | Fiz minha conta | Marque no Bônus 07 que você calculou o custo da sua fornada. |
+| Conta de 5 receitas | Termine a conta de 5 receitas diferentes na Conta da Fornada. |
 | Fornada de presente | Marque uma fornada que você fez para presentear. |
 | Variedade: 3 tipos | Faça materiais de 3 categorias diferentes. |
 | Variedade: 5 tipos | Faça materiais de 5 categorias diferentes. |

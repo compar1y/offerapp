@@ -19,7 +19,7 @@ const example: Record<string, { checkoutUrl: string; ready: boolean }> = {}
 const offerIds: string[] = OFFERS.filter((o) => o.catalog).map((o) => o.id)
 CHECKOUT_IDS.forEach((id) => {
   const idx = offerIds.indexOf(id)
-  const on = (idx >= 0 && idx < 12) || id === 'combo' || id === 'bump'
+  const on = (idx >= 0 && idx < 12) || id === 'combo' || id === 'bump' || id === 'calculadora'
   example[id] = { checkoutUrl: on ? `https://pay.exemplo.test/${id}` : '', ready: on }
 })
 await writeFile(ex, JSON.stringify(example, null, 2) + '\n')

@@ -5,7 +5,7 @@
 //   a lista de arquivos de products[] se chama `itens` (não `items`)
 // Tolerante: ignora campos extras e aceita o JSON com vírgulas faltando/sobrando (os exemplos da doc têm esse erro).
 
-import { BUMP, COMBO, DEFAULT_FULL_KIT_CHECKOUT_IDS, OFFERS, PLANS, type BundleId, type OfferId } from '../shared/catalog.js'
+import { BUMP, COMBO, DEFAULT_FULL_KIT_CHECKOUT_IDS, OFFERS, OFFER_BY_ID, PLANS, type BundleId, type CheckoutMap, type OfferId } from '../shared/catalog.js'
 import { env } from './env.js'
 
 export type WiapyStatus = 'paid' | 'unpaid' | 'credit_card_declined' | 'refunded' | 'chargedback' | 'unknown'
@@ -141,11 +141,29 @@ export const detectBump = (p: ParsedWiapy): boolean => detectBumpVia(p) !== null
 // ofertas adicionais (OFFERS): só contam as que estão ligadas (enabled) e configuradas (id do produto ou trecho do título)
 const idInPayload = (p: ParsedWiapy, id: string): boolean => !!id && (p.checkoutId === id || p.orderbump.some((x) => x.id === id) || p.products.some((x) => x.id === id))
 
-export function detectOffers(p: ParsedWiapy): OfferId[] {
+// Conta da Fornada: o checkout.id da Wiapy pode vir como o código público do link (pay.wiapy.com/<código>) ou como o id interno.
+// Os dois valem: o código sai do link de public/checkouts.json (chave `calculadora`), o id interno vem de wiapyProductId ou de CALC_CHECKOUT_IDS (env, separado por vírgula).
+export function toolCheckoutIds(map: CheckoutMap): string[] {
+  const url = map.calculadora?.checkoutUrl ?? ''
+  const code = url ? (url.replace(/[?#].*$/, '').split('/').filter(Boolean).pop() ?? '') : ''
+  const fromEnv = env('CALC_CHECKOUT_IDS')
+    .split(/[,;\s]+/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+  return [...new Set([OFFER_BY_ID.calculadora.wiapyProductId, code, ...fromEnv].filter(Boolean))]
+}
+// valor esperado da ferramenta (centavos): CALC_AMOUNT_CENTS (env) ou o preço do catálogo (R$ 19,90)
+export function amountExpected(): number {
+  const n = Number(env('CALC_AMOUNT_CENTS'))
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : OFFER_BY_ID.calculadora.priceCents
+}
+
+export function detectOffers(p: ParsedWiapy, toolIds: string[] = []): OfferId[] {
   const got = new Set<OfferId>()
   for (const o of OFFERS) {
     if (!o.enabled) continue
-    if (idInPayload(p, o.wiapyProductId)) got.add(o.id)
+    if (o.tool && toolIds.some((id) => idInPayload(p, id))) got.add(o.id)
+    else if (idInPayload(p, o.wiapyProductId)) got.add(o.id)
     else if (o.titleHints.length > 0 && (p.orderbump.some((x) => has(x.title, o.titleHints)) || p.products.some((x) => has(x.title, o.titleHints)))) got.add(o.id)
   }
   return OFFERS.filter((o) => got.has(o.id)).map((o) => o.id)
@@ -207,8 +225,9 @@ export function isFullKit(p: ParsedWiapy): { ok: boolean; reason?: string } {
 }
 
 // compra avulsa de um produto adicional (o checkout É o produto do bump ou de uma oferta ligada)
-export function isStandaloneExtra(p: ParsedWiapy): boolean {
+export function isStandaloneExtra(p: ParsedWiapy, toolIds: string[] = []): boolean {
   if (!p.checkoutId) return false
+  if (toolIds.includes(p.checkoutId)) return true
   if (BUMP.wiapyProductId && p.checkoutId === BUMP.wiapyProductId) return true
   if (COMBO.wiapyProductId && p.checkoutId === COMBO.wiapyProductId) return true
   return OFFERS.some((o) => o.enabled && !!o.wiapyProductId && p.checkoutId === o.wiapyProductId)

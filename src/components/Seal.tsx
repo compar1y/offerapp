@@ -15,6 +15,8 @@ const G: Record<SealIcon, string> = {
   encomenda: 'M3 8l9-5 9 5v9l-9 5-9-5zM3 8l9 5 9-5M12 13v9',
   conta: 'M6 3h12v18H6zM9 7h6M9 11h2M13 11h2M9 15h2M13 15h2',
   presente: 'M4 11h16v9H4zM3 8h18v3H3zM12 8v12M12 8c-2-4-6-3-5 0 .5 1.5 3 1.5 5 0zM12 8c2-4 6-3 5 0-.5 1.5-3 1.5-5 0z',
+  contas: 'M5 3h14v18H5zM8 7h8M8 11h3M13 11h3M8 15h3M13 15h3M8 19h8',
+  venda: 'M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2zM9 9h6M9 13h4',
   variedade: 'M7 3v7a2 2 0 0 0 2 2v9M11 3v7M7 3v7M17 3c-2 2-2 6 0 8v10',
 }
 

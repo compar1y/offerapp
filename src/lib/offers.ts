@@ -1,6 +1,6 @@
 // Regras de quais ofertas aparecem para a cliente. Tudo daqui só devolve algo se a oferta estiver LIGADA (enabled).
 import { COMBO, OFFERS, bundlePending, comboGate, comboOffers, comboShowInstallments, comboShowStrike, comboSumCents, isBundleId, type BundleId, type Offer, type OfferId, type OfferPlacement } from '../../shared/catalog'
-import { CATALOG_ENABLED, COMBO_MIN_AVAILABLE, PREVIEW } from '../data/config'
+import { CALC_ENABLED, CATALOG_ENABLED, COMBO_MIN_AVAILABLE, PREVIEW } from '../data/config'
 import { buyUrl, getCheckouts, isReady, readySet } from './checkouts'
 import { owns, type State } from './store'
 
@@ -20,7 +20,7 @@ export function visibleOffers(s: State, placement: OfferPlacement): Offer[] {
 
 // ofertas já compradas (viram um cartão "No seu kit" na home, sem texto de venda)
 export function ownedOffers(s: State): Offer[] {
-  return OFFERS.filter((o) => o.enabled && owns(s, o.id))
+  return OFFERS.filter((o) => o.enabled && (o.id !== 'calculadora' || CALC_ENABLED) && owns(s, o.id))
 }
 
 // ---- catálogo de ofertas (página /catalogo)

@@ -4,6 +4,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { COPY, ITEM_BY_ID } from '../../shared/catalog'
 import { MOCKUPS } from '../data/images'
 import { lockInfo } from '../lib/lock'
+import { ToolCard } from '../components/ToolCard'
+import { CALC_ENABLED } from '../data/config'
 import { ComboSlot } from '../components/Combo'
 import { Context, Layout, LockMark, OfferCard, Picture } from '../components/ui'
 import { bumpContextOf } from '../lib/context'
@@ -49,6 +51,7 @@ export function Catalog() {
         <LevelChip compact />
       </header>
       <div className="vlist vlist-all" aria-label="Todos os materiais da biblioteca">
+        {CALC_ENABLED && !owns(s, 'calculadora') && <ToolCard from="catalog" />}
         {hero && <OfferCard offer={hero} hero isNew={fresh.current.has(hero.id)} isNext={next.has(hero.id)} focus={foco === hero.id} from="catalog" />}
         {list.map((o) => (o === 'bump' ? <BumpCard key="bump" /> : <OfferCard key={o.id} offer={o} isNew={fresh.current.has(o.id)} isNext={next.has(o.id)} focus={foco === o.id} from="catalog" />))}
         <ComboSlot prominent />

@@ -6,7 +6,7 @@ import { logEvent } from '../server/purchases.js'
 import { ITEM_BY_ID, isOfferId, type ItemId } from '../shared/catalog.js'
 
 // só estes nomes são aceitos (o cliente não escolhe nomes livres)
-const NAMES = ['offer.click', 'offer.dismiss', 'offer.interest', 'offer.view', 'catalog.view', 'combo.view', 'combo.spin', 'combo.click', 'combo.interest', 'journey.view', 'hook.click', 'item.done', 'item.undone'] as const
+const NAMES = ['offer.click', 'offer.dismiss', 'offer.interest', 'offer.view', 'catalog.view', 'combo.view', 'combo.spin', 'combo.click', 'combo.interest', 'journey.view', 'hook.click', 'item.done', 'item.undone', 'calc.open', 'calc.unlock.click', 'calc.round.start', 'calc.conta.done', 'calc.export', 'calc.import'] as const
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -28,6 +28,8 @@ export async function POST(request: Request): Promise<Response> {
       // mapa "Seu caminho": só conta a abertura (e quantos itens a cliente já tem)
       const c = Number(b?.count)
       if (Number.isFinite(c)) props.count = String(Math.max(0, Math.min(99, Math.trunc(c))))
+    } else if (name.startsWith('calc.')) {
+      // ferramenta Conta da Fornada: só registra a ação (e de onde veio). Nenhum número da cliente vai no evento.
     } else if (name.startsWith('combo.')) {
       // sem oferta nem item: só registra a ação no combo "Leve tudo" (e de onde veio)
     } else if (name === 'catalog.view') {

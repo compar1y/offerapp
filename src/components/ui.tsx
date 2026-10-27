@@ -359,7 +359,7 @@ export function ProductTile({ to, media, title, state, tone = 'open', seen = fal
 
 // só aparece em modo demonstração: o cliente sempre tem o kit; alterna só as Fichas de Socorro e as ofertas
 export function DemoBar() {
-  const { demoBump, demoOffers, demoHave } = useStore()
+  const { demoBump, demoOffers, demoHave, demoCalc } = useStore()
   if (!PREVIEW) return null
   return (
     <div className="demobar" role="group" aria-label="Opções de teste (modo demonstração)">
@@ -373,6 +373,9 @@ export function DemoBar() {
         </button>
         <button className={demoHave > 0 ? 'seg-on' : ''} aria-label={`Itens que já comprei: ${demoHave}`} onClick={() => changeDemo({ have: demoHave === 0 ? 1 : demoHave === 1 ? 3 : 0 })}>
           {`Já comprei: ${demoHave}`}
+        </button>
+        <button className={demoCalc ? 'seg-on' : ''} aria-pressed={demoCalc} onClick={() => changeDemo({ calc: !demoCalc })}>
+          {demoCalc ? 'Com a Conta' : 'Sem a Conta'}
         </button>
       </div>
     </div>

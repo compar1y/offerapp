@@ -33,8 +33,8 @@ import catalogImages from './catalog-images.json'
 
 // mockup de produto do catálogo: public/img/catalogo/<id>.webp (lista gerada por `npm run catalogo:imagens`)
 export function catalogImage(o: Offer): Img | null {
-  if (!o.catalog || !(catalogImages as string[]).includes(o.id)) return null
-  const [w, h] = o.imageRatio === '2:3' ? [640, 960] : [800, 600]
+  if (!(o.catalog || o.tool) || !(catalogImages as string[]).includes(o.id)) return null
+  const [w, h] = o.imageRatio === '2:3' ? [640, 960] : o.imageRatio === '4:5' ? [640, 800] : [800, 600]
   return img(`catalogo/${o.id}.webp`, `Mockup de ${o.title}: ${o.imageType}`, w, h)
 }
 

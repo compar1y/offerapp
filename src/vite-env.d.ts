@@ -6,4 +6,5 @@ declare const __PREVIEW__: boolean
 interface ImportMetaEnv {
   readonly VITE_CATALOG_ENABLED?: 'true' | 'false'
   readonly VITE_COMBO_MIN_AVAILABLE?: string
+  readonly VITE_CALC_ENABLED?: 'true' | 'false'
 }

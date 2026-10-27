@@ -165,3 +165,6 @@ export const markLastItem = (item: string) => {
   const c = cur()
   if (c.email && c.st.ultimoItem !== item) commit(G.visit(c.st, today(), item))
 }
+
+// Conta da Fornada: ao concluir uma conta ("Fiz minha conta" +15 PF uma vez; +5 PF por receita nova, máx. 2/dia). Abrir a ferramenta: 0 PF.
+export const gameContaFeita = (receita: number | null) => apply(G.onContaFeita(cur().st, { ...base(), receita }))

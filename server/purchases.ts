@@ -6,10 +6,11 @@
 //   carrinho abandonado           : só gera evento
 // Os direitos são calculados na leitura, a partir das compras com status paid (inclui liberação manual e CSV).
 
-import { ENTITLEMENTS, itemsFor, type BundleId, type ItemId, type OfferId, type MeResponse, type PlanId, type PurchaseStatus, type PurchaseView } from '../shared/catalog.js'
+import { ENTITLEMENTS, NO_TOOLS, itemsFor, type BundleId, type ItemId, type OfferId, type MeResponse, type PlanId, type PurchaseStatus, type PurchaseView } from '../shared/catalog.js'
 import { readyIds } from './checkouts.js'
 import { getKV } from './kv.js'
-import { detectBumpVia, detectBundles, detectOffers, isFullKit, isStandaloneExtra, type ParsedWiapy } from './wiapy.js'
+import { loadCheckouts } from './checkouts.js'
+import { amountExpected, detectBumpVia, detectBundles, detectOffers, isFullKit, isStandaloneExtra, toolCheckoutIds, type ParsedWiapy } from './wiapy.js'
 
 export interface Purchase {
   orderId: string
@@ -112,8 +113,9 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
   if (!existing) {
     // só libera o que vem do checkout do kit (FULL_KIT_CHECKOUT_IDS) ou de um produto adicional avulso.
     // Qualquer outro checkout é ignorado, mas fica registrado como evento.
+    const toolIds = toolCheckoutIds(await loadCheckouts())
     const kit = isFullKit(p)
-    const extra = isStandaloneExtra(p)
+    const extra = isStandaloneExtra(p, toolIds)
     if (!kit.ok && !extra) {
       await logEvent({ name: 'purchase.ignored_checkout', origin, email: p.email, orderId, props: { ...props, reason: kit.reason, checkoutTitle: p.checkoutTitle, checkoutAmountCents: p.checkoutAmountCents } })
       return { ok: true, action: 'ignored', status, reason: kit.reason }
@@ -121,7 +123,7 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
     const plan = kit.ok ? ('completo' as const) : null
     const bumpVia = detectBumpVia(p)
     const bump = bumpVia !== null
-    const offers = detectOffers(p)
+    const offers = detectOffers(p, toolIds)
     const bundles = detectBundles(p)
     const needsReview = false
     const created: Purchase = {
@@ -145,6 +147,12 @@ export async function applyWiapyEvent(p: ParsedWiapy): Promise<ApplyResult> {
     await saveOrder(created)
     if (bump) await logEvent({ name: 'purchase.bump_detected', origin, email: p.email, orderId, props: { via: bumpVia, status } })
     await logEvent({ name: `purchase.${status}`, origin, email: p.email, orderId, props: { ...props, plan, bump, offers, bundles } })
+    // ferramenta Conta da Fornada: valor diferente do esperado só avisa (evento), nunca bloqueia a liberação
+    if (offers.includes('calculadora') && !plan) {
+      const esperado = amountExpected()
+      const got = p.checkoutAmountCents ?? p.amountCents
+      if (got !== null && got !== esperado) await logEvent({ name: 'purchase.amount_mismatch', origin, email: p.email, orderId, props: { esperado, recebido: got, offerId: 'calculadora' } })
+    }
     return { ok: true, action: 'created', status }
   }
 
@@ -235,7 +243,7 @@ export function buildMe(email: string, purchases: Purchase[], ready: ReadonlySet
     source: p.source,
     createdAt: p.createdAt,
   }))
-  return { email, plan, items: [...items], entitlements: [...items], purchases: views }
+  return { email, plan, items: [...items], entitlements: [...items], purchases: views, tools: { calculadora: { ...NO_TOOLS.calculadora, owned: items.has('calculadora') } } }
 }
 
 export async function meFor(email: string): Promise<MeResponse> {

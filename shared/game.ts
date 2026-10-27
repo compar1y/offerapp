@@ -35,7 +35,10 @@ export const PF = {
   conta: 15,
   presente: 10,
   variedade: 10,
+  contaReceita: 5, // Conta da Fornada: receita DIFERENTE com conta concluída (máx. 2 por dia)
+  conta5: 10, // selo "Conta de 5 receitas", uma vez
 } as const
+export const CONTA_POR_DIA = 2
 export const DAILY_CAP = 60
 export const WEEKLY_CHALLENGE_MAX = 3 * PF.desafio + PF.desafioTodos // 90
 export const DELIVERED_PER_DAY = 3
@@ -172,7 +175,7 @@ export const GAME_ITEMS: Partial<Record<ItemId, { branch: Branch; cat: CatId }>>
 export const metaOf = (id: string): { branch: Branch; cat: CatId } => GAME_ITEMS[id as ItemId] ?? { branch: 'massa', cat: 'classico' }
 
 // ------------------------------------------------------------ selos
-export type SealIcon = 'aprendiz' | 'fornada' | 'confeiteira' | 'mestra' | 'receita' | 'casa' | 'sequencia' | 'desafio' | 'socorro' | 'encomenda' | 'conta' | 'presente' | 'variedade'
+export type SealIcon = 'aprendiz' | 'fornada' | 'confeiteira' | 'mestra' | 'receita' | 'casa' | 'sequencia' | 'desafio' | 'socorro' | 'encomenda' | 'conta' | 'presente' | 'variedade' | 'contas' | 'venda'
 // nomes dos arquivos de imagem prontos para trocar o desenho simples (SVG) quando existirem em public/selos/<arquivo>.webp
 export const SEAL_FILES: Record<SealIcon, string | null> = {
   aprendiz: 's01-aprendiz',
@@ -188,6 +191,8 @@ export const SEAL_FILES: Record<SealIcon, string | null> = {
   conta: 's10-fiz-minha-conta',
   presente: null,
   variedade: null,
+  contas: 's11-conta-5-receitas', // arte pedida ao GPT (IMAGENS-FALTANDO.md); enquanto não existir, o desenho SVG funciona
+  venda: 's12-primeira-venda-anotada', // reservado para o diário de vendas (V1.5); ainda sem conquista no app
 }
 export const SOCORRO_TIPOS = [
   { id: 'massa-nao-cresce', name: 'Massa que não cresce' },
@@ -216,6 +221,7 @@ export const STATIC_SEALS: SealDef[] = [
   ...SOCORRO_TIPOS.map((t): SealDef => ({ id: `socorro:${t.id}`, name: `Salvei a fornada: ${t.name}`, how: 'Use uma Ficha de Socorro e marque "Resolveu".', icon: 'socorro' })),
   { id: 'enc1', name: 'Minha primeira encomenda', how: 'Registre a primeira encomenda no caderno.', icon: 'encomenda' },
   { id: 'conta', name: 'Fiz minha conta', how: 'Marque no Bônus 07 que você calculou o custo da sua fornada.', icon: 'conta' },
+  { id: 'conta5', name: 'Conta de 5 receitas', how: 'Termine a conta de 5 receitas diferentes na Conta da Fornada.', icon: 'contas' },
   { id: 'presente', name: 'Fornada de presente', how: 'Marque uma fornada que você fez para presentear.', icon: 'presente' },
   { id: 'var3', name: 'Variedade: 3 tipos', how: 'Faça materiais de 3 categorias diferentes.', icon: 'variedade' },
   { id: 'var5', name: 'Variedade: 5 tipos', how: 'Faça materiais de 5 categorias diferentes.', icon: 'variedade' },
@@ -285,6 +291,7 @@ export interface GameState {
   ack: string | null
   config: { gamificacao: boolean; sequencia: boolean; avisos: boolean }
   semPressao: boolean
+  contas?: Record<string, string> // Conta da Fornada: receita (número ou "livre") -> dia em que a primeira conta dela foi concluída
 }
 
 export const emptyGame = (today: string): GameState => ({
@@ -600,6 +607,33 @@ export function onConta(inp: GameState, c: BaseCtx): Res {
   award(st, msgs, c.today, 'conta', PF.conta, 'Fiz minha conta')
   seal(st, msgs, 'conta', c.today, 'Fiz minha conta')
   msgs.push('Você calculou o custo da sua fornada.')
+  return { st, msgs }
+}
+
+// Conta da Fornada: ao CONCLUIR uma conta. "Fiz minha conta" (+15 PF, selo, uma vez, igual ao botão do Bônus 07), +5 PF por receita DIFERENTE
+// (no máximo 2 por dia, dentro do teto), selo "Conta de 5 receitas" (+10 PF) (o desafio semanal "calcule uma receita" ficou para depois: mexer no rodízio mudaria os desafios que as clientes já veem). Abrir, ver prévia ou mudar número: 0 PF.
+export function onContaFeita(inp: GameState, c: BaseCtx & { receita: number | null }): Res {
+  const st = clone(inp)
+  const msgs: string[] = []
+  if (!hasOnce(st, 'conta')) {
+    award(st, msgs, c.today, 'conta', PF.conta, 'Fiz minha conta')
+    seal(st, msgs, 'conta', c.today, 'Fiz minha conta')
+  }
+  const key = c.receita === null ? 'livre' : String(c.receita)
+  const contas = (st.contas ??= {})
+  if (c.receita !== null && !(key in contas)) {
+    const hoje = Object.values(contas).filter((d) => d === c.today).length
+    if (hoje < CONTA_POR_DIA) {
+      contas[key] = c.today
+      award(st, msgs, c.today, `conta-rec:${key}`, PF.contaReceita, 'Conta de uma receita nova')
+    } else {
+      contas[key] = c.today // a receita já conta para o selo; os pontos do dia acabaram
+    }
+    if (Object.keys(contas).length >= 5 && !st.seals.conta5) {
+      seal(st, msgs, 'conta5', c.today, 'Conta de 5 receitas')
+      award(st, msgs, c.today, 'conta5', PF.conta5, 'Conta de 5 receitas')
+    }
+  }
   return { st, msgs }
 }
 

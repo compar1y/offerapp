@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { COPY, ITEM_BY_ID, OFFER_BY_ID, fileKey, offerCopy, type FileEntry, type ItemId } from '../../shared/catalog'
 import { MOCKUPS } from '../data/images'
-import { PREVIEW } from '../data/config'
+import { CALC_ENABLED, PREVIEW } from '../data/config'
+import { ToolEntry } from '../components/ToolCard'
 import { openFile, owns, toggleDone, toggleSeen, trackOffer, useStore } from '../lib/store'
 import { Context, DeliverableChip, Layout, OfferAction, OfferBlock, OfferMedia, Picture, Price } from '../components/ui'
 import { buyUrl, visibleOffers } from '../lib/offers'
@@ -25,6 +26,7 @@ export function Item() {
   useEffect(() => {
     if (mineId) markLastItem(mineId)
   }, [mineId])
+  if (id === 'calculadora' && CALC_ENABLED) return <Navigate to="/conta-da-fornada" replace />
   if (!item) return <Navigate to="/" replace />
   const unlocked = owns(s, item.id)
   const lock = lockInfo()
@@ -197,6 +199,8 @@ export function Item() {
 
       {unlocked && (inKit || !!offer) && s.done[item.id] && <FornadaPanel item={item.id} />}
       {unlocked && item.id === 'bonus-07' && <ContaPanel />}
+      {unlocked && item.id === 'bonus-07' && <ToolEntry where="bonus-07" />}
+      {unlocked && inKit && item.id !== 'bonus-07' && s.done[item.id] && <ToolEntry where="item-done" />}
       {unlocked && item.id === 'bump' && <SocorroPanel />}
       {offer && unlocked && <HookBox id={offer.id} where="detail" />}
       {footer && <OfferBlock offer={footer} from="item-footer" />}

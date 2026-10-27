@@ -1,4 +1,8 @@
 {
+  "calculadora": {
+    "checkoutUrl": "",
+    "ready": false
+  },
   "panetones-vulcao": {
     "checkoutUrl": "",
     "ready": false

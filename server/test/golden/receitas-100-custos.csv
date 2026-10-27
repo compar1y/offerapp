@@ -1,0 +1,101 @@
+n;nome;pagina_pdf;secao;tipo;rende;perda;rendimento_liquido;ingredientes;gas_energia;embalagem_lote;custo_lote;custo_unidade;minimo_preco;minimo_margem;minimo_lucro_lote;ideal_preco;ideal_margem;ideal_lucro_lote;premium_preco;premium_margem;premium_lucro_lote
+001;Chocotone Caseiro;1;Massas base e variações;G;2;5%;1.90;30.54;2.10;12.16;44.80;23.58;36;35%;23.60;48;51%;46.40;71;67%;90.10
+002;Panetone Tradicional;2;Massas base e variações;G;2;5%;1.90;32.68;2.10;12.16;46.94;24.71;38;35%;25.26;50;51%;48.06;75;67%;95.56
+003;Chocotone de Chocolate Branco;3;Massas base e variações;G;2;5%;1.90;31.29;2.10;12.16;45.55;23.97;36;33%;22.85;48;50%;45.65;72;67%;91.25
+004;Chocotone Dois Chocolates;4;Massas base e variações;G;2;5%;1.90;30.92;2.10;12.16;45.18;23.78;36;34%;23.22;48;50%;46.02;72;67%;91.62
+005;Chocotone com Creme de Avelã;5;Especiais;G;1;5%;0.95;22.19;1.05;6.08;29.32;30.86;47;34%;15.33;62;50%;29.58;93;67%;59.03
+006;Panetone com Doce de Leite e Nozes;6;Especiais;G;1;5%;0.95;23.59;1.05;6.08;30.72;32.34;49;34%;15.83;65;50%;31.03;98;67%;62.38
+007;Chocotone com Coco;7;Especiais;G;1;5%;0.95;19.17;1.05;6.08;26.30;27.68;42;34%;13.60;56;51%;26.90;84;67%;53.50
+008;Chocotone com Pistache;8;Especiais;G;1;5%;0.95;25.77;1.05;6.08;32.90;34.63;52;33%;16.50;70;51%;33.60;104;67%;65.90
+009;Chocotone Crocante de Amendoim;9;Especiais;G;1;5%;0.95;18.67;1.05;6.08;25.80;27.16;41;34%;13.15;55;51%;26.45;82;67%;52.10
+010;Chocotone com Cobertura Marmorizada;10;Especiais;G;1;5%;0.95;18.11;1.05;6.08;25.24;26.57;40;34%;12.76;54;51%;26.06;80;67%;50.76
+011;Chocotone Recheado de Brigadeiro;11;Chocotones recheados;G;1;5%;0.95;17.97;1.05;6.08;25.10;26.42;40;34%;12.90;53;50%;25.25;80;67%;50.90
+012;Chocotone Recheado de Leite em Pó;12;Chocotones recheados;G;1;5%;0.95;18.27;1.05;6.08;25.40;26.74;41;35%;13.55;54;50%;25.90;81;67%;51.55
+013;Chocotone Recheado de Ganache Meio Amargo;13;Chocotones recheados;G;1;5%;0.95;20.97;1.05;6.08;28.10;29.58;45;34%;14.65;60;51%;28.90;89;67%;56.45
+014;Chocotone Recheado de Chocolate Branco;14;Chocotones recheados;G;1;5%;0.95;20.07;1.05;6.08;27.20;28.63;43;33%;13.65;58;51%;27.90;86;67%;54.50
+015;Chocotone Recheado de Maracujá;15;Chocotones recheados;G;1;5%;0.95;19.02;1.05;6.08;26.15;27.53;42;34%;13.75;56;51%;27.05;83;67%;52.70
+016;Chocotone Recheado de Limão;16;Chocotones recheados;G;1;5%;0.95;19.02;1.05;6.08;26.15;27.53;42;34%;13.75;56;51%;27.05;83;67%;52.70
+017;Chocotone Recheado de Frutas Vermelhas;17;Chocotones recheados;G;1;5%;0.95;18.57;1.05;6.08;25.70;27.05;41;34%;13.25;55;51%;26.55;82;67%;52.20
+018;Chocotone Recheado de Caramelo Salgado;18;Chocotones recheados;G;1;5%;0.95;19.17;1.05;6.08;26.30;27.68;42;34%;13.60;56;51%;26.90;84;67%;53.50
+019;Chocotone Recheado de Café;19;Chocotones recheados;G;1;5%;0.95;18.87;1.05;6.08;26.00;27.37;42;35%;13.90;55;50%;26.25;83;67%;52.85
+020;Chocotone Recheado de Doce de Leite;20;Chocotones recheados;G;1;5%;0.95;19.02;1.05;6.08;26.15;27.53;42;34%;13.75;56;51%;27.05;83;67%;52.70
+021;Chocotone Recheado de Abóbora;21;Chocotones recheados;G;1;5%;0.95;18.65;1.05;6.08;25.78;27.14;41;34%;13.17;55;51%;26.47;82;67%;52.12
+022;Chocotone Recheado de Goiabada Cremosa;22;Chocotones recheados;G;1;5%;0.95;18.27;1.05;6.08;25.40;26.74;41;35%;13.55;54;50%;25.90;81;67%;51.55
+023;Chocotone Recheado de Damasco;23;Chocotones recheados;G;1;5%;0.95;18.87;1.05;6.08;26.00;27.37;42;35%;13.90;55;50%;26.25;83;67%;52.85
+024;Chocotone Recheado de Ameixa;24;Chocotones recheados;G;1;5%;0.95;18.87;1.05;6.08;26.00;27.37;42;35%;13.90;55;50%;26.25;83;67%;52.85
+025;Chocotone Recheado de Chocolate com Laranja;25;Chocotones recheados;G;1;5%;0.95;19.47;1.05;6.08;26.60;28.00;42;33%;13.30;56;50%;26.60;84;67%;53.20
+026;Chocotone Recheado de Chocolate com Menta;26;Chocotones recheados;G;1;5%;0.95;19.47;1.05;6.08;26.60;28.00;42;33%;13.30;56;50%;26.60;84;67%;53.20
+027;Chocotone Recheado de Castanha-de-Caju;27;Chocotones recheados;G;1;5%;0.95;19.77;1.05;6.08;26.90;28.32;43;34%;13.95;57;50%;27.25;85;67%;53.85
+028;Chocotone Recheado de Amendoim;28;Chocotones recheados;G;1;5%;0.95;18.57;1.05;6.08;25.70;27.05;41;34%;13.25;55;51%;26.55;82;67%;52.20
+029;Chocotone Recheado de Baunilha;29;Chocotones recheados;G;1;5%;0.95;18.57;1.05;6.08;25.70;27.05;41;34%;13.25;55;51%;26.55;82;67%;52.20
+030;Chocotone Recheado de Canela;30;Chocotones recheados;G;1;5%;0.95;18.57;1.05;6.08;25.70;27.05;41;34%;13.25;55;51%;26.55;82;67%;52.20
+031;Minichocotone na Air Fryer;31;Minichocotones na Air Fryer;M;5;10%;4.50;17.28;0.72;6.30;24.30;5.40;9;40%;16.20;11;51%;25.20;17;68%;52.20
+032;Minichocotone Recheado de Brigadeiro;32;Minichocotones na Air Fryer;M;5;10%;4.50;19.98;0.72;6.30;27.00;6.00;9;33%;13.50;12;50%;27.00;18;67%;54.00
+033;Minichocotone Recheado de Leite em Pó;33;Minichocotones na Air Fryer;M;5;10%;4.50;20.28;0.72;6.30;27.30;6.07;10;39%;17.70;13;53%;31.20;19;68%;58.20
+034;Minichocotone Recheado de Ganache Meio Amargo;34;Minichocotones na Air Fryer;M;5;10%;4.50;22.98;0.72;6.30;30.00;6.67;11;39%;19.50;14;52%;33.00;21;68%;64.50
+035;Minichocotone Recheado de Chocolate Branco;35;Minichocotones na Air Fryer;M;5;10%;4.50;22.08;0.72;6.30;29.10;6.47;10;35%;15.90;13;50%;29.40;20;68%;60.90
+036;Minichocotone Recheado de Maracujá;36;Minichocotones na Air Fryer;M;5;10%;4.50;21.03;0.72;6.30;28.05;6.23;10;38%;16.95;13;52%;30.45;19;67%;57.45
+037;Minichocotone Recheado de Limão;37;Minichocotones na Air Fryer;M;5;10%;4.50;21.03;0.72;6.30;28.05;6.23;10;38%;16.95;13;52%;30.45;19;67%;57.45
+038;Minichocotone Recheado de Frutas Vermelhas;38;Minichocotones na Air Fryer;M;5;10%;4.50;20.58;0.72;6.30;27.60;6.13;10;39%;17.40;13;53%;30.90;19;68%;57.90
+039;Minichocotone Recheado de Caramelo Salgado;39;Minichocotones na Air Fryer;M;5;10%;4.50;21.18;0.72;6.30;28.20;6.27;10;37%;16.80;13;52%;30.30;19;67%;57.30
+040;Minichocotone Recheado de Café;40;Minichocotones na Air Fryer;M;5;10%;4.50;20.88;0.72;6.30;27.90;6.20;10;38%;17.10;13;52%;30.60;19;67%;57.60
+041;Minichocotone Recheado de Doce de Leite;41;Minichocotones na Air Fryer;M;5;10%;4.50;21.03;0.72;6.30;28.05;6.23;10;38%;16.95;13;52%;30.45;19;67%;57.45
+042;Minichocotone Recheado de Abóbora;42;Minichocotones na Air Fryer;M;5;10%;4.50;20.66;0.72;6.30;27.68;6.15;10;39%;17.32;13;53%;30.82;19;68%;57.82
+043;Minichocotone Recheado de Goiabada Cremosa;43;Minichocotones na Air Fryer;M;5;10%;4.50;20.28;0.72;6.30;27.30;6.07;10;39%;17.70;13;53%;31.20;19;68%;58.20
+044;Minichocotone Recheado de Damasco;44;Minichocotones na Air Fryer;M;5;10%;4.50;20.88;0.72;6.30;27.90;6.20;10;38%;17.10;13;52%;30.60;19;67%;57.60
+045;Minichocotone Recheado de Ameixa;45;Minichocotones na Air Fryer;M;5;10%;4.50;20.88;0.72;6.30;27.90;6.20;10;38%;17.10;13;52%;30.60;19;67%;57.60
+046;Minichocotone Recheado de Chocolate com Laranja;46;Minichocotones na Air Fryer;M;5;10%;4.50;21.48;0.72;6.30;28.50;6.33;10;37%;16.50;13;51%;30.00;19;67%;57.00
+047;Minichocotone Recheado de Chocolate com Menta;47;Minichocotones na Air Fryer;M;5;10%;4.50;21.48;0.72;6.30;28.50;6.33;10;37%;16.50;13;51%;30.00;19;67%;57.00
+048;Minichocotone Recheado de Castanha-de-Caju;48;Minichocotones na Air Fryer;M;5;10%;4.50;21.78;0.72;6.30;28.80;6.40;10;36%;16.20;13;51%;29.70;20;68%;61.20
+049;Minichocotone Recheado de Amendoim;49;Minichocotones na Air Fryer;M;5;10%;4.50;20.58;0.72;6.30;27.60;6.13;10;39%;17.40;13;53%;30.90;19;68%;57.90
+050;Minichocotone Recheado de Baunilha;50;Minichocotones na Air Fryer;M;5;10%;4.50;20.58;0.72;6.30;27.60;6.13;10;39%;17.40;13;53%;30.90;19;68%;57.90
+051;Chocotone com Chocolate Branco e Coco;51;Chocotones com cobertura;G;1;5%;0.95;18.87;1.05;6.08;26.00;27.37;42;35%;13.90;55;50%;26.25;83;67%;52.85
+052;Chocotone com Chocolate Meio Amargo e Amêndoas;52;Chocotones com cobertura;G;1;5%;0.95;20.47;1.05;6.08;27.60;29.05;44;34%;14.20;59;51%;28.45;88;67%;56.00
+053;Chocotone com Chocolate ao Leite e Avelãs;53;Chocotones com cobertura;G;1;5%;0.95;19.37;1.05;6.08;26.50;27.89;42;34%;13.40;56;50%;26.70;84;67%;53.30
+054;Chocotone com Chocolate Branco e Pistache;54;Chocotones com cobertura;G;1;5%;0.95;22.02;1.05;6.08;29.15;30.68;47;35%;15.50;62;51%;29.75;93;67%;59.20
+055;Chocotone com Chocolate Meio Amargo e Nozes;55;Chocotones com cobertura;G;1;5%;0.95;20.87;1.05;6.08;28.00;29.47;45;35%;14.75;59;50%;28.05;89;67%;56.55
+056;Chocotone com Chocolate ao Leite e Castanha-de-Caju;56;Chocotones com cobertura;G;1;5%;0.95;19.97;1.05;6.08;27.10;28.53;43;34%;13.75;58;51%;28.00;86;67%;54.60
+057;Chocotone com Chocolate Branco e Damasco;57;Chocotones com cobertura;G;1;5%;0.95;19.47;1.05;6.08;26.60;28.00;42;33%;13.30;56;50%;26.60;84;67%;53.20
+058;Chocotone com Chocolate Meio Amargo e Coco;58;Chocotones com cobertura;G;1;5%;0.95;18.67;1.05;6.08;25.80;27.16;41;34%;13.15;55;51%;26.45;82;67%;52.10
+059;Chocotone com Chocolate ao Leite e Biscoito;59;Chocotones com cobertura;G;1;5%;0.95;18.47;1.05;6.08;25.60;26.95;41;34%;13.35;54;50%;25.70;81;67%;51.35
+060;Chocotone com Chocolate Branco e Passas;60;Chocotones com cobertura;G;1;5%;0.95;19.07;1.05;6.08;26.20;27.58;42;34%;13.70;56;51%;27.00;83;67%;52.65
+061;Chocotone com Chocolate Meio Amargo e Nibs;61;Chocotones com cobertura;G;1;5%;0.95;19.27;1.05;6.08;26.40;27.79;42;34%;13.50;56;50%;26.80;84;67%;53.40
+062;Chocotone com Chocolate ao Leite e Paçoca;62;Chocotones com cobertura;G;1;5%;0.95;18.65;1.05;6.08;25.78;27.14;41;34%;13.17;55;51%;26.47;82;67%;52.12
+063;Chocotone com Chocolate Branco e Nozes;63;Chocotones com cobertura;G;1;5%;0.95;21.07;1.05;6.08;28.20;29.68;45;34%;14.55;60;51%;28.80;90;67%;57.30
+064;Chocotone com Chocolate Meio Amargo e Avelãs;64;Chocotones com cobertura;G;1;5%;0.95;19.27;1.05;6.08;26.40;27.79;42;34%;13.50;56;50%;26.80;84;67%;53.40
+065;Chocotone com Chocolate ao Leite e Amêndoas;65;Chocotones com cobertura;G;1;5%;0.95;20.57;1.05;6.08;27.70;29.16;44;34%;14.10;59;51%;28.35;88;67%;55.90
+066;Chocotone com Chocolate Branco e Amendoim;66;Chocotones com cobertura;G;1;5%;0.95;18.67;1.05;6.08;25.80;27.16;41;34%;13.15;55;51%;26.45;82;67%;52.10
+067;Chocotone com Chocolate Meio Amargo e Damasco;67;Chocotones com cobertura;G;1;5%;0.95;19.27;1.05;6.08;26.40;27.79;42;34%;13.50;56;50%;26.80;84;67%;53.40
+068;Chocotone com Chocolate ao Leite e Coco;68;Chocotones com cobertura;G;1;5%;0.95;18.77;1.05;6.08;25.90;27.26;41;34%;13.05;55;50%;26.35;82;67%;52.00
+069;Chocotone com Chocolate Branco e Castanha-de-Caju;69;Chocotones com cobertura;G;1;5%;0.95;20.07;1.05;6.08;27.20;28.63;43;33%;13.65;58;51%;27.90;86;67%;54.50
+070;Chocotone com Chocolate Meio Amargo e Biscoito;70;Chocotones com cobertura;G;1;5%;0.95;18.37;1.05;6.08;25.50;26.84;41;35%;13.45;54;50%;25.80;81;67%;51.45
+071;Chocotone em Camadas de Brigadeiro e Leite em Pó;71;Chocotones em camadas;G;1;5%;0.95;18.12;1.05;6.08;25.25;26.58;40;34%;12.75;54;51%;26.05;80;67%;50.75
+072;Chocotone em Camadas de Brigadeiro e Maracujá;72;Chocotones em camadas;G;1;5%;0.95;18.50;1.05;6.08;25.63;26.98;41;34%;13.32;54;50%;25.67;81;67%;51.32
+073;Chocotone em Camadas de Brigadeiro e Frutas Vermelhas;73;Chocotones em camadas;G;1;5%;0.95;18.27;1.05;6.08;25.40;26.74;41;35%;13.55;54;50%;25.90;81;67%;51.55
+074;Chocotone em Camadas de Brigadeiro e Doce de Leite;74;Chocotones em camadas;G;1;5%;0.95;18.50;1.05;6.08;25.63;26.98;41;34%;13.32;54;50%;25.67;81;67%;51.32
+075;Chocotone em Camadas de Leite em Pó e Maracujá;75;Chocotones em camadas;G;1;5%;0.95;18.65;1.05;6.08;25.78;27.14;41;34%;13.17;55;51%;26.47;82;67%;52.12
+076;Chocotone em Camadas de Leite em Pó e Frutas Vermelhas;76;Chocotones em camadas;G;1;5%;0.95;18.42;1.05;6.08;25.55;26.89;41;34%;13.40;54;50%;25.75;81;67%;51.40
+077;Chocotone em Camadas de Leite em Pó e Goiabada Cremosa;77;Chocotones em camadas;G;1;5%;0.95;18.27;1.05;6.08;25.40;26.74;41;35%;13.55;54;50%;25.90;81;67%;51.55
+078;Chocotone em Camadas de Leite em Pó e Chocolate com Laranja;78;Chocotones em camadas;G;1;5%;0.95;18.87;1.05;6.08;26.00;27.37;42;35%;13.90;55;50%;26.25;83;67%;52.85
+079;Chocotone em Camadas de Ganache Meio Amargo e Maracujá;79;Chocotones em camadas;G;1;5%;0.95;20.00;1.05;6.08;27.13;28.56;43;34%;13.72;58;51%;27.97;86;67%;54.57
+080;Chocotone em Camadas de Ganache Meio Amargo e Frutas Vermelhas;80;Chocotones em camadas;G;1;5%;0.95;19.77;1.05;6.08;26.90;28.32;43;34%;13.95;57;50%;27.25;85;67%;53.85
+081;Chocotone em Camadas de Ganache Meio Amargo e Doce de Leite;81;Chocotones em camadas;G;1;5%;0.95;20.00;1.05;6.08;27.13;28.56;43;34%;13.72;58;51%;27.97;86;67%;54.57
+082;Chocotone em Camadas de Ganache Meio Amargo e Ameixa;82;Chocotones em camadas;G;1;5%;0.95;19.92;1.05;6.08;27.05;28.47;43;34%;13.80;57;50%;27.10;86;67%;54.65
+083;Chocotone em Camadas de Chocolate Branco e Maracujá;83;Chocotones em camadas;G;1;5%;0.95;19.55;1.05;6.08;26.68;28.08;43;35%;14.17;57;51%;27.47;85;67%;54.07
+084;Chocotone em Camadas de Chocolate Branco e Frutas Vermelhas;84;Chocotones em camadas;G;1;5%;0.95;19.32;1.05;6.08;26.45;27.84;42;34%;13.45;56;50%;26.75;84;67%;53.35
+085;Chocotone em Camadas de Chocolate Branco e Damasco;85;Chocotones em camadas;G;1;5%;0.95;19.47;1.05;6.08;26.60;28.00;42;33%;13.30;56;50%;26.60;84;67%;53.20
+086;Chocotone em Camadas de Chocolate Branco e Amendoim;86;Chocotones em camadas;G;1;5%;0.95;19.32;1.05;6.08;26.45;27.84;42;34%;13.45;56;50%;26.75;84;67%;53.35
+087;Chocotone em Camadas de Café e Doce de Leite;87;Chocotones em camadas;G;1;5%;0.95;18.95;1.05;6.08;26.08;27.45;42;35%;13.82;55;50%;26.17;83;67%;52.77
+088;Chocotone em Camadas de Doce de Leite e Ameixa;88;Chocotones em camadas;G;1;5%;0.95;18.95;1.05;6.08;26.08;27.45;42;35%;13.82;55;50%;26.17;83;67%;52.77
+089;Chocotone em Camadas de Abóbora e Baunilha;89;Chocotones em camadas;G;1;5%;0.95;18.61;1.05;6.08;25.74;27.09;41;34%;13.21;55;51%;26.51;82;67%;52.16
+090;Chocotone em Camadas de Damasco e Baunilha;90;Chocotones em camadas;G;1;5%;0.95;18.72;1.05;6.08;25.85;27.21;41;34%;13.10;55;51%;26.40;82;67%;52.05
+091;Panetone de Frutas com Brigadeiro;91;Panetones de frutas recheados;G;1;5%;0.95;19.04;1.05;6.08;26.17;27.55;42;34%;13.73;56;51%;27.03;83;67%;52.68
+092;Panetone de Frutas com Leite em Pó;92;Panetones de frutas recheados;G;1;5%;0.95;19.34;1.05;6.08;26.47;27.86;42;34%;13.43;56;50%;26.73;84;67%;53.33
+093;Panetone de Frutas com Ganache Meio Amargo;93;Panetones de frutas recheados;G;1;5%;0.95;22.04;1.05;6.08;29.17;30.71;47;35%;15.48;62;50%;29.73;93;67%;59.18
+094;Panetone de Frutas com Chocolate Branco;94;Panetones de frutas recheados;G;1;5%;0.95;21.14;1.05;6.08;28.27;29.76;45;34%;14.48;60;50%;28.73;90;67%;57.23
+095;Panetone de Frutas com Maracujá;95;Panetones de frutas recheados;G;1;5%;0.95;20.09;1.05;6.08;27.22;28.65;43;33%;13.63;58;51%;27.88;86;67%;54.48
+096;Panetone de Frutas com Limão;96;Panetones de frutas recheados;G;1;5%;0.95;20.09;1.05;6.08;27.22;28.65;43;33%;13.63;58;51%;27.88;86;67%;54.48
+097;Panetone de Frutas com Frutas Vermelhas;97;Panetones de frutas recheados;G;1;5%;0.95;19.64;1.05;6.08;26.77;28.18;43;34%;14.08;57;51%;27.38;85;67%;53.98
+098;Panetone de Frutas com Caramelo Salgado;98;Panetones de frutas recheados;G;1;5%;0.95;20.24;1.05;6.08;27.37;28.81;44;35%;14.43;58;50%;27.73;87;67%;55.28
+099;Panetone de Frutas com Café;99;Panetones de frutas recheados;G;1;5%;0.95;19.94;1.05;6.08;27.07;28.49;43;34%;13.78;57;50%;27.08;86;67%;54.63
+100;Panetone de Frutas com Doce de Leite;100;Panetones de frutas recheados;G;1;5%;0.95;20.09;1.05;6.08;27.22;28.65;43;33%;13.63;58;51%;27.88;86;67%;54.48

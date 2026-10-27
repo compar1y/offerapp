@@ -27,6 +27,10 @@ export const DEMO_CODE = '123456'
 // Ligado na prévia. Para ligar em produção: VITE_CATALOG_ENABLED=true no build e ofertas com enabled: true em shared/catalog.ts.
 export const CATALOG_ENABLED: boolean = PREVIEW || import.meta.env.VITE_CATALOG_ENABLED === 'true'
 
+// Conta da Fornada (calculadora de R$ 19,90): abre ANTES das outras ofertas. LIGADA por padrão (a prévia sempre liga).
+// Para esconder em produção sem mexer no código: VITE_CALC_ENABLED=false no build.
+export const CALC_ENABLED: boolean = PREVIEW || import.meta.env.VITE_CALC_ENABLED !== 'false'
+
 export function supportUrl(message: string = CONFIG.supportMessage): string {
   return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(message)}`
 }
