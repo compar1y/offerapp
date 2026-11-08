@@ -5,6 +5,7 @@ import { env, exigir } from '../../server/env.js'
 import { falha, json } from '../../server/http.js'
 import { iguais } from '../../server/sessao.js'
 import { lerJsonTolerante, lerPedido, semDadosPessoais } from '../../server/wiapy.js'
+import { emailLigado, enviarEmailAcesso } from '../../server/email.js'
 
 export async function POST(req: Request): Promise<Response> {
   try {
@@ -30,6 +31,12 @@ export async function POST(req: Request): Promise<Response> {
       return json({ ok: true, ignorado: 'checkout desconhecido' })
     }
     const pagamentoId = p.pagamentoId || `${p.checkoutId}:${p.email}`
+    // e-mail de acesso só na primeira vez que este pagamento vira "pago" (a Wiapy reenvia o mesmo aviso)
+    let jaEstavaPago = false
+    if (p.status === 'pago' && emailLigado()) {
+      const { data } = await db().from('compras').select('status').eq('pagamento_id', pagamentoId).eq('status', 'pago').limit(1)
+      jaEstavaPago = !!data?.length
+    }
     const linhas = p.produtos.map((produto) => ({
       email: p.email,
       produto,
@@ -42,6 +49,10 @@ export async function POST(req: Request): Promise<Response> {
     }))
     const { error } = await db().from('compras').upsert(linhas, { onConflict: 'pagamento_id,produto' })
     if (error) throw error
+    if (p.status === 'pago' && emailLigado() && !jaEstavaPago) {
+      const r = await enviarEmailAcesso(p.email, p.produtos)
+      await db().from('eventos').insert({ email: p.email, tipo: r.enviado ? 'email.acesso' : 'email.acesso.falhou', dados: { produtos: p.produtos, erro: r.erro ?? null } })
+    }
     return json({ ok: true, produtos: p.produtos, status: p.status })
   } catch (e) {
     return falha(e)
