@@ -1,8 +1,9 @@
-import { cena, fotoBau } from '../imagens'
+import { capa, cena, fotoBau, fotoEtapa, mockup } from '../imagens'
+import { RECEITAS } from '../../shared/receitas'
 import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS } from '../../shared/catalogo'
-import { AVATARES, ETAPAS, OFERTAS, PERFIS, TODAS_LICOES } from '../../shared/conteudo'
-import { fazerMissaoDoPerfil, hojeBR, type BauId } from '../../shared/jogo'
+import { ETAPAS, OFERTAS, PERFIS, TODAS_LICOES } from '../../shared/conteudo'
+import { hojeBR, type BauId } from '../../shared/jogo'
 import { ofertaDisponivel, reais, useApp } from '../ctx'
 import { Suporte } from './Entrar'
 
@@ -29,13 +30,15 @@ export function proximaLicao(comecaEm: number, feitas: string[]) {
 }
 
 export function Painel() {
-  const { eu, estado, ir, mudar, evento, recarregar, sair } = useApp()
+  const { eu, estado, ir, evento, recarregar, sair } = useApp()
   const perfil = PERFIS[eu.perfil ?? 'iniciante']
   const prox = proximaLicao(perfil.comecaEm, estado.licoes)
-  const missoes = ['Abrir o app hoje', 'Fazer uma lição ou uma receita', perfil.missao]
   const oferta = perfil.ofertas.find((p) => ofertaDisponivel(eu, p))
   const dias = diasParaNatal()
-  const feitasTotal = estado.licoes.length
+  const temReceitas = eu.acesso.materiais.includes('ebook')
+  const proxReceita = RECEITAS.find((r) => !estado.receitas.includes(r.n)) ?? RECEITAS[0]
+  const bonus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro')
+  const bausProntos = estado.baus.length
 
   useEffect(() => {
     if (oferta) evento('oferta.vista', { produto: oferta, onde: 'painel' })
@@ -43,19 +46,10 @@ export function Painel() {
 
   return (
     <>
-      <div className="topo">
-        <div className="avatar">{AVATARES[eu.avatar ?? 0]}</div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div className="nome">{eu.apelido || 'Confeiteira'}</div>
-          <div className="sub" style={{ fontSize: 13 }}>{perfil.nome}</div>
-        </div>
+      <div className="ola">
+        <h1>Olá{eu.apelido ? `, ${eu.apelido}` : ''}! 👋</h1>
+        {dias > 0 && <span className="chip natal-chip">🎄 Natal em {dias} {dias === 1 ? 'dia' : 'dias'}</span>}
       </div>
-      <div className="chips">
-        <span className="chip" title="Fornadas Seguidas">🔥 {estado.seq.dias} {estado.seq.dias === 1 ? 'dia seguido' : 'dias seguidos'}</span>
-        <span className="chip" title="Moedas Douradas">🪙 {estado.moedas}</span>
-        <button className="chip" onClick={() => ir({ t: 'loja' })} style={{ cursor: 'pointer', fontFamily: 'inherit', color: 'inherit' }}>🛍️ Lojinha</button>
-      </div>
-      {dias > 0 && <div className="natal"><span>Faltam para o Natal</span><b>{dias} {dias === 1 ? 'dia' : 'dias'}</b></div>}
 
       {eu.acesso.pendentes.length > 0 && (
         <div className="aviso">
@@ -65,87 +59,85 @@ export function Painel() {
         </div>
       )}
 
-      <div className="card">
-        <h3>Fornada do Dia</h3>
-        {missoes.map((m, k) => {
-          const ok = estado.missoes.feitas[k]
-          return (
-            <div key={k} className={`missao ${ok ? 'ok' : ''}`}>
-              <div className={`check ${ok ? 'ok' : ''}`} aria-hidden>{ok ? '✓' : ''}</div>
-              <span>{m}</span>
-              {k === 2 && !ok && (
-                <button className="btn leve feito-btn" onClick={() => { mudar(fazerMissaoDoPerfil); evento('missao.perfil', { perfil: perfil.id }) }}>Fiz</button>
-              )}
-              {k === 1 && !ok && prox && (
-                <button className="btn leve feito-btn" onClick={() => ir({ t: 'licao', id: prox.licao.id })}>Ir</button>
-              )}
-            </div>
-          )
-        })}
-        <p className="sub" style={{ fontSize: 13 }}>Complete as 3 e ganhe um Presente de Natal prata.</p>
-      </div>
-
-      {prox ? (
-        <div className="card">
-          <p className="eyebrow">{feitasTotal ? 'Continue de onde parou' : 'Comece por aqui'}</p>
-          <h3>Etapa {prox.etapa.n} · {prox.licao.titulo}</h3>
-          <div className="barra"><i style={{ width: `${(feitasTotal / TODAS_LICOES.length) * 100}%` }} /></div>
-          <p className="sub" style={{ fontSize: 13 }}>{feitasTotal} de {TODAS_LICOES.length} lições · uns {prox.licao.minutos} minutos</p>
-          <button className="btn" onClick={() => ir({ t: 'licao', id: prox.licao.id })}>Fazer agora</button>
+      {/* 1. o que ela comprou, primeiro e grande */}
+      {temReceitas && (
+        <div className="card destaque">
+          <img className="capa-destaque" src={capa('ebook')} alt="" />
+          <div className="destaque-txt">
+            <p className="eyebrow">Seu livro de receitas</p>
+            <h2>100 receitas de panetone</h2>
+            <p className="sub">Com foto de cada passo. Toque para abrir.</p>
+          </div>
+          <button className="btn grande" onClick={() => ir({ t: 'receitas' })}>📖 Abrir minhas receitas</button>
+          <button className="btn leve" onClick={() => ir({ t: 'ler', m: 'ebook', p: proxReceita.n })}>
+            {estado.receitas.length ? 'Próxima' : 'Comece pela'} Receita {String(proxReceita.n).padStart(3, '0')}: {proxReceita.titulo}
+          </button>
         </div>
-      ) : (
-        <div className="card"><p className="eyebrow">Jornada completa 🎉</p><h3>Você fez todas as lições até o Natal.</h3></div>
       )}
 
+      {/* 2. socorro sempre à mão */}
       <button className="cartao-cena sos-cena" onClick={() => ir({ t: 'sos' })}>
         <img src={cena('sos')} alt="" />
-        <span><b>🆘 SOS Massa</b>Deu algo errado? Toque aqui.</span>
-      </button>
-      <button className="cartao-cena" onClick={() => ir({ t: 'receitas' })}>
-        <img src={cena('receitas')} alt="" loading="lazy" />
-        <span><b>📖 Minhas 100 receitas</b>Com foto de cada uma. Busque pelo sabor.</span>
+        <span><b>🆘 Deu algo errado na massa?</b>Toque aqui e veja como salvar.</span>
       </button>
 
-      <div className="card">
-        <h3>Presentes de Natal</h3>
-        <div className="baus">
-          {BAUS.map((b) => {
-            const qtd = estado.baus.filter((x) => x === b.id).length
-            return (
-              <button key={b.id} className={`bau ${qtd ? 'pronto' : ''}`} title={b.como} onClick={() => (qtd ? ir({ t: 'bau', b: b.id }) : undefined)} aria-label={`Presente ${b.nome}: ${qtd ? `${qtd} para abrir` : `ganhe ao ${b.como}`}`}>
-                <img className="ico" src={fotoBau(b.id)} alt="" />{b.nome}{qtd > 1 ? ` ×${qtd}` : ''}
+      {/* 3. os bônus, com capa */}
+      {bonus.length > 0 && (
+        <div className="card">
+          <div className="titulo-linha"><h3>Seus bônus</h3><button className="link" onClick={() => ir({ t: 'materiais' })}>Ver todos</button></div>
+          <div className="fileira">
+            {bonus.map((m) => (
+              <button key={m} className="mini-capa" onClick={() => ir({ t: 'ler', m, p: 1 })}>
+                <img src={capa(m)} alt="" loading="lazy" />
+                <span>{MATERIAIS[m].titulo.replace(/^Bônus \d+: /, '')}</span>
               </button>
-            )
-          })}
-        </div>
-        <p className="sub" style={{ fontSize: 13 }}>Prata: 3 missões do dia · Ouro: terminar uma etapa · Diamante: 7 dias seguidos · Cristal: terminar a jornada</p>
-      </div>
-
-      {oferta && (
-        <div className="card oferta">
-          <p className="eyebrow">Para o seu próximo passo</p>
-          <h3>{PRODUTOS[oferta].nome}</h3>
-          <p className="sub">{OFERTAS[oferta as Exclude<typeof oferta, 'kit'>].gancho}</p>
-          <button className="btn fita" onClick={() => ir({ t: 'oferta', p: oferta, origem: 'painel' })}>Ver como funciona · R${reais(PRODUTOS[oferta].precoCentavos)}</button>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3>Meus materiais</h3><span className="sub" style={{ fontSize: 13 }}>tudo aberto</span></div>
-        <div className="lista">
-          {eu.acesso.materiais.slice(0, 3).map((m) => (
-            <button key={m} className="item" onClick={() => (m === 'ebook' ? ir({ t: 'receitas' }) : ir({ t: 'ler', m, p: 1 }))}>
-              <span>{MATERIAIS[m].icone}</span><span style={{ minWidth: 0 }}>{MATERIAIS[m].titulo}</span>
-              <span className={`tag ${MATERIAIS[m].rotulo === 'presente' ? 'presente' : ''}`}>{MATERIAIS[m].rotulo ?? 'aberto'}</span>
-            </button>
-          ))}
+      {/* 4. o passo a passo, um de cada vez */}
+      {!eu.perfil ? (
+        <div className="card">
+          <p className="eyebrow">Opcional · 1 minuto</p>
+          <h3>Quer um passo a passo feito para você até o Natal?</h3>
+          <p className="sub">Responda 5 perguntas e o app monta o seu caminho.</p>
+          <button className="btn leve" onClick={() => ir({ t: 'pergunta' })}>Responder as perguntas</button>
         </div>
-        <button className="btn leve" onClick={() => ir({ t: 'materiais' })}>Ver todos ({eu.acesso.materiais.length})</button>
-      </div>
+      ) : prox ? (
+        <div className="card etapa-card">
+          <img className="foto-etapa" src={fotoEtapa(prox.etapa.n)} alt="" loading="lazy" />
+          <p className="eyebrow">Seu próximo passo · uns {prox.licao.minutos} minutos</p>
+          <h3>{prox.licao.titulo}</h3>
+          <div className="barra"><i style={{ width: `${(estado.licoes.length / TODAS_LICOES.length) * 100}%` }} /></div>
+          <p className="sub" style={{ fontSize: 14 }}>{estado.licoes.length} de {TODAS_LICOES.length} passos feitos</p>
+          <button className="btn" onClick={() => ir({ t: 'licao', id: prox.licao.id })}>Fazer agora</button>
+        </div>
+      ) : null}
 
-      <button className="btn leve" onClick={() => ir({ t: 'conquistas' })}>🏅 Minhas Conquistas ({estado.selos.length})</button>
-      <button className="btn leve" onClick={() => ir({ t: 'jornada' })}>Ver a jornada completa</button>
-      <p className="sub" style={{ fontSize: 13, textAlign: 'center' }}>Precisa de ajuda? <Suporte /></p>
+      {/* 5. próximo produto, com a capa */}
+      {oferta && (
+        <button className="card oferta-mini" onClick={() => ir({ t: 'oferta', p: oferta, origem: 'painel' })}>
+          <img src={mockup(oferta) ?? capa(PRODUTOS[oferta].libera[0])} alt="" loading="lazy" />
+          <span>
+            <small>🔒 Para o seu próximo passo</small>
+            <b>{PRODUTOS[oferta].nome}</b>
+            <span className="sub">{OFERTAS[oferta as Exclude<typeof oferta, 'kit'>].gancho}</span>
+            <span className="tag comprar">Liberar · R${reais(PRODUTOS[oferta].precoCentavos)}</span>
+          </span>
+        </button>
+      )}
+
+      {/* 6. o jogo fica por último, numa linha só */}
+      <button className="card presentes-linha" onClick={() => ir({ t: 'loja' })}>
+        <img src={fotoBau('ouro')} alt="" loading="lazy" />
+        <span>
+          <b>Presentes e moedas</b>
+          <span className="sub">🪙 {estado.moedas} moedas · 🔥 {estado.seq.dias} {estado.seq.dias === 1 ? 'dia seguido' : 'dias seguidos'}{bausProntos ? ` · 🎁 ${bausProntos} para abrir` : ''}</span>
+        </span>
+      </button>
+
+      <p className="sub" style={{ fontSize: 14, textAlign: 'center' }}>Precisa de ajuda? <Suporte /></p>
       <button className="link" onClick={sair}>Sair</button>
       <Instalar />
     </>

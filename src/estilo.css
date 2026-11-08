@@ -175,3 +175,29 @@ select{font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha
 @keyframes liberar{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 .cartao-capa .desejo{margin:0 10px;font-size:13px;line-height:1.3;color:var(--chocolate-2)}
 .cartao-capa.travado{border-color:var(--casca)}
+/* Início novo: produto primeiro, letras maiores, jogo no fim */
+.ola{display:flex;flex-direction:column;gap:6px}
+.ola h1{font-size:28px}
+.natal-chip{align-self:flex-start;background:var(--fita);color:#fff;border-color:var(--fita);font-size:15px;padding:4px 12px}
+.card.destaque{gap:12px;border-color:var(--casca);text-align:center}
+.capa-destaque{width:62%;max-width:220px;align-self:center;border-radius:12px;box-shadow:0 8px 20px rgba(46,30,20,.22);aspect-ratio:1024/1536;object-fit:cover}
+.destaque-txt{display:flex;flex-direction:column;gap:4px}
+.btn.grande{font-size:21px;padding:18px 16px}
+.card.destaque .btn.leve{font-size:15px;line-height:1.3}
+.titulo-linha{display:flex;justify-content:space-between;align-items:center}
+.titulo-linha .link{padding:4px;font-weight:700}
+.fileira{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory;scrollbar-width:thin}
+.mini-capa{flex:none;width:112px;display:flex;flex-direction:column;gap:6px;background:none;border:0;padding:0;font:inherit;color:var(--chocolate);text-align:left;cursor:pointer;scroll-snap-align:start}
+.mini-capa img{width:112px;aspect-ratio:1054/1492;object-fit:cover;border-radius:10px;border:1px solid var(--linha)}
+.mini-capa span{font-size:13px;font-weight:700;line-height:1.25}
+.oferta-mini,.presentes-linha{flex-direction:row;align-items:center;gap:12px;cursor:pointer;font:inherit;color:var(--chocolate);text-align:left;width:100%}
+.oferta-mini{border-color:var(--casca);background:var(--casca-clara)}
+.oferta-mini img{width:92px;flex:none;border-radius:10px}
+.oferta-mini > span,.presentes-linha > span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.oferta-mini small{font-size:12px;font-weight:800;color:var(--fita);text-transform:uppercase;letter-spacing:.05em}
+.oferta-mini b,.presentes-linha b{font-family:var(--display);font-size:18px;line-height:1.15}
+.oferta-mini .sub{font-size:14px;line-height:1.35}
+.oferta-mini .tag.comprar{align-self:flex-start;background:var(--pinheiro);color:#fff;font-weight:800;font-size:13px;border-radius:10px;padding:6px 12px;box-shadow:0 3px 0 var(--pinheiro-sombra);animation:liberar 1.4s ease-in-out infinite}
+.presentes-linha img{width:56px;height:56px;object-fit:contain;flex:none}
+.presentes-linha .sub{font-size:14px}
+body{font-size:17px}

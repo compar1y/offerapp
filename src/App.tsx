@@ -16,7 +16,8 @@ import { Menu } from './telas/Menu'
 
 type Fase = { f: 'carregando' } | { f: 'entrar'; aviso?: string } | { f: 'bloqueada'; msg: string } | { f: 'dentro' }
 
-const telaInicial = (eu: Eu): Tela => (eu.perfil ? { t: 'painel' } : { t: 'boas' })
+// entra direto no Início: as perguntas do perfil ficam opcionais, num cartão do Início
+const telaInicial = (_eu: Eu): Tela => ({ t: 'painel' })
 
 export function App() {
   const [fase, setFase] = useState<Fase>({ f: 'carregando' })
@@ -55,7 +56,7 @@ export function App() {
         pendente.current = e
         gravar()
         const salva = history.state as Tela | null
-        const t = salva && d.perfil ? salva : telaInicial(d)
+        const t = salva ?? telaInicial(d)
         history.replaceState(t, '')
         setTela(t)
       }
