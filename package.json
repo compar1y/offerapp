@@ -1,0 +1,27 @@
+{
+  "name": "app-fornada",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "test": "vitest run",
+    "check": "tsc -p tsconfig.json --noEmit && vitest run && vite build",
+    "subir:paginas": "node scripts/subir-paginas.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.45.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.7.4",
+    "@types/react": "18.3.11",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.3.2",
+    "typescript": "5.6.2",
+    "vite": "5.4.8",
+    "vitest": "2.1.2"
+  }
+}
