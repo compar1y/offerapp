@@ -41,10 +41,12 @@ export const useApp = (): Ctx => useContext(CtxReact)!
 export const tem = (eu: Eu, p: ProdutoId) => eu.acesso.produtos.includes(p)
 export const temMaterial = (eu: Eu, m: MaterialId) => eu.acesso.materiais.includes(m)
 
-/** a oferta pode aparecer no app? tem checkout e ela ainda não tem.
- *  A Primeira Encomenda é downsell do funil (só depois de recusar o upsell): nunca é vendida dentro do app. */
+/** a oferta pode aparecer? tem checkout e ela ainda não tem.
+ *  A Primeira Encomenda é só downsell: aparece uma vez, depois de ela recusar a Encomenda Puxa Encomenda,
+ *  e nunca no catálogo nem no Início. Some para quem já tem a Encomenda Puxa Encomenda. */
 export function ofertaDisponivel(eu: Eu, p: ProdutoId): boolean {
-  if (p === 'kit' || p === 'primeira' || !PRODUTOS[p].checkoutUrl || tem(eu, p)) return false
+  if (p === 'kit' || !PRODUTOS[p].checkoutUrl || tem(eu, p)) return false
+  if (p === 'primeira' && tem(eu, 'encomenda')) return false
   return true
 }
 

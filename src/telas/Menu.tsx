@@ -4,16 +4,16 @@ type Aba = { id: string; nome: string; ico: string; vai: Tela; ativa: (t: Tela) 
 
 const ABAS: Aba[] = [
   { id: 'inicio', nome: 'Início', ico: '🏠', vai: { t: 'painel' }, ativa: (t) => t.t === 'painel' },
-  { id: 'jornada', nome: 'Jornada', ico: '🗺️', vai: { t: 'jornada' }, ativa: (t) => t.t === 'jornada' || t.t === 'licao' },
   { id: 'receitas', nome: 'Receitas', ico: '📖', vai: { t: 'receitas' }, ativa: (t) => t.t === 'receitas' || (t.t === 'ler' && t.m === 'ebook') },
-  { id: 'sos', nome: 'SOS', ico: '🆘', vai: { t: 'sos' }, ativa: (t) => t.t === 'sos' || (t.t === 'ler' && t.m === 'fichas-socorro') },
-  { id: 'presentes', nome: 'Presentes', ico: '🎁', vai: { t: 'loja' }, ativa: (t) => t.t === 'loja' || t.t === 'bau' || t.t === 'raspa' },
-  { id: 'materiais', nome: 'Materiais', ico: '📦', vai: { t: 'materiais' }, ativa: (t) => t.t === 'materiais' || t.t === 'conquistas' || t.t === 'oferta' || (t.t === 'ler' && t.m !== 'ebook' && t.m !== 'fichas-socorro') },
+  { id: 'sos', nome: 'Socorro', ico: '🆘', vai: { t: 'sos' }, ativa: (t) => t.t === 'sos' || (t.t === 'ler' && t.m === 'fichas-socorro') },
+  { id: 'materiais', nome: 'Meus livros', ico: '📚', vai: { t: 'materiais' }, ativa: (t) => t.t === 'materiais' || (t.t === 'ler' && t.m !== 'ebook' && t.m !== 'fichas-socorro') },
+  { id: 'jornada', nome: 'Passos', ico: '✅', vai: { t: 'jornada' }, ativa: (t) => t.t === 'jornada' || t.t === 'licao' },
 ]
 
 const SEM_MENU = new Set(['boas', 'pergunta', 'resultado', 'avatar'])
 
-/** menu fixo no topo, em todas as telas depois do onboarding; no celular as 6 abas cabem lado a lado */
+/** barra de baixo, em formato de pílula, como a de um celular: 5 abas com nomes simples.
+ *  Presentes e moedas ficam no Início (não são o que ela comprou). */
 export function Menu({ tela }: { tela: Tela }) {
   const { ir, trocar } = useApp()
   if (SEM_MENU.has(tela.t)) return null

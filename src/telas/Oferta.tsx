@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
-import { reais, tem, useApp } from '../ctx'
+import { ofertaDisponivel, reais, tem, useApp } from '../ctx'
 
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
 
 /** página curta antes do checkout (TSL interna). O pagamento abre em outra aba; ao voltar, o app confere se liberou. */
 export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
-  const { eu, trocar, voltar, evento, recarregar } = useApp()
+  const { eu, estado, trocar, voltar, evento, recarregar, mudar } = useApp()
   const [abriu, setAbriu] = useState(false)
   const [conferindo, setConferindo] = useState(false)
   const prod = PRODUTOS[p]
@@ -36,7 +36,13 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   function agoraNao() {
     evento('oferta.recusada', { produto: p, onde: origem })
-    if (origem.startsWith('etapa')) trocar({ t: 'painel' })
+    // recusou a Encomenda Puxa Encomenda: mostra uma vez a versão menor (downsell). Ela não aparece em nenhum outro lugar do app.
+    if (p === 'encomenda' && ofertaDisponivel(eu, 'primeira') && !estado.ofertasVistas.includes('downsell-primeira')) {
+      mudar((e) => ({ ...e, ofertasVistas: [...e.ofertasVistas, 'downsell-primeira'] }))
+      trocar({ t: 'oferta', p: 'primeira', origem: 'downsell' })
+      return
+    }
+    if (origem.startsWith('etapa') || origem === 'downsell') trocar({ t: 'painel' })
     else voltar()
   }
 
@@ -52,9 +58,9 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <div className="card pop" style={{ textAlign: 'center', gap: 14 }}>
         <div style={{ fontSize: 64 }}>🎉</div>
         <h1>Liberado!</h1>
-        <p><b>{prod.nome}</b> já está em Meus materiais.</p>
+        <p><b>{prod.nome}</b> já está em Meus livros.</p>
         <button className="btn" onClick={() => trocar({ t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>
-        <button className="link" onClick={() => trocar({ t: 'painel' })}>Voltar ao painel</button>
+        <button className="link" onClick={() => trocar({ t: 'painel' })}>Voltar ao Início</button>
       </div>
     )
   }
@@ -62,7 +68,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   return (
     <>
       <button className="voltar" onClick={agoraNao}>← Agora não</button>
-      <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'O seu próximo passo'}</p>
+      <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'Livro extra, vendido à parte'}</p>
       <h1>{texto.gancho}</h1>
       <div className="card oferta">
         {mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}

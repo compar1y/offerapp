@@ -46,6 +46,7 @@ export function Painel() {
 
   return (
     <>
+      <p className="marca">Fábrica de Panetones Caseiros</p>
       <div className="ola">
         <h1>Olá{eu.apelido ? `, ${eu.apelido}` : ''}! 👋</h1>
         {dias > 0 && <span className="chip natal-chip">🎄 Natal em {dias} {dias === 1 ? 'dia' : 'dias'}</span>}
@@ -120,7 +121,7 @@ export function Painel() {
         <button className="card oferta-mini" onClick={() => ir({ t: 'oferta', p: oferta, origem: 'painel' })}>
           <img src={mockup(oferta) ?? capa(PRODUTOS[oferta].libera[0])} alt="" loading="lazy" />
           <span>
-            <small>🔒 Para o seu próximo passo</small>
+            <small>🔒 Livro extra · ainda não está no seu kit</small>
             <b>{PRODUTOS[oferta].nome}</b>
             <span className="sub">{OFERTAS[oferta as Exclude<typeof oferta, 'kit'>].gancho}</span>
             <span className="tag comprar">Liberar · R${reais(PRODUTOS[oferta].precoCentavos)}</span>

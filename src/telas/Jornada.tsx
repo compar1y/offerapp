@@ -16,7 +16,7 @@ export function Jornada() {
   return (
     <>
       <button className="voltar" onClick={voltar}>← Voltar</button>
-      <h2>Sua jornada até o Natal</h2>
+      <h2>Seu passo a passo até o Natal</h2>
       <p className="sub">Tudo aberto. A ordem é só uma sugestão para o seu perfil.</p>
       {ETAPAS.map((e) => {
         const feita = e.licoes.every((l) => estado.licoes.includes(l.id))
