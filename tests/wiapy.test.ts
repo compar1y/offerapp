@@ -22,6 +22,16 @@ describe('webhook da Wiapy', () => {
     const p = lerPedido(base({ payment: { id: 'pay_2', status: 'paid', amount: 4580 } }))
     expect(p.produtos).toEqual(['kit', 'recheios'])
   })
+  it('Recheios avulso pelo checkout próprio', () => {
+    for (const id of ['lNDHn0qgGdy7', '6af0613b371815cbeca7ea24']) {
+      const p = lerPedido(base({ checkout: { id, amount: 790 }, payment: { id: 'pay_r', status: 'paid', amount: 790 }, products: [{ id, title: 'Produto' }] }))
+      expect(p.produtos).toEqual(['recheios'])
+    }
+  })
+  it('kit + bump dos Recheios pelo id do produto, sem depender do título', () => {
+    const p = lerPedido(base({ checkout: { id: 'r2PHgYwK6CVi', orderbump: [{ id: '6af0613b371815cbeca7ea24', title: 'Bump' }] } }))
+    expect(p.produtos).toEqual(['kit', 'recheios'])
+  })
   it('upsell e downsell pelo id do checkout', () => {
     expect(produtoDoCheckout('6aee79cc4fbe72f8a1685733')).toBe('encomenda')
     expect(produtoDoCheckout('6aee7b90371815cbec6a481c')).toBe('primeira')

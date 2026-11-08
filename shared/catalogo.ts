@@ -64,9 +64,9 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     nome: '10 Recheios que Mais Vendem',
     precoCentavos: 790,
     libera: ['recheios'],
-    // o bump é vendido dentro do checkout do kit; avulso, o link fica vazio até existir um checkout próprio
-    checkoutUrl: '',
-    checkoutIds: [],
+    // checkout avulso (para quem comprou o kit sem o bump); o mesmo produto também é o bump do kit
+    checkoutUrl: 'https://pay.wiapy.com/lNDHn0qgGdy7',
+    checkoutIds: ['lNDHn0qgGdy7', '6af0613b371815cbeca7ea24'],
   },
   encomenda: {
     id: 'encomenda',
@@ -87,7 +87,11 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
 }
 
 /** como reconhecer o bump dos Recheios dentro do pedido do kit */
-export const BUMP_RECHEIOS = { trechosTitulo: ['recheio'], totalComKitCentavos: 3790 + 790 }
+export const BUMP_RECHEIOS = {
+  ids: ['lNDHn0qgGdy7', '6af0613b371815cbeca7ea24'],
+  trechosTitulo: ['recheio'],
+  totalComKitCentavos: 3790 + 790,
+}
 
 export function materiaisLiberados(produtos: ProdutoId[]): MaterialId[] {
   const set = new Set<MaterialId>()
