@@ -9,7 +9,8 @@ import { Jornada, LicaoTela } from './telas/Jornada'
 import { Leitor } from './telas/Leitor'
 import { Receitas } from './telas/Receitas'
 import { Sos } from './telas/Sos'
-import { BauTela, Loja, Raspa } from './telas/Presentes'
+import { BauTela, Raspa } from './telas/Presentes'
+import { PresenteDaFabrica } from './telas/Presente'
 import { Oferta } from './telas/Oferta'
 import { Conquistas, Materiais } from './telas/Materiais'
 import { Menu } from './telas/Menu'
@@ -170,7 +171,7 @@ function Rota({ tela }: { tela: Tela }) {
     case 'bau': return <BauTela b={tela.b} />
     case 'raspa': return <Raspa etapa={tela.etapa} />
     case 'oferta': return <Oferta key={tela.p} p={tela.p} origem={tela.origem} />
-    case 'loja': return <Loja />
+    case 'loja': return <PresenteDaFabrica />
     case 'materiais': return <Materiais />
     case 'conquistas': return <Conquistas />
     default: return <Painel />

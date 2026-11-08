@@ -1,11 +1,13 @@
 // Modo prévia (VITE_DEMO=1): o app roda sem servidor, com dados de exemplo guardados só neste navegador.
 // Só entra no build de prévia; o build de produção não inclui este arquivo.
 import { materiaisLiberados, type ProdutoId } from '../shared/catalogo'
+import { podeEscolher, presenteDe } from '../shared/presente'
 
 const CHAVE = 'fornada-previa'
 type Usuaria = Record<string, unknown> & { produtos: ProdutoId[]; logada: boolean }
 
-const novo = (): Usuaria => ({ logada: false, produtos: ['kit'], perfil: null, respostas: null, avatar: null, apelido: '', estado: null })
+// na prévia ela já começa com 5 dias de entrada (🪙50) para dar para testar a escolha do presente
+const novo = (): Usuaria => ({ logada: false, produtos: ['kit'], perfil: null, respostas: null, avatar: null, apelido: '', estado: null, dias: 5, presente: null })
 function ler(): Usuaria {
   try { return { ...novo(), ...JSON.parse(localStorage.getItem(CHAVE) ?? '{}') } } catch { return novo() }
 }
@@ -30,8 +32,15 @@ export function instalarPrevia() {
     if (rota === '/api/sair') { gravar({ ...u, logada: false }); return resposta({ ok: true }) }
     if (rota === '/api/eu' && (init?.method ?? 'GET') === 'GET') {
       if (!u.logada) return resposta({ erro: 'Entre de novo.' }, 401)
-      const { produtos, logada: _l, ...resto } = u
-      return resposta({ email: 'maria.exemplo@gmail.com', ...resto, acesso: { produtos, pendentes: [], materiais: materiaisLiberados(produtos) } })
+      const { produtos, logada: _l, dias, presente, ...resto } = u
+      return resposta({ email: 'maria.exemplo@gmail.com', ...resto, acesso: { produtos, pendentes: [], materiais: materiaisLiberados(produtos) }, presente: presenteDe(Number(dias), (presente as ProdutoId | null) ?? null) })
+    }
+    if (rota === '/api/presente') {
+      const p = presenteDe(Number(u.dias), (u.presente as ProdutoId | null) ?? null)
+      const ok = podeEscolher(p, corpo.produto, u.produtos)
+      if (ok !== true) return resposta({ erro: ok }, 400)
+      gravar({ ...u, presente: corpo.produto, produtos: [...u.produtos, corpo.produto] })
+      return resposta({ ok: true })
     }
     if (rota === '/api/eu') { gravar({ ...u, ...corpo }); return resposta({ ok: true }) }
     return resposta({ ok: true })

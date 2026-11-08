@@ -2,8 +2,8 @@ import { fotoEtapa } from '../imagens'
 import { useEffect, useState } from 'react'
 import { MATERIAIS, type MaterialId } from '../../shared/catalogo'
 import { ETAPAS, PERFIS, TODAS_LICOES, type Ref } from '../../shared/conteudo'
-import { concluirLicao, MOEDAS } from '../../shared/jogo'
-import { temMaterial, useApp } from '../ctx'
+import { concluirLicao } from '../../shared/jogo'
+import { ofertaDisponivel, temMaterial, useApp } from '../ctx'
 
 export const lerRef = (r: Ref): { m: MaterialId; p: number } => {
   const [m, p] = r.split(':')
@@ -70,8 +70,15 @@ export function LicaoTela({ id }: { id: string }) {
     const r = concluirLicao(estado, id)
     mudar(() => r.estado)
     evento('licao.feita', { licao: id })
-    toast(`+${MOEDAS.licao} 🪙 Lição feita!`)
-    if (r.etapaConcluida) ir({ t: 'raspa', etapa: r.etapaConcluida })
+    if (!r.etapaConcluida) return toast('Lição feita ✓')
+    toast(`Etapa ${r.etapaConcluida} concluída 🎉`)
+    // ao terminar uma etapa, mostra 1 vez a oferta dela (se ela ainda não tiver o livro)
+    const p = ETAPAS.find((e) => e.n === r.etapaConcluida)?.ofertaAoConcluir
+    const chave = `oferta-etapa-${r.etapaConcluida}`
+    if (p && ofertaDisponivel(eu, p) && !r.estado.ofertasVistas.includes(chave)) {
+      mudar((e) => ({ ...e, ofertasVistas: [...e.ofertasVistas, chave] }))
+      ir({ t: 'oferta', p, origem: `etapa-${r.etapaConcluida}` })
+    }
   }
 
   return (
@@ -91,7 +98,7 @@ export function LicaoTela({ id }: { id: string }) {
         <button className="btn leve" onClick={() => ir({ t: 'ler', m: alvo.m, p: alvo.p })}>📖 Ver no material ({ver.rotulo})</button>
       )}
       {ver && alvo && !podeVer && <p className="sub">Está em: {MATERIAIS[alvo.m].titulo}.</p>}
-      <button className="btn" onClick={concluir} disabled={feita}>{feita ? 'Lição feita ✓' : `Fiz! (+${MOEDAS.licao} 🪙)`}</button>
+      <button className="btn" onClick={concluir} disabled={feita}>{feita ? 'Lição feita ✓' : 'Fiz esta lição ✓'}</button>
       <button className="link" onClick={() => ir({ t: 'sos' })}>A massa deu problema? Abrir o SOS Massa</button>
     </>
   )

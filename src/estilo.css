@@ -205,3 +205,17 @@ select{font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha
 .presentes-linha img{width:56px;height:56px;object-fit:contain;flex:none}
 .presentes-linha .sub{font-size:14px}
 body{font-size:17px}
+/* Presente da Fábrica */
+.card.saldo{gap:8px;border-color:var(--casca);background:var(--casca-clara)}
+.card.saldo b{font-family:var(--display);font-size:20px}
+.livro-presente{flex-direction:row;align-items:flex-start;gap:12px}
+.livro-presente img{width:104px;flex:none;border-radius:10px}
+.livro-presente > span{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.livro-presente b{font-family:var(--display);font-size:18px;line-height:1.15}
+.livro-presente .sub{font-size:14px;line-height:1.35}
+.livro-presente .btn{font-size:15px;padding:10px 12px}
+.livro-presente.meu{border-color:var(--pinheiro);background:var(--pinheiro-claro)}
+.preco-presente{font-size:15px}
+.preco-presente s{color:var(--chocolate-2)}
+.preco-presente b{font-family:inherit;font-size:15px;color:var(--pinheiro)}
+.overlay .card.pop{max-height:calc(100dvh - 40px);overflow-y:auto}

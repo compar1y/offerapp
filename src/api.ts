@@ -1,3 +1,4 @@
+import type { Presente } from '../shared/presente'
 import type { MaterialId, ProdutoId } from '../shared/catalogo'
 import type { PerfilId } from '../shared/conteudo'
 import type { Estado } from '../shared/jogo'
@@ -11,6 +12,7 @@ export interface Eu {
   apelido: string
   estado: Estado | null
   acesso: Acesso
+  presente: Presente
 }
 
 export class ErroApi extends Error {
@@ -38,6 +40,7 @@ export const api = {
   sair: () => pedir<{ ok: true }>('/api/sair', { method: 'POST' }),
   eu: () => pedir<Eu>('/api/eu'),
   salvar: (dados: Salvavel, keepalive = false) => pedir<{ ok: true }>('/api/eu', { method: 'POST', body: JSON.stringify(dados), keepalive }),
+  presente: (produto: ProdutoId) => pedir<{ ok: true }>('/api/presente', { method: 'POST', body: JSON.stringify({ produto }) }),
   evento: (tipo: string, dados: Record<string, unknown> = {}) => {
     pedir('/api/evento', { method: 'POST', body: JSON.stringify({ tipo, dados }), keepalive: true }).catch(() => {})
   },

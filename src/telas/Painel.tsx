@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS } from '../../shared/catalogo'
 import { ETAPAS, OFERTAS, PERFIS, TODAS_LICOES } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
+import { CUSTO_PRESENTE, diasQueFaltam, MOEDAS_POR_DIA, type Presente } from '../../shared/presente'
 import { ofertaDisponivel, reais, useApp } from '../ctx'
 import { Suporte } from './Entrar'
 
@@ -29,6 +30,13 @@ export function proximaLicao(comecaEm: number, feitas: string[]) {
   return null
 }
 
+function textoPresente(p: Presente): string {
+  if (p.escolhido) return `🎁 ${PRODUTOS[p.escolhido].nome}. Toque para abrir.`
+  if (p.moedas >= CUSTO_PRESENTE) return `🪙 ${p.moedas} moedas: já dá para escolher o seu! Toque aqui.`
+  const f = diasQueFaltam(p)
+  return `🪙 ${p.moedas} de ${CUSTO_PRESENTE} moedas. Cada dia que você abre o app vale 🪙${MOEDAS_POR_DIA}. Faltam ${f} ${f === 1 ? 'dia' : 'dias'}.`
+}
+
 export function Painel() {
   const { eu, estado, ir, evento, recarregar, sair } = useApp()
   const perfil = PERFIS[eu.perfil ?? 'iniciante']
@@ -38,7 +46,6 @@ export function Painel() {
   const temReceitas = eu.acesso.materiais.includes('ebook')
   const proxReceita = RECEITAS.find((r) => !estado.receitas.includes(r.n)) ?? RECEITAS[0]
   const bonus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro')
-  const bausProntos = estado.baus.length
 
   useEffect(() => {
     if (oferta) evento('oferta.vista', { produto: oferta, onde: 'painel' })
@@ -133,8 +140,8 @@ export function Painel() {
       <button className="card presentes-linha" onClick={() => ir({ t: 'loja' })}>
         <img src={fotoBau('ouro')} alt="" loading="lazy" />
         <span>
-          <b>Presentes e moedas</b>
-          <span className="sub">🪙 {estado.moedas} moedas · 🔥 {estado.seq.dias} {estado.seq.dias === 1 ? 'dia seguido' : 'dias seguidos'}{bausProntos ? ` · 🎁 ${bausProntos} para abrir` : ''}</span>
+          <b>{eu.presente.escolhido ? 'Seu livro de presente' : 'Ganhe 1 livro de presente'}</b>
+          <span className="sub">{textoPresente(eu.presente)}</span>
         </span>
       </button>
 

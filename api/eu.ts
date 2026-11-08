@@ -1,10 +1,11 @@
-// GET  /api/eu  → perfil, estado do jogo e o que ela comprou
+// GET  /api/eu  → perfil, estado do jogo, o que ela comprou e o saldo do presente (marca o dia de hoje)
 // POST /api/eu  { perfil?, respostas?, avatar?, apelido?, estado? } → salva
 import { PERFIS, type PerfilId } from '../shared/conteudo.js'
 import { hojeBR, sanear } from '../shared/jogo.js'
 import { acessoDe } from '../server/acesso.js'
 import { db } from '../server/db.js'
 import { corpoJson, falha, json } from '../server/http.js'
+import { marcarDiaEContar } from '../server/presente.js'
 import { emailDaSessao } from '../server/sessao.js'
 
 export async function GET(req: Request): Promise<Response> {
@@ -15,7 +16,8 @@ export async function GET(req: Request): Promise<Response> {
     if (error) throw error
     if (acesso.produtos.length === 0) return json({ erro: 'Seu acesso foi encerrado. Fale com o suporte.' }, 403)
     await db().from('usuarias').update({ visto_em: new Date().toISOString() }).eq('email', email)
-    return json({ email, perfil: data?.perfil ?? null, respostas: data?.respostas ?? null, avatar: data?.avatar ?? null, apelido: data?.apelido ?? '', estado: data?.estado && Object.keys(data.estado).length ? sanear(data.estado, hojeBR()) : null, acesso })
+    const presente = await marcarDiaEContar(email)
+    return json({ email, perfil: data?.perfil ?? null, respostas: data?.respostas ?? null, avatar: data?.avatar ?? null, apelido: data?.apelido ?? '', estado: data?.estado && Object.keys(data.estado).length ? sanear(data.estado, hojeBR()) : null, acesso, presente })
   } catch (e) {
     return falha(e)
   }

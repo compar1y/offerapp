@@ -36,11 +36,11 @@ export async function GET(req: Request): Promise<Response> {
     if (new URL(req.url).searchParams.get('armazenamento') === '1') return json(await diagnosticoArmazenamento())
     type U = { email: string; perfil: string | null; estado: { licoes?: string[]; receitas?: number[] } | null; visto_em: string | null }
     type E = { email: string; tipo: string; dados: Record<string, unknown> }
-    type C = { email: string; produto: string; status: string }
+    type C = { email: string; produto: string; status: string; metodo: string | null }
     const [usuarias, eventos, compras] = await Promise.all([
       tudo<U>('usuarias', 'email,perfil,estado,visto_em'),
       tudo<E>('eventos', 'email,tipo,dados'),
-      tudo<C>('compras', 'email,produto,status'),
+      tudo<C>('compras', 'email,produto,status,metodo'),
     ])
     const perfilDe = new Map(usuarias.map((u) => [u.email, u.perfil ?? 'sem perfil']))
     const porPerfil: Record<string, number> = {}
@@ -64,7 +64,7 @@ export async function GET(req: Request): Promise<Response> {
       else if (e.tipo === 'oferta.clicada') l.clicada++
       else if (e.tipo === 'oferta.recusada') l.recusada++
     }
-    for (const c of compras) if (c.status === 'pago' && c.produto !== 'kit') linha(c.produto, perfilDe.get(c.email) ?? 'sem perfil').comprou++
+    for (const c of compras) if (c.status === 'pago' && c.produto !== 'kit' && c.metodo !== 'presente') linha(c.produto, perfilDe.get(c.email) ?? 'sem perfil').comprou++
 
     const sos: Record<string, number> = {}
     const receitas: Record<string, number> = {}

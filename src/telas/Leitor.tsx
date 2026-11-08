@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MATERIAIS, type MaterialId } from '../../shared/catalogo'
 import { RECEITAS } from '../../shared/receitas'
-import { fazerReceita, MOEDAS } from '../../shared/jogo'
+import { fazerReceita } from '../../shared/jogo'
 import { urlPagina } from '../api'
 import { temMaterial, useApp } from '../ctx'
 
@@ -93,10 +93,10 @@ export function Leitor({ m, p: inicial }: { m: MaterialId; p: number }) {
                   onClick={() => {
                     mudar((e) => fazerReceita(e, receita.n))
                     evento('receita.feita', { n: receita.n })
-                    toast(`+${MOEDAS.receita} 🪙 Receita feita!`)
+                    toast('Receita marcada como feita ✓')
                   }}
                 >
-                  {feita ? `Receita ${receita.n} feita ✓` : `Fiz a receita ${receita.n}! (+${MOEDAS.receita} 🪙)`}
+                  {feita ? `Receita ${receita.n} feita ✓` : `Fiz a receita ${receita.n} ✓`}
                 </button>
               )}
             </div>

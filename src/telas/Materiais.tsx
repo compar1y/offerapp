@@ -7,7 +7,7 @@ import { capa } from '../imagens'
 import type { MaterialId } from '../../shared/catalogo'
 
 /** frase curta de desejo em cada material com cadeado (sem promessa de ganho com número) */
-const DESEJO: Partial<Record<ProdutoId, string>> = {
+export const DESEJO: Partial<Record<ProdutoId, string>> = {
   recheios: 'O recheio cremoso que faz a cliente voltar e pedir o segundo panetone.',
   encomenda: 'Cada cliente feliz traz a próxima: o caminho para as encomendas virem até você.',
   primeira: 'Sua primeira encomenda, passo a passo, começando por quem já confia em você.',
