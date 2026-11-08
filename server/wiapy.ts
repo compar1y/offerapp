@@ -92,7 +92,7 @@ export function lerPedido(corpo: unknown): Pedido {
 
   // bump dos Recheios: pelo id (BUMP_RECHEIOS_IDS), pelo título ("recheio") ou pelo valor total kit + bump
   if (principal === 'kit') {
-    const idsBump = idsExtras('BUMP_RECHEIOS_IDS')
+    const idsBump = [...BUMP_RECHEIOS.ids, ...idsExtras('BUMP_RECHEIOS_IDS')]
     const casa = (x: { id: string; titulo: string }) => idsBump.includes(x.id) || BUMP_RECHEIOS.trechosTitulo.some((t) => x.titulo.toLowerCase().includes(t))
     const temBump = bumps.some(casa) || prods.some(casa) || valor === BUMP_RECHEIOS.totalComKitCentavos
     if (temBump) produtos.push('recheios')
