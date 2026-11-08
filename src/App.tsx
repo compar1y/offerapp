@@ -146,6 +146,7 @@ export function App() {
 
   return (
     <CtxReact.Provider value={ctx}>
+      {import.meta.env.VITE_DEMO === '1' && <BarraPrevia />}
       <Rota tela={tela} />
       {aviso && <div className="toast pop" role="status">{aviso}</div>}
     </CtxReact.Provider>
@@ -171,4 +172,13 @@ function Rota({ tela }: { tela: Tela }) {
     case 'conquistas': return <Conquistas />
     default: return <Painel />
   }
+}
+
+function BarraPrevia() {
+  return (
+    <div className="aviso" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+      <span>Prévia com dados de exemplo</span>
+      <button className="chip" style={{ cursor: 'pointer', fontFamily: 'inherit', color: 'inherit' }} onClick={() => import('./demo').then((d) => d.recomecarPrevia())}>Recomeçar</button>
+    </div>
+  )
 }

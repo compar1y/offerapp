@@ -43,4 +43,5 @@ export const api = {
   },
 }
 
-export const urlPagina = (m: MaterialId, p: number) => `/api/pagina?m=${encodeURIComponent(m)}&p=${p}`
+export const urlPagina = (m: MaterialId, p: number) =>
+  import.meta.env.VITE_DEMO === '1' ? `paginas/${m}/${String(p).padStart(3, '0')}.webp` : `/api/pagina?m=${encodeURIComponent(m)}&p=${p}`

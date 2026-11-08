@@ -19,8 +19,14 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   if (!texto) return null
 
-  function comprar() {
+  async function comprar() {
     evento('oferta.clicada', { produto: p, onde: origem })
+    if (import.meta.env.VITE_DEMO === '1') {
+      const { comprarNaPrevia } = await import('../demo')
+      comprarNaPrevia(p)
+      await recarregar()
+      return
+    }
     window.open(prod.checkoutUrl, '_blank', 'noopener')
     setAbriu(true)
   }
@@ -77,7 +83,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         ) : (
           <button className="btn fita" onClick={comprar}>{texto.botao}</button>
         )}
-        <p className="sub" style={{ fontSize: 13 }}>{texto.garantia} O pagamento abre numa página segura e o app continua aqui.</p>
+        <p className="sub" style={{ fontSize: 13 }}>{texto.garantia} {import.meta.env.VITE_DEMO === '1' ? 'Na prévia, o botão libera na hora, sem pagar.' : 'O pagamento abre numa página segura e o app continua aqui.'}</p>
       </div>
       <button className="link" onClick={agoraNao}>Agora não</button>
     </>

@@ -49,7 +49,7 @@ export function Leitor({ m, p: inicial }: { m: MaterialId; p: number }) {
       {receita && <h2>Receita {String(receita.n).padStart(3, '0')} · {receita.titulo}</h2>}
       <div className="leitor">
         {carregou !== 'sim' && (
-          <div className="vazio">{carregou === 'erro' ? 'Não consegui abrir esta página. Confira a internet e toque em Próxima ou Voltar.' : 'Abrindo a página…'}</div>
+          <div className="vazio">{carregou === 'erro' ? import.meta.env.VITE_DEMO === '1' ? 'Na prévia só algumas páginas vieram junto. No app de verdade, todas abrem aqui.' : 'Não consegui abrir esta página. Confira a internet e toque em Próxima ou Voltar.' : 'Abrindo a página…'}</div>
         )}
         <img
           key={p}

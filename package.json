@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "test": "vitest run",
     "check": "tsc -p tsconfig.json --noEmit && vitest run && vite build",
+    "previa": "VITE_DEMO=1 vite build",
     "subir:paginas": "node scripts/subir-paginas.mjs"
   },
   "dependencies": {
