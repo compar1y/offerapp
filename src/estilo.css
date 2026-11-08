@@ -120,3 +120,13 @@ input[type=email],input[type=text]{width:100%;font:inherit;font-size:18px;paddin
 .tabela td.n{text-align:right}
 textarea{width:100%;font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha);background:var(--cartao);color:var(--chocolate);min-height:120px}
 select{font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha);background:var(--cartao);color:var(--chocolate);width:100%}
+/* menu de topo: fixo ao rolar; 6 abas iguais com ícone em cima (cabem na coluna de 440px e num celular de 320px) */
+.menu{position:sticky;top:0;z-index:20;margin:-18px calc(-1 * max(16px,env(safe-area-inset-right,0px))) 0;padding:calc(6px + env(safe-area-inset-top,0px)) 6px 6px;background:var(--chocolate);color:var(--farinha);box-shadow:0 2px 0 var(--fita)}
+:root[data-theme="dark"] .menu{background:#120D0A;color:#FBEFE3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .menu{background:#120D0A;color:#FBEFE3}}
+.menu .abas{display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+.menu button{display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:0;color:inherit;opacity:.62;font:inherit;font-weight:700;font-size:11.5px;line-height:1.15;padding:6px 2px;border-radius:10px;cursor:pointer;white-space:nowrap;min-width:0}
+.menu button span{font-size:20px;line-height:1.1}
+.menu button:hover{opacity:.9}
+.menu button.on{opacity:1;background:rgba(255,255,255,.12);box-shadow:inset 0 -2px 0 var(--casca)}
+@media (max-width:350px){.menu button{font-size:10px}.menu button span{font-size:18px}}
