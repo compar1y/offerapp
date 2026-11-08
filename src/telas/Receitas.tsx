@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { RECEITAS } from '../../shared/receitas'
 import { useApp } from '../ctx'
+import { fotoReceita } from '../imagens'
 
 const semAcento = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
@@ -23,13 +24,15 @@ export function Receitas() {
       {grupos.map((g) => (
         <div key={g} className="card">
           <h3>{g}</h3>
-          <div className="licoes">
+          <div className="grade">
             {lista.filter((r) => r.grupo === g).map((r) => {
               const ok = estado.receitas.includes(r.n)
               return (
-                <button key={r.n} className="licao" onClick={() => ir({ t: 'ler', m: 'ebook', p: r.n })}>
-                  <span className={`check ${ok ? 'ok' : ''}`} style={{ width: 30, height: 22, fontSize: 11, color: ok ? '#fff' : 'var(--chocolate-2)' }}>{ok ? '✓' : String(r.n).padStart(3, '0')}</span>
-                  {r.titulo}
+                <button key={r.n} className="cartao-foto" onClick={() => ir({ t: 'ler', m: 'ebook', p: r.n })}>
+                  <img src={fotoReceita(r.n)} alt="" loading="lazy" />
+                  {ok && <span className="selo-ok">✓ feita</span>}
+                  <span className="num">{String(r.n).padStart(3, '0')}</span>
+                  <span className="tit">{r.titulo}</span>
                 </button>
               )
             })}

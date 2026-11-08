@@ -3,13 +3,14 @@
 // POST /api/admin { acao:'liberar', email, produto }           → libera acesso manual (ex.: compra antiga, suporte)
 // POST /api/admin { acao:'importar', linhas:[{email,produto}] } → importa compradoras antigas (até 2000 por vez)
 // POST /api/admin { acao:'bloquear', email, produto }          → tira o acesso (reembolso feito por fora)
-import { ehProduto, type ProdutoId } from '../shared/catalogo.js'
+// PUT  /api/admin?m=ebook&p=1 (corpo: a imagem WebP)            → troca uma página no armazenamento (scripts/subir-paginas-admin.mjs)
+import { ehMaterial, ehProduto, MATERIAIS, type ProdutoId } from '../shared/catalogo.js'
 import { PERFIS, TODAS_LICOES } from '../shared/conteudo.js'
-import { db } from '../server/db.js'
+import { BUCKET, db } from '../server/db.js'
 import { exigir } from '../server/env.js'
 import { corpoJson, emailValido, falha, json, normalizarEmail } from '../server/http.js'
 import { iguais } from '../server/sessao.js'
-import { diagnosticoArmazenamento } from '../server/paginas.js'
+import { diagnosticoArmazenamento, prefixoDasPaginas } from '../server/paginas.js'
 
 function autorizado(req: Request): boolean {
   const h = req.headers.get('authorization') ?? ''
@@ -125,6 +126,27 @@ export async function POST(req: Request): Promise<Response> {
       return json({ ok, linhasComErro: erros })
     }
     return json({ erro: 'ação desconhecida' }, 400)
+  } catch (e) {
+    return falha(e)
+  }
+}
+
+export async function PUT(req: Request): Promise<Response> {
+  try {
+    if (!autorizado(req)) return json({ erro: 'não autorizado' }, 401)
+    const url = new URL(req.url)
+    const m = url.searchParams.get('m') ?? ''
+    const p = Number(url.searchParams.get('p'))
+    if (!ehMaterial(m) || !Number.isInteger(p) || p < 1 || p > MATERIAIS[m].paginas) return json({ erro: 'material ou página inválida' }, 400)
+    const corpo = new Uint8Array(await req.arrayBuffer())
+    // WebP começa com "RIFF....WEBP"; limite abaixo do teto de 4,5 MB da Vercel
+    const ehWebp = corpo.length > 12 && String.fromCharCode(...corpo.slice(0, 4)) === 'RIFF' && String.fromCharCode(...corpo.slice(8, 12)) === 'WEBP'
+    if (!ehWebp || corpo.length > 4_000_000) return json({ erro: 'mande uma imagem WebP de até 4 MB' }, 400)
+    const prefixo = (await prefixoDasPaginas()) ?? ''
+    const caminho = `${prefixo}${m}/${String(p).padStart(3, '0')}.webp`
+    const { error } = await db().storage.from(BUCKET).upload(caminho, corpo, { contentType: 'image/webp', upsert: true, cacheControl: '3600' })
+    if (error) return json({ erro: error.message, caminho }, 500)
+    return json({ ok: true, caminho, bytes: corpo.length })
   } catch (e) {
     return falha(e)
   }

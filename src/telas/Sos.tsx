@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { SOS, SOS_CHECAGEM_PAGINA, SOS_LER_ANTES_PAGINAS } from '../../shared/receitas'
 import { useApp } from '../ctx'
+import { fotoSos } from '../imagens'
 
 export function Sos() {
   const { ir, voltar, mudar } = useApp()
@@ -19,9 +20,9 @@ export function Sos() {
           <h3>{grupo}</h3>
           <div className="licoes">
             {itens.map(([t, p]) => (
-              <button key={p} className="licao" onClick={() => ir({ t: 'ler', m: 'fichas-socorro', p })}>
-                <span className="check" style={{ width: 22, height: 22, fontSize: 11, color: 'var(--chocolate-2)' }}>{String(p - 3).padStart(2, '0')}</span>
-                {t}
+              <button key={p} className="licao com-foto" onClick={() => ir({ t: 'ler', m: 'fichas-socorro', p })}>
+                <img src={fotoSos(p - 3)} alt="" loading="lazy" />
+                <span><small>Ficha {String(p - 3).padStart(2, '0')}</small>{t}</span>
               </button>
             ))}
           </div>

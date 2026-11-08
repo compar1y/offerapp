@@ -1,37 +1,52 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MATERIAIS, type MaterialId } from '../../shared/catalogo'
 import { RECEITAS } from '../../shared/receitas'
 import { fazerReceita, MOEDAS } from '../../shared/jogo'
 import { urlPagina } from '../api'
 import { temMaterial, useApp } from '../ctx'
 
-const lerZoom = () => { try { return Number(localStorage.getItem('fornada-zoom')) || 100 } catch { return 100 } }
+/** páginas em pé têm 1054×1492; o Caderninho é deitado. Serve só para reservar o espaço antes da imagem chegar. */
+const proporcao = (m: MaterialId) => (m === 'caderninho' ? '1.414 / 1' : '1054 / 1492')
 
-/** leitor de páginas dentro do app: as imagens vêm do armazenamento privado por link temporário */
+/**
+ * Leitor em rolagem contínua: todas as páginas uma embaixo da outra, como um PDF no celular.
+ * As imagens só carregam quando chegam perto da tela (loading="lazy"). Abre já na página pedida.
+ */
 export function Leitor({ m, p: inicial }: { m: MaterialId; p: number }) {
-  const { eu, estado, voltar, mudar, evento, toast, ir } = useApp()
+  const { eu, estado, voltar, mudar, evento, toast } = useApp()
   const mat = MATERIAIS[m]
-  const [p, setP] = useState(Math.min(Math.max(1, inicial), mat.paginas))
-  const [zoom, setZoom] = useState(lerZoom)
-  const [carregou, setCarregou] = useState<'sim' | 'nao' | 'erro'>('nao')
-  const receita = m === 'ebook' ? RECEITAS[p - 1] : null
-  const feita = receita ? estado.receitas.includes(receita.n) : false
+  const alvo = Math.min(Math.max(1, inicial), mat.paginas)
+  const [atual, setAtual] = useState(alvo)
+  const [erros, setErros] = useState<Set<number>>(new Set())
+  const refs = useRef<(HTMLDivElement | null)[]>([])
+  const vistas = useRef<Set<number>>(new Set())
 
+  // abre na página pedida (ex.: Receita 37 ou a ficha do SOS)
   useEffect(() => {
-    setCarregou('nao')
-    history.replaceState({ t: 'ler', m, p }, '')
-    if (m === 'ebook') evento('receita.aberta', { n: p })
-    else if (m === 'fichas-socorro' && p >= 4 && p <= 24) evento('sos.aberto', { ficha: p - 3 })
-    else evento('pagina.aberta', { m, p })
-    // já pede a próxima página para virar sem esperar
-    if (p < mat.paginas) new Image().src = urlPagina(m, p + 1)
-  }, [m, p, mat.paginas, evento])
+    if (alvo > 1) refs.current[alvo - 1]?.scrollIntoView({ block: 'start' })
+  }, [alvo])
 
-  const mudarZoom = (d: number) => {
-    const z = Math.min(250, Math.max(100, zoom + d * 25))
-    setZoom(z)
-    try { localStorage.setItem('fornada-zoom', String(z)) } catch { /* sem armazenamento */ }
-  }
+  // descobre qual página está na tela: atualiza o contador, guarda a posição e registra a leitura uma vez por página
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (itens) => {
+        for (const it of itens) {
+          if (!it.isIntersecting) continue
+          const p = Number((it.target as HTMLElement).dataset.p)
+          setAtual(p)
+          history.replaceState({ t: 'ler', m, p }, '')
+          if (vistas.current.has(p)) continue
+          vistas.current.add(p)
+          if (m === 'ebook') evento('receita.aberta', { n: p })
+          else if (m === 'fichas-socorro' && p >= 4 && p <= 24) evento('sos.aberto', { ficha: p - 3 })
+          else evento('pagina.aberta', { m, p })
+        }
+      },
+      { rootMargin: '-45% 0px -50% 0px' }, // conta a página que cruza o meio da tela
+    )
+    refs.current.forEach((el) => el && obs.observe(el))
+    return () => obs.disconnect()
+  }, [m, evento])
 
   if (!temMaterial(eu, m)) {
     return (
@@ -42,46 +57,53 @@ export function Leitor({ m, p: inicial }: { m: MaterialId; p: number }) {
     )
   }
 
+  const paginas = Array.from({ length: mat.paginas }, (_, i) => i + 1)
+
   return (
     <>
-      <button className="voltar" onClick={voltar}>← Voltar</button>
-      <p className="eyebrow">{mat.titulo} · pág. {p} de {mat.paginas}</p>
-      {receita && <h2>Receita {String(receita.n).padStart(3, '0')} · {receita.titulo}</h2>}
-      <div className="leitor">
-        {carregou !== 'sim' && (
-          <div className="vazio">{carregou === 'erro' ? import.meta.env.VITE_DEMO === '1' ? 'Na prévia só algumas páginas vieram junto. No app de verdade, todas abrem aqui.' : 'Não consegui abrir esta página. Confira a internet e toque em Próxima ou Voltar.' : 'Abrindo a página…'}</div>
-        )}
-        <img
-          key={p}
-          src={urlPagina(m, p)}
-          alt={`Página ${p} de ${mat.titulo}`}
-          style={{ width: `${zoom}%`, display: carregou === 'sim' ? 'block' : 'none' }}
-          onLoad={() => setCarregou('sim')}
-          onError={() => setCarregou('erro')}
-        />
+      <div className="leitor-topo">
+        <button className="voltar" onClick={voltar}>← Voltar</button>
+        <span className="sub">pág. {atual} de {mat.paginas}</span>
       </div>
-      <div className="chips" style={{ justifyContent: 'center' }}>
-        <button className="chip" onClick={() => mudarZoom(-1)} disabled={zoom <= 100} style={{ cursor: 'pointer', fontFamily: 'inherit', color: 'inherit' }}>➖ Diminuir</button>
-        <button className="chip" onClick={() => mudarZoom(1)} disabled={zoom >= 250} style={{ cursor: 'pointer', fontFamily: 'inherit', color: 'inherit' }}>➕ Aumentar</button>
+      <h2>{mat.titulo}</h2>
+      <div className="rolagem">
+        {paginas.map((p) => {
+          const receita = m === 'ebook' ? RECEITAS[p - 1] : null
+          const feita = receita ? estado.receitas.includes(receita.n) : false
+          return (
+            <div key={p} className="folha" data-p={p} ref={(el) => { refs.current[p - 1] = el }}>
+              {erros.has(p) ? (
+                <div className="vazio" style={{ aspectRatio: proporcao(m) }}>
+                  {import.meta.env.VITE_DEMO === '1' ? 'Na prévia só algumas páginas vieram junto. No app de verdade, todas abrem aqui.' : 'Não consegui abrir esta página. Confira a internet.'}
+                </div>
+              ) : (
+                <img
+                  src={urlPagina(m, p)}
+                  alt={receita ? `Receita ${receita.n}: ${receita.titulo}` : `Página ${p} de ${mat.titulo}`}
+                  loading={Math.abs(p - alvo) <= 1 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  style={{ aspectRatio: proporcao(m) }}
+                  onError={() => setErros((s) => new Set(s).add(p))}
+                />
+              )}
+              {receita && (
+                <button
+                  className="btn"
+                  disabled={feita}
+                  onClick={() => {
+                    mudar((e) => fazerReceita(e, receita.n))
+                    evento('receita.feita', { n: receita.n })
+                    toast(`+${MOEDAS.receita} 🪙 Receita feita!`)
+                  }}
+                >
+                  {feita ? `Receita ${receita.n} feita ✓` : `Fiz a receita ${receita.n}! (+${MOEDAS.receita} 🪙)`}
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button className="btn leve" onClick={() => setP(p - 1)} disabled={p <= 1}>← Anterior</button>
-        <button className="btn leve" onClick={() => setP(p + 1)} disabled={p >= mat.paginas}>Próxima →</button>
-      </div>
-      {receita && (
-        <button
-          className="btn"
-          disabled={feita}
-          onClick={() => {
-            mudar((e) => fazerReceita(e, receita.n))
-            evento('receita.feita', { n: receita.n })
-            toast(`+${MOEDAS.receita} 🪙 Receita feita!`)
-          }}
-        >
-          {feita ? 'Você já fez esta ✓' : `Fiz esta receita! (+${MOEDAS.receita} 🪙)`}
-        </button>
-      )}
-      {m === 'fichas-socorro' && p >= 4 && p <= 24 && <button className="btn" onClick={() => ir({ t: 'painel' })}>Entendi, voltar ao painel</button>}
+      <button className="btn leve" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>↑ Voltar ao topo</button>
     </>
   )
 }

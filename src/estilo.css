@@ -130,3 +130,29 @@ select{font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha
 .menu button:hover{opacity:.9}
 .menu button.on{opacity:1;background:rgba(255,255,255,.12);box-shadow:inset 0 -2px 0 var(--casca)}
 @media (max-width:350px){.menu button{font-size:10px}.menu button span{font-size:18px}}
+/* leitor em rolagem contínua: páginas uma embaixo da outra; no computador a coluna alarga para a página ficar legível */
+.leitor-topo{position:sticky;top:58px;z-index:10;display:flex;justify-content:space-between;align-items:center;background:var(--farinha);padding:6px 0;margin-block:-6px}
+.rolagem{display:flex;flex-direction:column;gap:14px;width:min(860px,calc(100vw - 32px));position:relative;left:50%;transform:translateX(-50%)}
+.folha{display:flex;flex-direction:column;gap:10px}
+.folha img{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--linha);background:var(--cartao)}
+.folha .vazio{display:grid;place-items:center;text-align:center;color:var(--chocolate-2);padding:16px;border-radius:12px;border:2px dashed var(--linha)}
+.folha .btn{max-width:440px;align-self:center}
+/* imagens: grades de receitas e capas, fotos no SOS, cadeado nas ofertas */
+.grade{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cartao-foto,.cartao-capa{position:relative;display:flex;flex-direction:column;gap:4px;background:var(--cartao);border:2px solid var(--linha);border-radius:16px;padding:0 0 10px;overflow:hidden;cursor:pointer;font:inherit;color:var(--chocolate);text-align:left}
+.cartao-foto img{width:100%;aspect-ratio:10/7;object-fit:cover;display:block;background:var(--casca-clara)}
+.cartao-foto .num,.cartao-capa .tag{margin:0 10px}
+.cartao-foto .num{font-size:11px;font-weight:800;color:var(--chocolate-2);letter-spacing:.06em}
+.cartao-foto .tit,.cartao-capa .tit{margin:0 10px;font-weight:700;font-size:14px;line-height:1.25}
+.cartao-foto .selo-ok{position:absolute;top:8px;left:8px;background:var(--pinheiro);color:#fff;font-size:12px;font-weight:800;border-radius:999px;padding:2px 8px}
+.capa{display:block;width:100%;aspect-ratio:1054/1492;object-fit:cover;background:var(--casca-clara)}
+.capa.sem{display:grid;place-items:center;font-size:56px}
+.cartao-capa .tag{align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:3px 8px}
+.cartao-capa .tag.presente{color:var(--fita);background:var(--casca-clara)}
+.cartao-capa .tag.comprar{color:#fff;background:var(--fita)}
+.cartao-capa.travado .capa{filter:grayscale(.85) brightness(.75)}
+.cartao-capa .cadeado{position:absolute;top:28%;left:50%;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;background:rgba(46,30,20,.82);display:grid;place-items:center;font-size:30px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.card.oferta .capa{max-width:200px;align-self:center;border-radius:12px;box-shadow:0 6px 18px rgba(46,30,20,.18)}
+.licao.com-foto img{width:64px;height:64px;object-fit:cover;border-radius:12px;flex:none;background:var(--casca-clara)}
+.licao.com-foto small{display:block;font-size:11px;font-weight:800;color:var(--chocolate-2);letter-spacing:.05em;text-transform:uppercase}
+.folha{scroll-margin-top:100px}
