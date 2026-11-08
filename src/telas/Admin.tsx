@@ -39,6 +39,16 @@ export function Admin() {
     }
   }
 
+  const [arm, setArm] = useState<string>('')
+  async function verArmazenamento() {
+    try {
+      const r = await fetch('/api/admin?armazenamento=1', { headers: { authorization: `Bearer ${token}` } })
+      setArm(JSON.stringify(await r.json(), null, 2))
+    } catch (e) {
+      setArm(String((e as Error).message))
+    }
+  }
+
   async function liberar() {
     try {
       await chamar({ method: 'POST', body: JSON.stringify({ acao: 'liberar', email, produto }) })
@@ -103,6 +113,11 @@ export function Admin() {
           </div>
         </>
       )}
+      <div className="card">
+        <h3>Páginas no armazenamento</h3>
+        <button className="btn leve" onClick={verArmazenamento} disabled={!token}>Conferir páginas</button>
+        {arm && <pre style={{ whiteSpace: 'pre-wrap', fontSize: 13, margin: 0 }}>{arm}</pre>}
+      </div>
       <div className="card">
         <h3>Liberar acesso</h3>
         <input type="email" placeholder="e-mail da cliente" value={email} onChange={(e) => setEmail(e.target.value)} />

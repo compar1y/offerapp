@@ -9,6 +9,7 @@ import { db } from '../server/db.js'
 import { exigir } from '../server/env.js'
 import { corpoJson, emailValido, falha, json, normalizarEmail } from '../server/http.js'
 import { iguais } from '../server/sessao.js'
+import { diagnosticoArmazenamento } from '../server/paginas.js'
 
 function autorizado(req: Request): boolean {
   const h = req.headers.get('authorization') ?? ''
@@ -31,6 +32,7 @@ const conta = (m: Record<string, number>, k: string) => (m[k] = (m[k] ?? 0) + 1)
 export async function GET(req: Request): Promise<Response> {
   try {
     if (!autorizado(req)) return json({ erro: 'não autorizado' }, 401)
+    if (new URL(req.url).searchParams.get('armazenamento') === '1') return json(await diagnosticoArmazenamento())
     type U = { email: string; perfil: string | null; estado: { licoes?: string[]; receitas?: number[] } | null; visto_em: string | null }
     type E = { email: string; tipo: string; dados: Record<string, unknown> }
     type C = { email: string; produto: string; status: string }
