@@ -1,3 +1,4 @@
+import { fotoEtapa } from '../imagens'
 import { useEffect, useState } from 'react'
 import { MATERIAIS, type MaterialId } from '../../shared/catalogo'
 import { ETAPAS, PERFIS, TODAS_LICOES, type Ref } from '../../shared/conteudo'
@@ -20,7 +21,8 @@ export function Jornada() {
       {ETAPAS.map((e) => {
         const feita = e.licoes.every((l) => estado.licoes.includes(l.id))
         return (
-          <div key={e.n} className="card">
+          <div key={e.n} className="card etapa-card">
+            <img className="foto-etapa" src={fotoEtapa(e.n)} alt="" loading="lazy" />
             <div className="etapa">
               <div className={`n ${feita ? 'feito' : ''}`}>{feita ? '✓' : e.n}</div>
               <div>

@@ -4,6 +4,7 @@ import { OFERTAS } from '../../shared/conteudo'
 import { ofertaDisponivel, reais, tem, useApp } from '../ctx'
 
 import { Capa } from './Materiais'
+import { mockup } from '../imagens'
 
 /** página curta antes do checkout (TSL interna). O pagamento abre em outra aba; ao voltar, o app confere se liberou. */
 export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
@@ -70,7 +71,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'O seu próximo passo'}</p>
       <h1>{texto.gancho}</h1>
       <div className="card oferta">
-        <Capa m={prod.libera[0]} />
+        {mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span className="sub">por</span><span className="preco">R${reais(prod.precoCentavos)}</span></div>

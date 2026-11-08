@@ -1,3 +1,4 @@
+import { cena } from '../imagens'
 import { useState } from 'react'
 import { WHATSAPP_SUPORTE } from '../../shared/catalogo'
 import { api, ErroApi } from '../api'
@@ -32,7 +33,8 @@ export function Entrar({ aoEntrar }: { aoEntrar(): void }) {
   }
 
   return (
-    <form className="card pop" style={{ gap: 14 }} onSubmit={entrar}>
+    <form className="card pop" style={{ gap: 14, paddingTop: 0, overflow: 'hidden' }} onSubmit={entrar}>
+      <img className="foto-topo" src={cena('boas-vindas')} alt="" />
       <p className="eyebrow">Fábrica de Panetones Caseiros</p>
       <h1>Entre com o e-mail da sua compra</h1>
       <p className="sub">É o mesmo e-mail que você usou no pagamento. Sem senha.</p>

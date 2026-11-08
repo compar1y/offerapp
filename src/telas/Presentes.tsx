@@ -1,3 +1,4 @@
+import { cena, fotoBau } from '../imagens'
 import { useEffect, useRef, useState } from 'react'
 import { ETAPAS, LOJA } from '../../shared/conteudo'
 import { abrirBau, premioRaspadinha, receberRaspadinha, trocar, type BauId, type Premio } from '../../shared/jogo'
@@ -27,6 +28,7 @@ export function BauTela({ b }: { b: BauId }) {
     <>
       <button className="voltar" onClick={voltar}>← Voltar</button>
       <div className="card pop" style={{ alignItems: 'center', textAlign: 'center', gap: 14 }}>
+        <img className="bau-grande pop" src={fotoBau(b)} alt="" />
         <h2>Presente de Natal {info.nome.toLowerCase()}</h2>
         {premio ? (
           <>
@@ -144,6 +146,7 @@ export function Loja() {
   return (
     <>
       <button className="voltar" onClick={voltar}>← Voltar</button>
+      <img className="foto-faixa" src={cena('presentes')} alt="" />
       <h1>Lojinha</h1>
       <p>Você tem <b>🪙 {estado.moedas} Moedas Douradas</b>. Ganhe mais fazendo lições, receitas e missões.</p>
       <div className="lista">

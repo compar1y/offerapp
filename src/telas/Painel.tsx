@@ -1,3 +1,4 @@
+import { cena, fotoBau } from '../imagens'
 import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS } from '../../shared/catalogo'
 import { AVATARES, ETAPAS, OFERTAS, PERFIS, TODAS_LICOES } from '../../shared/conteudo'
@@ -96,8 +97,14 @@ export function Painel() {
         <div className="card"><p className="eyebrow">Jornada completa 🎉</p><h3>Você fez todas as lições até o Natal.</h3></div>
       )}
 
-      <button className="btn leve" style={{ fontSize: 18 }} onClick={() => ir({ t: 'receitas' })}>📖 Minhas 100 receitas</button>
-      <button className="sos" onClick={() => ir({ t: 'sos' })}><span className="ico">🆘</span><span><b>SOS Massa</b>Deu algo errado? Toque aqui.</span></button>
+      <button className="cartao-cena sos-cena" onClick={() => ir({ t: 'sos' })}>
+        <img src={cena('sos')} alt="" />
+        <span><b>🆘 SOS Massa</b>Deu algo errado? Toque aqui.</span>
+      </button>
+      <button className="cartao-cena" onClick={() => ir({ t: 'receitas' })}>
+        <img src={cena('receitas')} alt="" loading="lazy" />
+        <span><b>📖 Minhas 100 receitas</b>Com foto de cada uma. Busque pelo sabor.</span>
+      </button>
 
       <div className="card">
         <h3>Presentes de Natal</h3>
@@ -106,7 +113,7 @@ export function Painel() {
             const qtd = estado.baus.filter((x) => x === b.id).length
             return (
               <button key={b.id} className={`bau ${qtd ? 'pronto' : ''}`} title={b.como} onClick={() => (qtd ? ir({ t: 'bau', b: b.id }) : undefined)} aria-label={`Presente ${b.nome}: ${qtd ? `${qtd} para abrir` : `ganhe ao ${b.como}`}`}>
-                <span className="ico">{b.ico}</span>{b.nome}{qtd > 1 ? ` ×${qtd}` : ''}
+                <img className="ico" src={fotoBau(b.id)} alt="" />{b.nome}{qtd > 1 ? ` ×${qtd}` : ''}
               </button>
             )
           })}

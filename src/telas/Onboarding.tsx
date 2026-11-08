@@ -1,3 +1,4 @@
+import { cena, fotoPerfil } from '../imagens'
 import { useState } from 'react'
 import { AVATARES, PERFIS, PERGUNTAS, perfilDe, porqueDoPerfil } from '../../shared/conteudo'
 import { useApp } from '../ctx'
@@ -5,8 +6,8 @@ import { useApp } from '../ctx'
 export function Boas() {
   const { ir } = useApp()
   return (
-    <div className="card pop" style={{ gap: 14, textAlign: 'center' }}>
-      <div style={{ fontSize: 64 }}>🎄</div>
+    <div className="card pop" style={{ gap: 14, textAlign: 'center', paddingTop: 0, overflow: 'hidden' }}>
+      <img className="foto-topo" src={cena('boas-vindas')} alt="" />
       <h1>Seu acesso está liberado!</h1>
       <p>
         Tudo o que você comprou já está aberto: as 100 receitas, os 8 bônus e o seu presente, o <b>SOS Massa</b>.
@@ -56,7 +57,8 @@ export function Resultado() {
   return (
     <>
       <p className="eyebrow">Seu perfil</p>
-      <div className="card pop" style={{ borderColor: 'var(--casca)', gap: 12 }}>
+      <div className="card pop" style={{ borderColor: 'var(--casca)', gap: 12, paddingTop: 0, overflow: 'hidden' }}>
+        <img className="foto-topo" src={fotoPerfil(p.id)} alt="" />
         <h1>{p.nome}</h1>
         <p>{porqueDoPerfil(p.id, eu.respostas)}</p>
         <div className="tarefa"><b>Seu caminho</b><span>{p.frase}</span></div>

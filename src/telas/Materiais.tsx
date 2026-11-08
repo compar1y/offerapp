@@ -88,6 +88,5 @@ export function Conquistas() {
 
 /** capa do material; enquanto não tem imagem, mostra o ícone num cartão */
 export function Capa({ m }: { m: MaterialId }) {
-  const src = capa(m)
-  return src ? <img className="capa" src={src} alt="" loading="lazy" /> : <span className="capa sem">{MATERIAIS[m].icone}</span>
+  return <img className="capa" src={capa(m)} alt="" loading="lazy" />
 }
