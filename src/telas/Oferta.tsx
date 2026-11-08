@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
-import { ofertaDisponivel, reais, tem, useApp } from '../ctx'
+import { reais, tem, useApp } from '../ctx'
 
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
 
 /** página curta antes do checkout (TSL interna). O pagamento abre em outra aba; ao voltar, o app confere se liberou. */
 export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
-  const { eu, estado, trocar, voltar, evento, recarregar, mudar } = useApp()
+  const { eu, trocar, voltar, evento, recarregar } = useApp()
   const [abriu, setAbriu] = useState(false)
   const [conferindo, setConferindo] = useState(false)
   const prod = PRODUTOS[p]
@@ -36,13 +36,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   function agoraNao() {
     evento('oferta.recusada', { produto: p, onde: origem })
-    // recusou a Encomenda Puxa Encomenda: mostra uma vez a versão menor (downsell)
-    if (p === 'encomenda' && ofertaDisponivel(eu, 'primeira') && !estado.ofertasVistas.includes('downsell-primeira')) {
-      mudar((e) => ({ ...e, ofertasVistas: [...e.ofertasVistas, 'downsell-primeira'] }))
-      trocar({ t: 'oferta', p: 'primeira', origem: 'downsell' })
-      return
-    }
-    if (origem.startsWith('etapa') || origem === 'downsell') trocar({ t: 'painel' })
+    if (origem.startsWith('etapa')) trocar({ t: 'painel' })
     else voltar()
   }
 

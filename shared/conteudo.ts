@@ -24,11 +24,11 @@ export interface Perfil {
 }
 
 export const PERFIS: Record<PerfilId, Perfil> = {
-  desacreditada: { id: 'desacreditada', nome: 'A Desacreditada', frase: 'Seu primeiro panetone em 48 horas, com a foto que prova que você consegue.', missao: 'Testar o fermento e fazer meia receita', comecaEm: 1, ofertas: ['recheios', 'encomenda', 'primeira'] },
-  semClientes: { id: 'semClientes', nome: 'A Confeiteira Sem Clientes', frase: 'Suas clientes já estão no seu WhatsApp.', missao: 'Mandar a foto do panetone para 1 pessoa, no privado', comecaEm: 4, ofertas: ['encomenda', 'primeira', 'recheios'] },
-  semPreco: { id: 'semPreco', nome: 'A Vendedora Sem Preço', frase: 'Você está pagando para trabalhar? Faça a conta agora.', missao: 'Preencher a Tabela de Custo com 1 receita', comecaEm: 3, ofertas: ['encomenda', 'recheios', 'primeira'] },
-  corrida: { id: 'corrida', nome: 'A Corrida Contra o Tempo', frase: 'Um passo curto por dia, no tempo que sobra depois da rotina.', missao: 'Escolher 1 receita e separar os ingredientes', comecaEm: 1, ofertas: ['primeira', 'recheios', 'encomenda'] },
-  iniciante: { id: 'iniciante', nome: 'A Iniciante Caprichosa', frase: 'Do zero ao primeiro panetone fofinho, sem desperdiçar.', missao: 'Testar o fermento (2 minutos)', comecaEm: 1, ofertas: ['recheios', 'encomenda', 'primeira'] },
+  desacreditada: { id: 'desacreditada', nome: 'A Desacreditada', frase: 'Seu primeiro panetone em 48 horas, com a foto que prova que você consegue.', missao: 'Testar o fermento e fazer meia receita', comecaEm: 1, ofertas: ['recheios', 'encomenda'] },
+  semClientes: { id: 'semClientes', nome: 'A Confeiteira Sem Clientes', frase: 'Suas clientes já estão no seu WhatsApp.', missao: 'Mandar a foto do panetone para 1 pessoa, no privado', comecaEm: 4, ofertas: ['encomenda', 'recheios'] },
+  semPreco: { id: 'semPreco', nome: 'A Vendedora Sem Preço', frase: 'Você está pagando para trabalhar? Faça a conta agora.', missao: 'Preencher a Tabela de Custo com 1 receita', comecaEm: 3, ofertas: ['encomenda', 'recheios'] },
+  corrida: { id: 'corrida', nome: 'A Corrida Contra o Tempo', frase: 'Um passo curto por dia, no tempo que sobra depois da rotina.', missao: 'Escolher 1 receita e separar os ingredientes', comecaEm: 1, ofertas: ['recheios', 'encomenda'] },
+  iniciante: { id: 'iniciante', nome: 'A Iniciante Caprichosa', frase: 'Do zero ao primeiro panetone fofinho, sem desperdiçar.', missao: 'Testar o fermento (2 minutos)', comecaEm: 1, ofertas: ['recheios', 'encomenda'] },
 }
 
 /** respostas = índice da opção escolhida em cada uma das 5 perguntas */
@@ -120,7 +120,7 @@ export const ETAPAS: Etapa[] = [
     ],
   },
   {
-    n: 5, titulo: 'Dar Conta Até o Dia 24', subtitulo: 'organizar as fornadas', ofertaAoConcluir: 'primeira',
+    n: 5, titulo: 'Dar Conta Até o Dia 24', subtitulo: 'organizar as fornadas', ofertaAoConcluir: 'encomenda',
     licoes: [
       { id: '5.1', titulo: 'A sua capacidade', minutos: 15, texto: 'Quantos panetones cabem no seu forno e no seu tempo? Com esse número você nunca promete mais do que dá conta.', tarefa: 'Anote quantas unidades cabem por fornada.', ver: { rotulo: 'Bônus 05: agenda e capacidade', ref: 'b05-guia:5' } },
       { id: '5.2', titulo: 'Planejar de trás para a frente', minutos: 15, texto: 'Comece pela data de entrega e volte: embalagem, forno, fermentação e compras.', tarefa: 'Monte o cronograma da sua primeira semana.', ver: { rotulo: 'Bônus 05: cronograma real', ref: 'b05-guia:7' } },

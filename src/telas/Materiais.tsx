@@ -15,7 +15,7 @@ const DESEJO: Partial<Record<ProdutoId, string>> = {
 
 export function Materiais() {
   const { eu, estado, ir, voltar } = useApp()
-  const aVenda = (['recheios', 'encomenda', 'primeira'] as ProdutoId[]).filter((p) => ofertaDisponivel(eu, p))
+  const aVenda = (['recheios', 'encomenda'] as ProdutoId[]).filter((p) => ofertaDisponivel(eu, p))
   const premios = LOJA.filter((i) => estado.itens.includes(i.id))
   return (
     <>
