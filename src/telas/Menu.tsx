@@ -6,7 +6,7 @@ const ABAS: Aba[] = [
   { id: 'inicio', nome: 'Início', ico: '🏠', vai: { t: 'painel' }, ativa: (t) => t.t === 'painel' },
   { id: 'receitas', nome: 'Receitas', ico: '📖', vai: { t: 'receitas' }, ativa: (t) => t.t === 'receitas' || (t.t === 'ler' && t.m === 'ebook') },
   { id: 'sos', nome: 'Socorro', ico: '🆘', vai: { t: 'sos' }, ativa: (t) => t.t === 'sos' || (t.t === 'ler' && t.m === 'fichas-socorro') },
-  { id: 'materiais', nome: 'Meus livros', ico: '📚', vai: { t: 'materiais' }, ativa: (t) => t.t === 'materiais' || (t.t === 'ler' && t.m !== 'ebook' && t.m !== 'fichas-socorro') },
+  { id: 'materiais', nome: 'Meus materiais', ico: '📚', vai: { t: 'materiais' }, ativa: (t) => t.t === 'materiais' || (t.t === 'ler' && t.m !== 'ebook' && t.m !== 'fichas-socorro') },
   { id: 'jornada', nome: 'Passos', ico: '✅', vai: { t: 'jornada' }, ativa: (t) => t.t === 'jornada' || t.t === 'licao' },
 ]
 

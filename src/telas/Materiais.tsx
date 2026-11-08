@@ -20,7 +20,7 @@ export function Materiais() {
   return (
     <>
       <button className="voltar" onClick={voltar}>← Voltar</button>
-      <h1>Meus livros</h1>
+      <h1>Meus materiais</h1>
       <p className="sub">Tudo o que você comprou está aberto: é só tocar na capa. Os que têm cadeado são livros extras, vendidos à parte.</p>
       <div className="grade capas">
         {eu.acesso.materiais.map((m) => (

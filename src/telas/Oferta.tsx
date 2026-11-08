@@ -58,7 +58,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <div className="card pop" style={{ textAlign: 'center', gap: 14 }}>
         <div style={{ fontSize: 64 }}>🎉</div>
         <h1>Liberado!</h1>
-        <p><b>{prod.nome}</b> já está em Meus livros.</p>
+        <p><b>{prod.nome}</b> já está em Meus materiais.</p>
         <button className="btn" onClick={() => trocar({ t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>
         <button className="link" onClick={() => trocar({ t: 'painel' })}>Voltar ao Início</button>
       </div>
