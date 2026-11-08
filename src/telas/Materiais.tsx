@@ -6,6 +6,13 @@ import { lerRef } from './Jornada'
 import { capa } from '../imagens'
 import type { MaterialId } from '../../shared/catalogo'
 
+/** frase curta de desejo em cada material com cadeado (sem promessa de ganho com número) */
+const DESEJO: Partial<Record<ProdutoId, string>> = {
+  recheios: 'O recheio cremoso que faz a cliente voltar e pedir o segundo panetone.',
+  encomenda: 'Cada cliente feliz traz a próxima: o caminho para as encomendas virem até você.',
+  primeira: 'Sua primeira encomenda, passo a passo, começando por quem já confia em você.',
+}
+
 export function Materiais() {
   const { eu, estado, ir, voltar } = useApp()
   const aVenda = (['recheios', 'encomenda', 'primeira'] as ProdutoId[]).filter((p) => ofertaDisponivel(eu, p))
@@ -14,7 +21,7 @@ export function Materiais() {
     <>
       <button className="voltar" onClick={voltar}>← Voltar</button>
       <h1>Meus materiais</h1>
-      <p className="sub">Tudo o que você comprou está aberto. Os que têm cadeado você pode liberar quando quiser.</p>
+      <p className="sub">Tudo o que você comprou está aberto. Os de cadeado são o próximo passo para vender mais neste Natal: libere quando quiser.</p>
       <div className="grade capas">
         {eu.acesso.materiais.map((m) => (
           <button key={m} className="cartao-capa" onClick={() => (m === 'ebook' ? ir({ t: 'receitas' }) : ir({ t: 'ler', m, p: 1 }))}>
@@ -28,6 +35,7 @@ export function Materiais() {
             <Capa m={PRODUTOS[p].libera[0]} />
             <span className="cadeado" aria-hidden="true">🔒</span>
             <span className="tit">{PRODUTOS[p].nome}</span>
+            <span className="desejo">{DESEJO[p]}</span>
             <span className="tag comprar">Liberar · R${reais(PRODUTOS[p].precoCentavos)}</span>
           </button>
         ))}
