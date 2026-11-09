@@ -91,12 +91,11 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         {mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
-        {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} texto={`${desc.pct}% OFF neste material`} />}
+        {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} de={reais(prod.precoCentavos)} por={reais(desc.precoCentavos)} />}
         {!desc && ganhaPresente(eu, p) && <AvisoPresente />}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {desc && <s className="preco-de">R${reais(prod.precoCentavos)}</s>}
-          <span className="sub">por</span><span className="preco">R${reais(desc ? desc.precoCentavos : prod.precoCentavos)}</span>
-        </div>
+        {!desc && (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span className="sub">por</span><span className="preco">R${reais(prod.precoCentavos)}</span></div>
+        )}
         {abriu || pendente ? (
           <>
             <div className="aviso">

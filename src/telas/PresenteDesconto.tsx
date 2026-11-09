@@ -19,13 +19,17 @@ export function useRelogio(ate: string | undefined | null): string | null {
 }
 
 /** faixa do presente da primeira compra, com o relógio */
-export function FaixaDesconto({ pct, ate, texto }: { pct: number; ate: string; texto?: string }) {
+export function FaixaDesconto({ pct, ate, texto, de, por }: { pct: number; ate: string; texto?: string; de?: string; por?: string }) {
   const resta = useRelogio(ate)
   if (!resta) return null
   return (
     <div className="faixa-desconto" role="status">
       <span className="fd-titulo">🎁 Presente da sua primeira compra</span>
-      <span className="fd-texto">{texto ?? `${pct}% OFF no próximo material`}</span>
+      {por ? (
+        <span className="fd-preco"><s>R${de}</s> por <b>R${por}</b></span>
+      ) : (
+        <span className="fd-texto">{texto ?? `${pct}% OFF no próximo material`}</span>
+      )}
       <span className="fd-relogio">Acaba em <b>{resta}</b></span>
     </div>
   )

@@ -303,3 +303,6 @@ body{font-size:17px}
 .barra-presente{position:sticky;top:8px;z-index:20;margin:0 auto;width:100%;box-sizing:border-box;text-align:center;padding:9px 12px;border-radius:999px;background:linear-gradient(135deg,#C9333F,#8E1218);color:#fff;font-size:15px;border:2px solid #F3D27A;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .barra-presente b{color:#F3D27A}
 .barra-presente .br-relogio{font-variant-numeric:tabular-nums;color:#fff;background:rgba(0,0,0,.25);padding:1px 7px;border-radius:7px}
+.faixa-desconto .fd-preco{font-size:17px;line-height:1.2}
+.faixa-desconto .fd-preco s{opacity:.75}
+.faixa-desconto .fd-preco b{font-family:var(--display);font-size:34px;color:#fff;margin-left:2px}
