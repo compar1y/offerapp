@@ -254,3 +254,6 @@ body{font-size:17px}
 .btn.comprar-pulsa{background:#1F8A5B;box-shadow:0 5px 0 #13573A;animation:pulsa-compra 1.4s ease-in-out infinite}
 .btn.comprar-pulsa:active{animation:none}
 @media (prefers-reduced-motion:reduce){.btn.comprar-pulsa{animation:none}}
+@keyframes pulsa-dinheiro{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+.dinheiro-pulsa{display:inline-block;animation:pulsa-dinheiro 1.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.dinheiro-pulsa{animation:none}}
