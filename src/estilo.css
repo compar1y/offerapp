@@ -237,3 +237,4 @@ body{font-size:17px}
 .grade-extras .mini-capa img{width:100%;box-shadow:0 6px 16px rgba(46,30,20,.2)}
 .grade-extras .mini-capa > span:not(.btn-extra){font-size:15px}
 .btn-extra{display:block;text-align:center;background:var(--pinheiro);color:#fff;font-weight:800;font-size:15px;border-radius:12px;padding:10px 8px;box-shadow:0 4px 0 var(--pinheiro-sombra);animation:liberar 1.4s ease-in-out infinite}
+.selo-extras .estrela{color:#C9333F;font-size:16px;margin-right:2px;text-shadow:0 1px 0 rgba(255,255,255,.4)}

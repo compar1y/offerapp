@@ -104,7 +104,7 @@ export function Painel() {
       {/* 4. extras: seção separada, mesma cara dos outros; o toque leva à página de compra (pedido do Levi) */}
       {extras.length > 0 && (
         <div className="card extras-card">
-          <span className="selo-extras">✨ Seleção especial</span>
+          <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Seleção especial</span>
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas.</p>
           <div className="grade-extras">
