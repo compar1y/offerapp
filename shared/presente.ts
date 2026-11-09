@@ -26,6 +26,7 @@ export function podeEscolher(p: Presente, produto: ProdutoId, jaTem: ProdutoId[]
   if (!LIVROS_PRESENTE.includes(produto)) return 'Este material não está entre os presentes.'
   if (p.escolhido) return 'Você já escolheu o seu presente.'
   if (jaTem.includes(produto)) return 'Você já tem este material.'
+  if (produto === 'primeira' && jaTem.includes('encomenda')) return 'Você já tem a Encomenda Puxa Encomenda, que é a versão completa.'
   if (p.moedas < CUSTO_PRESENTE) return `Faltam ${CUSTO_PRESENTE - p.moedas} moedas.`
   return true
 }

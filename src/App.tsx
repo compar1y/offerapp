@@ -9,7 +9,7 @@ import { Jornada, LicaoTela } from './telas/Jornada'
 import { Leitor } from './telas/Leitor'
 import { Receitas } from './telas/Receitas'
 import { Sos } from './telas/Sos'
-import { BauTela, Raspa } from './telas/Presentes'
+import { BauTela, Loja, Raspa } from './telas/Presentes'
 import { PresenteDaFabrica } from './telas/Presente'
 import { Oferta } from './telas/Oferta'
 import { OfertaVideo } from './telas/OfertaVideo'
@@ -17,6 +17,12 @@ import { Conquistas, Materiais } from './telas/Materiais'
 import { AulaTela, Aulas } from './telas/Aulas'
 
 type Fase = { f: 'carregando' } | { f: 'entrar'; aviso?: string } | { f: 'bloqueada'; msg: string } | { f: 'dentro' }
+
+/** quantas telas do app existem antes desta no histórico da aba (0 = chegou agora, de fora ou recarregando) */
+const profundidade = (): number => {
+  const n = (history.state as { n?: unknown } | null)?.n
+  return typeof n === 'number' && n > 0 ? n : 0
+}
 
 // entra direto no Início: as perguntas do perfil ficam opcionais, num cartão do Início
 const telaInicial = (_eu: Eu): Tela => ({ t: 'painel' })
@@ -57,9 +63,9 @@ export function App() {
         setEstado(e)
         pendente.current = e
         gravar()
-        const salva = history.state as Tela | null
-        const t = salva ?? telaInicial(d)
-        history.replaceState(t, '')
+        const salva = history.state as (Tela & { n?: number }) | null
+        const t = salva?.t ? salva : telaInicial(d)
+        history.replaceState({ ...t, n: profundidade() }, '')
         setTela(t)
       }
       setFase({ f: 'dentro' })
@@ -94,20 +100,22 @@ export function App() {
       eu,
       estado,
       ir(t) {
-        history.pushState(t, '')
+        history.pushState({ ...t, n: profundidade() + 1 }, '')
         setTela(t)
         window.scrollTo(0, 0)
       },
       trocar(t) {
-        history.replaceState(t, '')
+        history.replaceState({ ...t, n: profundidade() }, '')
         setTela(t)
         window.scrollTo(0, 0)
       },
+      // só volta no histórico quando a tela anterior é do app; senão vai para o Início (nunca para outro site)
       voltar() {
-        if (history.length > 1) history.back()
+        if (profundidade() > 0) history.back()
         else {
-          history.replaceState({ t: 'painel' }, '')
+          history.replaceState({ t: 'painel', n: 0 }, '')
           setTela({ t: 'painel' })
+          window.scrollTo(0, 0)
         }
       },
       mudar(fn) {
@@ -172,6 +180,7 @@ function Rota({ tela }: { tela: Tela }) {
     case 'raspa': return <Raspa etapa={tela.etapa} />
     case 'oferta': return <Oferta key={tela.p} p={tela.p} origem={tela.origem} />
     case 'loja': return <PresenteDaFabrica />
+    case 'lojinha': return <Loja />
     case 'videoaulas': return <OfertaVideo />
     case 'materiais': return <Materiais />
     case 'conquistas': return <Conquistas />

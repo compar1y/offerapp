@@ -107,6 +107,11 @@ export async function POST(req: Request): Promise<Response> {
       const produto = typeof b.produto === 'string' ? b.produto : ''
       if (!emailValido(email) || !ehProduto(produto)) return json({ erro: 'e-mail ou produto inválido' }, 400)
       await liberar(email, produto, b.acao === 'liberar' ? 'pago' : 'estornado')
+      // bloquear vale também para a compra que veio da Wiapy (e para o livro ganho de presente): todas as linhas pagas deste produto
+      if (b.acao === 'bloquear') {
+        const { error } = await db().from('compras').update({ status: 'estornado', atualizado_em: new Date().toISOString() }).eq('email', email).eq('produto', produto).eq('status', 'pago')
+        if (error) throw error
+      }
       return json({ ok: true })
     }
     if (b.acao === 'importar') {

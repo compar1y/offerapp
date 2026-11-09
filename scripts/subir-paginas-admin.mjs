@@ -1,11 +1,11 @@
 // Troca as páginas no armazenamento passando pelo próprio app (só precisa do ADMIN_TOKEN, não da chave do Supabase).
-// Uso: APP_URL=https://offerapp-umber.vercel.app ADMIN_TOKEN=... node scripts/subir-paginas-admin.mjs /mnt/project-files/app-novo/paginas-hd
+// Uso: APP_URL=https://acessofabricadepanetones.vercel.app ADMIN_TOKEN=... node scripts/subir-paginas-admin.mjs /mnt/project-files/app-novo/paginas-hd
 // Pode rodar de novo: substitui o que já existe.
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const pasta = process.argv[2] ?? '/mnt/project-files/app-novo/paginas-hd'
-const app = (process.env.APP_URL ?? 'https://offerapp-umber.vercel.app').replace(/\/$/, '')
+const app = (process.env.APP_URL ?? 'https://acessofabricadepanetones.vercel.app').replace(/\/$/, '')
 const token = process.env.ADMIN_TOKEN
 if (!token) {
   console.error('Falta ADMIN_TOKEN no ambiente.')

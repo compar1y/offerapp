@@ -66,11 +66,19 @@
 ## Aulas em vídeo
 
 - 25 aulas curtas, verticais, em 4 módulos (`shared/aulas.ts`): Panetone tradicional (10), Chocotone (8), Recheios e versões especiais (4), Panetone salgado (3).
-- **Vídeos dentro do app:** os 25 `.mp4` ficam em `public/aulas/` e são servidos em `./aulas/<nome>`. Sem serviço externo, sem YouTube, sem embed. `VITE_AULAS_VIDEO_BASE_URL` só troca a pasta se um dia precisar; `off` esconde os vídeos ("sendo preparado").
-- **Quem vê (flag `VITE_AULAS_ACESSO`):** padrão = só quem comprou a oferta Videoaulas (produto `videoaulas`, R$ 19,90, ainda SEM checkout: quem não comprou vê a página de venda). `VITE_AULAS_ACESSO=kit` libera para quem tem o kit e esconde a oferta. Quando o checkout existir: `checkoutUrl`/`checkoutIds` em `shared/catalogo.ts` (ou `CHECKOUT_IDS_VIDEOAULAS`) e `VIDEOAULAS.checkoutUrl` em `src/telas/OfertaVideo.tsx`.
+- **Vídeos dentro do app:** os 25 `.mp4` ficam em `public/aulas/aula-01.mp4 … aula-25.mp4` (na ordem de `shared/aulas.ts`) e são servidos em `/aulas/<nome>`. Sem serviço externo, sem YouTube, sem embed. `VITE_AULAS_VIDEO_BASE_URL` só troca a pasta (fora do app o portão não protege); `off` esconde os vídeos ("sendo preparado").
+- **Protegidos:** `middleware.ts` (Vercel Routing Middleware) só entrega `/aulas/*` para quem está logada e comprou as Videoaulas. Sem login 401, sem compra 403.
+- **Quem vê (flag `VITE_AULAS_ACESSO`):** padrão = só quem comprou a oferta Videoaulas (produto `videoaulas`, R$ 19,90, checkout `6af1e13a04a3ce9b11749472`). `VITE_AULAS_ACESSO=kit` libera para quem tem o kit e esconde a oferta (o middleware lê a mesma variável).
 - Player em tela cheia (`src/telas/Aulas.tsx`, sem o menu de baixo): botão grande de assistir/pausar, barra arrastável, anterior/próxima, "Já assisti" e retoma de onde parou (tempo no aparelho, em `fornada-aulas:v1:<email>`).
 - Jogo: aula assistida entra em `estado.aulas` no servidor, vale 🪙 5 uma vez por aula e conta a missão do meio da Fornada do Dia (`assistirAula` em `shared/jogo.ts`). Rever não paga de novo.
 - Testar no celular sem publicar: `VITE_DEMO=1 npx vite --host` e abra no celular o endereço "Network" do terminal (mesmo Wi-Fi). Na prévia, o botão de compra das Videoaulas libera na hora.
+
+## Baixar PDF e planilha
+
+- Os 16 arquivos (PDFs de cada material, a planilha do bônus 05 e a do Caderninho) ficam em `public/downloads/`. A lista e quem pode baixar cada um estão em `shared/acesso.ts` (`ARQUIVOS`).
+- `middleware.ts` confere o cookie de sessão e a compra antes de entregar `/downloads/*`; o `vercel.json` responde com `Content-Disposition: attachment`. Sem login 401, sem compra 403, servidor sem configuração 503 (fecha, nunca abre).
+- No leitor de cada material aparecem "Baixar PDF" e/ou "Baixar planilha". Android e iPhone no Safari: download direto, a cliente fica na mesma tela. iPhone com o app instalado: o app busca o arquivo e abre o "Compartilhar" para "Salvar em Arquivos".
+- Conferir depois de publicar: `curl -I <app>/downloads/ebook-100-receitas.pdf` sem cookie tem que dar **401**, e `curl -I <app>/aulas/aula-01.mp4` também.
 
 ## Colocar no ar (só com a ordem do dono)
 

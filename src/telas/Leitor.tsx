@@ -4,6 +4,7 @@ import { RECEITAS } from '../../shared/receitas'
 import { fazerReceita } from '../../shared/jogo'
 import { urlPagina } from '../api'
 import { ofertaDisponivel, temMaterial, useApp } from '../ctx'
+import { BotoesBaixar } from './Baixar'
 
 /** páginas em pé têm 1054×1492; o Caderninho é deitado. Serve só para reservar o espaço antes da imagem chegar. */
 const proporcao = (m: MaterialId) => (m === 'caderninho' ? '1.414 / 1' : '1054 / 1492')
@@ -68,6 +69,7 @@ export function Leitor({ m, p: inicial }: { m: MaterialId; p: number }) {
         <span className="sub">pág. {atual} de {mat.paginas}</span>
       </div>
       <h2>{mat.titulo}</h2>
+      <BotoesBaixar m={m} />
       <div className="rolagem">
         {paginas.map((p) => {
           const receita = m === 'ebook' ? RECEITAS[p - 1] : null

@@ -1,12 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { cena } from '../imagens'
 import { reais, useApp } from '../ctx'
 import { PRODUTOS } from '../../shared/catalogo'
 import { podeVerAulas } from '../aulas'
 
 /**
- * Upsell de videoaulas (produto ainda em produção). Sem checkout, o botão só avisa "em breve".
- * Quando o checkout existir: preencha checkoutUrl. A copy precisa bater com o que os vídeos mostram.
+ * Oferta das Videoaulas (R$19,90, as 25 aulas de shared/aulas.ts). O pagamento abre na Wiapy em outra aba;
+ * ao voltar, o app confere se liberou. Não tem downsell: quem não quer só volta pelo "← Voltar".
  */
 export const VIDEOAULAS = {
   mostrar: true,
@@ -30,6 +30,9 @@ export const VIDEOAULAS = {
 export function OfertaVideo() {
   const { eu, voltar, trocar, evento, toast, recarregar } = useApp()
   const libera = podeVerAulas(eu)
+  const [abriu, setAbriu] = useState(false)
+  const [conferindo, setConferindo] = useState(false)
+  const pendente = eu.acesso.pendentes.includes('videoaulas')
   // quem já tem as aulas não vê a venda: vai direto para a lista
   useEffect(() => { if (libera) trocar({ t: 'aulas' }) }, [libera, trocar])
   useEffect(() => { if (!libera) evento('oferta.vista', { produto: 'videoaulas', onde: 'pagina' }) }, [evento, libera])
@@ -42,16 +45,22 @@ export function OfertaVideo() {
       await recarregar()
       return
     }
-    if (VIDEOAULAS.checkoutUrl) window.open(VIDEOAULAS.checkoutUrl, '_blank', 'noopener')
-    else toast('As videoaulas chegam em breve aqui no app. 🎬')
+    if (!VIDEOAULAS.checkoutUrl) return toast('As videoaulas chegam em breve aqui no app. 🎬')
+    window.open(VIDEOAULAS.checkoutUrl, '_blank', 'noopener')
+    setAbriu(true)
   }
-  const recusar = () => {
-    evento('oferta.recusada', { produto: 'videoaulas' })
+  const sair = () => {
+    evento('oferta.recusada', { produto: 'videoaulas', onde: 'voltar' })
     voltar()
+  }
+  async function conferir() {
+    setConferindo(true)
+    await recarregar()
+    setConferindo(false)
   }
   return (
     <>
-      <button className="voltar" onClick={voltar}>← Voltar</button>
+      <button className="voltar" onClick={sair}>← Voltar</button>
       <p className="eyebrow">Material extra, vendido à parte</p>
       <h1>{VIDEOAULAS.gancho}</h1>
       <div className="card oferta">
@@ -63,9 +72,18 @@ export function OfertaVideo() {
         <ul className="passos">{VIDEOAULAS.itens.map((i) => <li key={i}>{i}</li>)}</ul>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span className="sub">por</span><span className="preco">R${reais(VIDEOAULAS.precoCentavos)}</span></div>
         <p className="sub" style={{ fontSize: 15 }}>{VIDEOAULAS.ancora}</p>
-        <button className="btn comprar-pulsa" onClick={comprar}>{VIDEOAULAS.botao}</button>
-        {/* tem downsell (Aula do Ponto Certo, R$9,90): por enquanto a recusa volta ao Início; quando o downsell existir, leva para ele */}
-        <button className="btn recusar" onClick={recusar}>Não, obrigada</button>
+        {abriu || pendente ? (
+          <>
+            <div className="aviso">
+              <b>⏳ Pagou no PIX?</b>
+              <span>Assim que o pagamento cair, as aulas liberam aqui sozinhas. Pode levar alguns minutos.</span>
+            </div>
+            <button className="btn" onClick={conferir} disabled={conferindo}>{conferindo ? 'Conferindo…' : 'Já paguei, conferir'}</button>
+            <button className="link" onClick={comprar}>Abrir o pagamento de novo</button>
+          </>
+        ) : (
+          <button className="btn comprar-pulsa" onClick={comprar}>{VIDEOAULAS.botao}</button>
+        )}
         <p className="sub" style={{ fontSize: 13 }}>{VIDEOAULAS.garantia} O pagamento abre numa página segura e o app continua aqui.</p>
       </div>
     </>

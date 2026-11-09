@@ -5,7 +5,7 @@ import { PRODUTOS, type ProdutoId } from '../shared/catalogo.js'
 import { env } from './env.js'
 
 export const emailLigado = () => !!env('RESEND_API_KEY') && !!env('EMAIL_REMETENTE')
-const urlApp = () => env('APP_URL') || 'https://offerapp-umber.vercel.app'
+const urlApp = () => env('APP_URL') || 'https://acessofabricadepanetones.vercel.app'
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 

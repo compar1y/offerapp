@@ -11,7 +11,7 @@ describe('e-mail de acesso', () => {
     const m = montarEmailAcesso('maria<x>@gmail.com', ['kit', 'recheios'])
     expect(m.assunto).toContain('Fábrica de Panetones')
     expect(m.html).toContain('10 Recheios que Mais Vendem')
-    expect(m.html).toContain('https://offerapp-umber.vercel.app')
+    expect(m.html).toContain('https://acessofabricadepanetones.vercel.app')
     expect(m.html).toContain('maria&lt;x&gt;@gmail.com')
   })
   it('compra só de upsell tem assunto com o nome do produto', () => {
