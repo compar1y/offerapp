@@ -7,7 +7,7 @@ import { EXTRAS } from './Painel'
 
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
-import { VitrineEtiquetas } from './Etiquetas'
+import { DigiteSaiPronto, VitrineEtiquetas } from './Etiquetas'
 
 /** página curta antes do checkout (TSL interna). O pagamento abre em outra aba; ao voltar, o app confere se liberou. */
 export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
@@ -89,11 +89,13 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <button className="voltar" onClick={agoraNao}>← Voltar</button>
       <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'Material extra, vendido à parte'}</p>
       <h1>{texto.gancho}</h1>
+      {texto.sub && <p className="sub">{texto.sub}</p>}
       <div className="card oferta">
         {p === 'etiquetas'
           ? <img className="foto-oferta" src="/img/mockups/etiquetas-destaque.webp" width={800} height={1000} loading="lazy" alt="Confeiteira de avental vinho amarrando no panetone a etiqueta redonda “Panetones da Dona Cida”" />
           : mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
         {/* as peças de verdade, com o nome de exemplo, logo abaixo da capa */}
+        {p === 'etiquetas' && <DigiteSaiPronto />}
         {p === 'etiquetas' && <VitrineEtiquetas />}
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>

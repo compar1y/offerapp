@@ -143,7 +143,7 @@ export const LOJA: ItemLoja[] = [
   { id: 'trufado', icone: '🍫', titulo: 'Atalho: Plano B Trufado completo', custo: 250, ref: 'b06:1' },
 ]
 
-export interface TextoOferta { gancho: string; itens: string[]; botao: string; garantia: string }
+export interface TextoOferta { gancho: string; sub?: string; itens: string[]; botao: string; garantia: string }
 
 // a oferta Videoaulas tem página própria (src/telas/OfertaVideo.tsx)
 export const OFERTAS: Record<Exclude<ProdutoId, 'kit' | 'videoaulas'>, TextoOferta> = {
@@ -160,11 +160,14 @@ export const OFERTAS: Record<Exclude<ProdutoId, 'kit' | 'videoaulas'>, TextoOfer
     garantia: '7 dias de garantia.',
   },
   etiquetas: {
-    gancho: 'Seus panetones já estão prontos. Agora falta mostrar, com o seu nome em cada peça.',
+    gancho: 'Digite o nome do seu negócio e, em segundos, saem 6 imagens e as suas etiquetas prontas. Sem designer, sem Canva.',
+    // só cita campos que a entrega tem de verdade (src/telas/Etiquetas.tsx): nome, WhatsApp, sabores, pedidos até e entrega
+    sub: 'Tudo personalizado na hora com os seus dados: o nome do negócio, o WhatsApp, os sabores, até quando você aceita pedidos e como você entrega.',
     itens: [
-      '6 imagens de Natal para divulgar seus panetones no WhatsApp: 3 para o Status e 3 quadradas para conversa e grupo',
-      'Etiquetas “Feito à mão por” com o seu nome e espaço para o sabor',
-      'Cartões de presente e de agradecimento para entregar junto',
+      'Personalizado na hora: você escreve uma vez, no celular, e todas as peças saem com os seus dados',
+      '6 imagens de Natal para o WhatsApp (3 para o Status e 3 quadradas) com o seu nome, os seus sabores, a data limite dos pedidos e o jeito que você entrega',
+      'Etiquetas “Feito à mão por” com o seu nome e os seus sabores já escritos',
+      'Cartões de presente e de agradecimento com o seu nome (e o seu WhatsApp, se quiser)',
       'Tudo em PDF para imprimir em casa ou na papelaria, com versão em preto e branco e modelo para escrever à mão',
     ],
     botao: 'Quero com o meu nome',

@@ -181,6 +181,7 @@ export function Painel() {
                 <img src={p === 'etiquetas' ? '/img/mockups/etiquetas-capa.webp' : capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
                 {precoPresente(eu, p) && <span className="selo-off">-{precoPresente(eu, p)!.pct}%</span>}
                 <span>{PRODUTOS[p].nome}</span>
+                {p === 'etiquetas' && <span className="mini-capa-sub">✍️ Personalizado na hora com os seus dados</span>}
                 <span className="btn-extra">{p === 'etiquetas' ? '🏷️ Quero com o meu nome' : '📖 Ver material'}</span>
               </button>
             ))}
