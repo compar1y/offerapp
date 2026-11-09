@@ -15,6 +15,7 @@ import { Oferta } from './telas/Oferta'
 import { OfertaVideo } from './telas/OfertaVideo'
 import { Conquistas, Materiais } from './telas/Materiais'
 import { AulaTela, Aulas } from './telas/Aulas'
+import { EtiquetasTela } from './telas/Etiquetas'
 
 type Fase = { f: 'carregando' } | { f: 'entrar'; aviso?: string } | { f: 'bloqueada'; msg: string } | { f: 'dentro' }
 
@@ -181,6 +182,7 @@ function Rota({ tela }: { tela: Tela }) {
     case 'oferta': return <Oferta key={tela.p} p={tela.p} origem={tela.origem} />
     case 'loja': return <PresenteDaFabrica />
     case 'lojinha': return <Loja />
+    case 'etiquetas': return <EtiquetasTela />
     case 'videoaulas': return <OfertaVideo />
     case 'materiais': return <Materiais />
     case 'conquistas': return <Conquistas />

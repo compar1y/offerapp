@@ -8,18 +8,12 @@ import { useState } from 'react'
 import type { MaterialId } from '../../shared/catalogo'
 import { arquivosDo, type Arquivo } from '../../shared/acesso'
 import { temMaterial, useApp } from '../ctx'
+import { iosInstalado } from '../salvar'
 
 const mb = (b: number) => (b < 1e6 ? `${Math.max(1, Math.round(b / 1e3))} KB` : `${(b / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB`)
 const MIME: Record<Arquivo['tipo'], string> = {
   pdf: 'application/pdf',
   planilha: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-}
-
-/** iPhone/iPad com o app aberto pelo ícone da tela de início */
-function iosInstalado(): boolean {
-  const nav = navigator as Navigator & { standalone?: boolean }
-  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-  return ios && nav.standalone === true
 }
 
 export function BotoesBaixar({ m }: { m: MaterialId }) {

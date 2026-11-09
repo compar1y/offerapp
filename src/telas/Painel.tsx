@@ -11,6 +11,7 @@ import { VIDEOAULAS } from './OfertaVideo'
 import { AULAS } from '../../shared/aulas'
 import { podeVerAulas } from '../aulas'
 import { CUSTO_PRESENTE } from '../../shared/presente'
+import { VitrineEtiquetas } from './Etiquetas'
 
 export const BAUS: { id: BauId; nome: string; ico: string; como: string }[] = [
   { id: 'prata', nome: 'Prata', ico: '🎁', como: '3 missões do dia' },
@@ -35,7 +36,7 @@ export function proximaLicao(comecaEm: number, feitas: string[]) {
 }
 
 /** extras vendidos à parte, sempre com preço e a palavra "extra" (aula 21 dicas, dica 6) */
-export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda']
+export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'etiquetas']
 /** produtos comprados à parte (mostrados em "Minhas compras") */
 const COMPRAS_EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'primeira']
 
@@ -108,6 +109,14 @@ export function Painel() {
         </div>
       )}
 
+      {/* 1a2. Imagens e Etiquetas: gerador com o nome dela */}
+      {tem(eu, 'etiquetas') && (
+        <button className="cartao-cena etiquetas-entrada" onClick={() => { clique('etiquetas'); ir({ t: 'etiquetas' }) }}>
+          <VitrineEtiquetas compacta />
+          <span><b>🏷️ Imagens e Etiquetas com o Seu Nome</b>Toque para gerar as imagens e o PDF com o seu nome.</span>
+        </button>
+      )}
+
       {/* 1b. o que ela comprou além do kit */}
       {compras.length > 0 && (
         <div className="card compras-card">
@@ -169,10 +178,10 @@ export function Painel() {
           <div className={`grade-extras${extras.length === 1 ? ' uma' : ''}`}>
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
-                <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
+                {p === 'etiquetas' ? <VitrineEtiquetas compacta /> : <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />}
                 {precoPresente(eu, p) && <span className="selo-off">-{precoPresente(eu, p)!.pct}%</span>}
                 <span>{PRODUTOS[p].nome}</span>
-                <span className="btn-extra">📖 Ver material</span>
+                <span className="btn-extra">{p === 'etiquetas' ? '🏷️ Quero com o meu nome' : '📖 Ver material'}</span>
               </button>
             ))}
           </div>

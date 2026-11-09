@@ -21,6 +21,7 @@ export type Tela =
   | { t: 'videoaulas' }
   | { t: 'loja' }
   | { t: 'lojinha' }
+  | { t: 'etiquetas' }
   | { t: 'materiais' }
   | { t: 'conquistas' }
   | { t: 'aulas' }

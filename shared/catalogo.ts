@@ -1,7 +1,7 @@
 // Produtos, materiais e o que cada compra libera. Fonte única para o app (src/) e o servidor (api/, server/).
 // Regra do Levi: tudo o que a cliente comprou fica ABERTO desde o primeiro minuto. Nada comprado é travado por progresso.
 
-export type ProdutoId = 'kit' | 'recheios' | 'encomenda' | 'primeira' | 'videoaulas'
+export type ProdutoId = 'kit' | 'recheios' | 'encomenda' | 'primeira' | 'videoaulas' | 'etiquetas'
 
 export type MaterialId =
   | 'ebook'
@@ -37,6 +37,17 @@ export const MATERIAIS: Record<MaterialId, Material> = {
   'encomenda-puxa-encomenda': { id: 'encomenda-puxa-encomenda', titulo: 'Encomenda Puxa Encomenda', icone: '🤝', paginas: 34 },
   'primeira-encomenda': { id: 'primeira-encomenda', titulo: 'A Primeira Encomenda', icone: '📦', paginas: 16 },
   caderninho: { id: 'caderninho', titulo: 'Caderninho de Clientes (para imprimir)', icone: '📒', paginas: 3 },
+}
+
+/**
+ * Imagens e Etiquetas com o Seu Nome (R$12,90): códigos da Wiapy. VAZIOS até o Levi criar o produto e o checkout.
+ * checkoutUrl: o link de pagamento · checkoutIds: o código do link e o id interno do checkout · produtoIds: o id do conteúdo.
+ * Com o checkoutUrl vazio, ofertaDisponivel() esconde o card e a tela de venda.
+ */
+export const ETIQUETAS_WIAPY: { checkoutUrl: string; checkoutIds: string[]; produtoIds: string[] } = {
+  checkoutUrl: '',
+  checkoutIds: [],
+  produtoIds: [],
 }
 
 export interface Produto {
@@ -103,6 +114,17 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     checkoutUrl: 'https://pay.wiapy.com/6af1e13a04a3ce9b11749472',
     checkoutIds: ['6af1e13a04a3ce9b11749472'],
     produtoIds: ['6af1e083371815cbecec6d54'],
+  },
+  etiquetas: {
+    id: 'etiquetas',
+    nome: 'Imagens e Etiquetas com o Seu Nome',
+    precoCentavos: 1290,
+    // não é PDF pronto: o app gera as 6 imagens e o PDF de etiquetas com o nome dela (src/telas/Etiquetas.tsx)
+    libera: [],
+    // ainda sem produto na Wiapy: enquanto o link estiver vazio, o card de venda não aparece em lugar nenhum
+    checkoutUrl: ETIQUETAS_WIAPY.checkoutUrl,
+    checkoutIds: ETIQUETAS_WIAPY.checkoutIds,
+    produtoIds: ETIQUETAS_WIAPY.produtoIds,
   },
 }
 

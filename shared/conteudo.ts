@@ -159,6 +159,17 @@ export const OFERTAS: Record<Exclude<ProdutoId, 'kit' | 'videoaulas'>, TextoOfer
     botao: 'Quero minhas clientes',
     garantia: '7 dias de garantia.',
   },
+  etiquetas: {
+    gancho: 'Seus panetones já estão prontos. Agora falta mostrar, com o seu nome em cada peça.',
+    itens: [
+      '6 imagens de Natal para divulgar seus panetones no WhatsApp: 3 para o Status e 3 quadradas para conversa e grupo',
+      'Etiquetas “Feito à mão por” com o seu nome e espaço para o sabor',
+      'Cartões de presente e de agradecimento para entregar junto',
+      'Tudo em PDF para imprimir em casa ou na papelaria, com versão em preto e branco e modelo para escrever à mão',
+    ],
+    botao: 'Quero com o meu nome',
+    garantia: '7 dias de garantia. Peças de apresentação, não são rótulo oficial (sem validade nem ingredientes).',
+  },
   primeira: {
     gancho: 'Comece só pela primeira encomenda: da lista de contatos até o primeiro pedido pago.',
     itens: ['4 capítulos, 4 dias, 1 objetivo', 'A lista de 30 nomes e a degustação certa', 'A pré-venda com sinal e a fala cara a cara', 'O Caderninho de Clientes para imprimir'],

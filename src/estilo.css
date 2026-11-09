@@ -364,3 +364,40 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .moedas-card{display:flex;flex-direction:column;gap:10px}
 .moedas-card .moedas-saldo{font-size:15px;margin:0}
 .moedas-botoes{display:grid;grid-template-columns:1fr;gap:8px}
+
+/* Imagens e Etiquetas com o Seu Nome */
+.vitrine-etiquetas{position:relative;display:block;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:radial-gradient(circle at 30% 20%,#FFF6E6,#EED8B4 70%)}
+.vitrine-etiquetas>img{position:absolute;display:block;aspect-ratio:auto;object-fit:contain;height:auto;border-radius:6px;box-shadow:0 8px 18px rgba(59,36,22,.28)}
+.vitrine-etiquetas>.ve-folha{left:3%;top:9%;width:40%;transform:rotate(-7deg);border-radius:2px}
+.vitrine-etiquetas>.ve-status.ve-2{left:60%;top:4%;width:23%;transform:rotate(6deg)}
+.vitrine-etiquetas>.ve-status.ve-1{left:38%;top:7%;width:25%;transform:rotate(-2deg);z-index:2}
+.vitrine-etiquetas>.ve-quadrada{left:64%;top:50%;width:33%;transform:rotate(3deg);z-index:3}
+.vitrine-etiquetas>.ve-nome{position:absolute;left:8px;top:6px;z-index:4;font-size:11px;color:var(--chocolate-2);background:rgba(255,255,255,.8);padding:2px 8px;border-radius:99px}
+.mini-capa .vitrine-etiquetas{aspect-ratio:3/4}
+.mini-capa .vitrine-etiquetas>.ve-folha{left:4%;top:44%;width:56%}
+.mini-capa .vitrine-etiquetas>.ve-status.ve-1{left:8%;top:4%;width:38%}
+.mini-capa .vitrine-etiquetas>.ve-status.ve-2{left:52%;top:5%;width:36%}
+.mini-capa .vitrine-etiquetas>.ve-quadrada{left:50%;top:58%;width:46%}
+.cartao-cena.etiquetas-entrada .vitrine-etiquetas{aspect-ratio:16/8;border-radius:0}
+.cartao-cena.etiquetas-entrada .vitrine-etiquetas>.ve-folha{top:12%;width:30%}
+.cartao-cena.etiquetas-entrada .vitrine-etiquetas>.ve-status.ve-1{left:34%;width:20%}
+.cartao-cena.etiquetas-entrada .vitrine-etiquetas>.ve-status.ve-2{left:56%;width:18%}
+.cartao-cena.etiquetas-entrada .vitrine-etiquetas>.ve-quadrada{left:74%;top:30%;width:22%}
+.foto-lugar{border:2px dashed var(--fita);border-radius:14px;padding:22px 14px;text-align:center;font-size:13px;color:var(--fita);background:#fff8f0}
+.form-etiquetas{gap:12px}
+.form-etiquetas label{display:flex;flex-direction:column;gap:4px;font-weight:800;font-size:15px}
+.form-etiquetas label small{font-weight:600;color:var(--chocolate-2)}
+.form-etiquetas input,.form-etiquetas textarea{font:inherit;font-weight:600;font-size:17px;padding:12px 12px;border:2px solid var(--linha);border-radius:12px;background:#fff;color:var(--chocolate);width:100%;box-sizing:border-box}
+.form-etiquetas textarea{resize:vertical}
+.grade-pecas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.peca{display:flex;flex-direction:column;gap:8px;background:var(--cartao);border:2px solid var(--linha);border-radius:16px;padding:10px}
+.peca b{font-family:var(--display);font-size:15px;line-height:1.15}
+.peca-img{display:flex;align-items:center;justify-content:center;background:#F3E3C8;border-radius:10px;overflow:hidden}
+.peca.status .peca-img{aspect-ratio:9/16}
+.peca.quadrada .peca-img{aspect-ratio:1/1}
+.peca-img img{width:100%;height:100%;object-fit:contain;display:block}
+.peca .btn{font-size:15px;padding:11px 8px}
+.peca .link{font-size:14px;padding:2px}
+.peca-whats{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700}
+.peca-whats input{width:20px;height:20px}
+.peca-whats-lista{display:flex;flex-direction:column;gap:6px}

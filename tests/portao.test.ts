@@ -36,7 +36,10 @@ describe('cookie de sessão no Edge', () => {
     const t = criarToken('maria@x.com', Date.now(), SEGREDO)
     expect(await emailDoCookie(t, SEGREDO)).toBe('maria@x.com')
     expect(await emailDoCookie(t, 'outro')).toBeNull()
-    expect(await emailDoCookie(t.replace(/.$/, (c) => (c === 'A' ? 'B' : 'A')), SEGREDO)).toBeNull()
+    // troca um caractere do meio da assinatura (o último do base64url pode mexer só em bits de sobra e decodificar igual)
+    const [d0, s0] = t.split('.')
+    const mexida = `${s0.slice(0, 5)}${s0[5] === 'A' ? 'B' : 'A'}${s0.slice(6)}`
+    expect(await emailDoCookie(`${d0}.${mexida}`, SEGREDO)).toBeNull()
     const [dado] = t.split('.')
     const falso = Buffer.from(JSON.stringify({ e: 'intrusa@x.com', x: Date.now() + 1e9 })).toString('base64url')
     expect(await emailDoCookie(`${falso}.${t.split('.')[1]}`, SEGREDO)).toBeNull()
