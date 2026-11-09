@@ -99,7 +99,7 @@ input[type=email],input[type=text]{width:100%;font:inherit;font-size:18px;paddin
 .bauGrande.treme{animation:treme .5s ease-in-out 2}
 @keyframes treme{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
 .voltar{background:none;border:0;font:inherit;font-weight:800;color:var(--chocolate-2);cursor:pointer;padding:4px 0;align-self:flex-start}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--chocolate);color:var(--farinha);padding:10px 16px;border-radius:14px;font-weight:700;max-width:calc(100% - 32px);z-index:35;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--chocolate);color:var(--farinha);padding:10px 16px;border-radius:14px;font-weight:700;max-width:calc(100% - 32px);z-index:35;text-align:center}
 .overlay{position:fixed;inset:0;background:rgba(20,12,8,.55);display:flex;align-items:flex-end;justify-content:center;z-index:40;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 .overlay .card{max-width:440px;width:100%}
 .passos{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
@@ -132,7 +132,7 @@ select{font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha
 .menu button.on{opacity:1;background:var(--casca);color:var(--chocolate)}
 @media (max-width:389px){.menu button{font-size:11.5px;padding:7px 6px}}
 @media (max-width:350px){.menu button{font-size:10.5px;padding:7px 4px}.menu button span{font-size:19px}}
-#app{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+#app{padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}
 .marca{margin:0 0 -10px;text-align:center;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--fita)}
 /* leitor em rolagem contínua: páginas uma embaixo da outra; no computador a coluna alarga para a página ficar legível */
 .leitor-topo{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;background:var(--farinha);padding:6px 0;margin-block:-6px}
@@ -219,3 +219,10 @@ body{font-size:17px}
 .preco-presente s{color:var(--chocolate-2)}
 .preco-presente b{font-family:inherit;font-size:15px;color:var(--pinheiro)}
 .overlay .card.pop{max-height:calc(100dvh - 40px);overflow-y:auto}
+
+/* Início como área de membros (plano 21 dicas) */
+.banner-inicio{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:18px;border:2px solid var(--casca)}
+.grade-inicio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.grade-inicio .mini-capa{width:auto}
+.grade-inicio .mini-capa img{width:100%}
+.divisor-extras{margin:8px 0 -4px;font-size:15px;text-transform:uppercase;letter-spacing:.05em;color:var(--fita);text-align:center}

@@ -13,7 +13,6 @@ import { BauTela, Raspa } from './telas/Presentes'
 import { PresenteDaFabrica } from './telas/Presente'
 import { Oferta } from './telas/Oferta'
 import { Conquistas, Materiais } from './telas/Materiais'
-import { Menu } from './telas/Menu'
 
 type Fase = { f: 'carregando' } | { f: 'entrar'; aviso?: string } | { f: 'bloqueada'; msg: string } | { f: 'dentro' }
 
@@ -149,7 +148,6 @@ export function App() {
 
   return (
     <CtxReact.Provider value={ctx}>
-      <Menu tela={tela} />
       {import.meta.env.VITE_DEMO === '1' && <BarraPrevia />}
       <Rota tela={tela} />
       {aviso && <div className="toast pop" role="status">{aviso}</div>}

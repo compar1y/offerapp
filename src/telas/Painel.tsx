@@ -1,10 +1,10 @@
-import { capa, cena, fotoBau, fotoEtapa, mockup } from '../imagens'
+import { capa, cena, mockup } from '../imagens'
 import { RECEITAS } from '../../shared/receitas'
 import { useEffect, useState } from 'react'
-import { MATERIAIS, PRODUTOS } from '../../shared/catalogo'
-import { ETAPAS, OFERTAS, PERFIS, TODAS_LICOES } from '../../shared/conteudo'
+import { MATERIAIS, PRODUTOS, type ProdutoId } from '../../shared/catalogo'
+import { DESEJO } from './Materiais'
+import { ETAPAS } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
-import { CUSTO_PRESENTE, diasQueFaltam, MOEDAS_POR_DIA, type Presente } from '../../shared/presente'
 import { ofertaDisponivel, reais, useApp } from '../ctx'
 import { Suporte } from './Entrar'
 
@@ -30,34 +30,30 @@ export function proximaLicao(comecaEm: number, feitas: string[]) {
   return null
 }
 
-function textoPresente(p: Presente): string {
-  if (p.escolhido) return `🎁 ${PRODUTOS[p.escolhido].nome}. Toque para abrir.`
-  if (p.moedas >= CUSTO_PRESENTE) return `🪙 ${p.moedas} moedas: já dá para escolher o seu! Toque aqui.`
-  const f = diasQueFaltam(p)
-  return `🪙 ${p.moedas} de ${CUSTO_PRESENTE} moedas. Cada dia que você abre o app vale 🪙${MOEDAS_POR_DIA}. Faltam ${f} ${f === 1 ? 'dia' : 'dias'}.`
-}
+/** extras vendidos à parte, sempre com preço e a palavra "extra" (aula 21 dicas, dica 6) */
+export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda']
 
+/** Início = área de membros: o que ela comprou primeiro, extras com preço embaixo. Uma tela só. */
 export function Painel() {
   const { eu, estado, ir, evento, recarregar, sair } = useApp()
-  const perfil = PERFIS[eu.perfil ?? 'iniciante']
-  const prox = proximaLicao(perfil.comecaEm, estado.licoes)
-  const oferta = perfil.ofertas.find((p) => ofertaDisponivel(eu, p))
-  const dias = diasParaNatal()
   const temReceitas = eu.acesso.materiais.includes('ebook')
   const proxReceita = RECEITAS.find((r) => !estado.receitas.includes(r.n)) ?? RECEITAS[0]
-  const bonus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro')
+  const seus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro')
+  const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
+  const clique = (botao: string) => evento('inicio.clique', { botao })
 
   useEffect(() => {
-    if (oferta) evento('oferta.vista', { produto: oferta, onde: 'painel' })
-  }, [oferta, evento])
+    if (extras.length) evento('oferta.vista', { produto: extras.join(','), onde: 'inicio' })
+  }, [extras.join(','), evento]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
+      <img className="banner-inicio" src={cena('boas-vindas')} alt="" />
       <p className="marca">Fábrica de Panetones Caseiros</p>
       <div className="ola">
         <h1>Olá{eu.apelido ? `, ${eu.apelido}` : ''}! 👋</h1>
-        {dias > 0 && <span className="chip natal-chip">🎄 Natal em {dias} {dias === 1 ? 'dia' : 'dias'}</span>}
       </div>
+      <p className="sub">Tudo o que você comprou está aqui. É só tocar.</p>
 
       {eu.acesso.pendentes.length > 0 && (
         <div className="aviso">
@@ -74,28 +70,32 @@ export function Painel() {
           <div className="destaque-txt">
             <p className="eyebrow">Seu livro de receitas</p>
             <h2>100 receitas de panetone</h2>
-            <p className="sub">Com foto de cada passo. Toque para abrir.</p>
           </div>
-          <button className="btn grande" onClick={() => ir({ t: 'receitas' })}>📖 Abrir minhas receitas</button>
-          <button className="btn leve" onClick={() => ir({ t: 'ler', m: 'ebook', p: proxReceita.n })}>
-            {estado.receitas.length ? 'Próxima' : 'Comece pela'} Receita {String(proxReceita.n).padStart(3, '0')}: {proxReceita.titulo}
+          <button className="btn grande" onClick={() => { clique('abrir-receitas'); ir({ t: 'ler', m: 'ebook', p: proxReceita.n }) }}>
+            📖 Abrir minhas 100 receitas
           </button>
+          <button className="btn leve" onClick={() => { clique('procurar-receita'); ir({ t: 'receitas' }) }}>🔎 Procurar uma receita</button>
+          <p className="sub" style={{ fontSize: 15, textAlign: 'center' }}>
+            {estado.receitas.length ? 'Você parou na' : 'Comece pela'} Receita {String(proxReceita.n).padStart(3, '0')}: {proxReceita.titulo}
+          </p>
         </div>
       )}
 
       {/* 2. socorro sempre à mão */}
-      <button className="cartao-cena sos-cena" onClick={() => ir({ t: 'sos' })}>
-        <img src={cena('sos')} alt="" />
-        <span><b>🆘 Deu algo errado na massa?</b>Toque aqui e veja como salvar.</span>
-      </button>
+      {eu.acesso.materiais.includes('fichas-socorro') && (
+        <button className="cartao-cena sos-cena" onClick={() => { clique('socorro'); ir({ t: 'sos' }) }}>
+          <img src={cena('sos')} alt="" />
+          <span><b>🆘 Deu problema na massa?</b>Toque aqui e veja como salvar.</span>
+        </button>
+      )}
 
-      {/* 3. os bônus, com capa */}
-      {bonus.length > 0 && (
+      {/* 3. bônus e livros que ela já tem, todos com capa */}
+      {seus.length > 0 && (
         <div className="card">
-          <div className="titulo-linha"><h3>Seus bônus</h3><button className="link" onClick={() => ir({ t: 'materiais' })}>Ver todos</button></div>
-          <div className="fileira">
-            {bonus.map((m) => (
-              <button key={m} className="mini-capa" onClick={() => ir({ t: 'ler', m, p: 1 })}>
+          <h3>Seus bônus e livros</h3>
+          <div className="grade-inicio">
+            {seus.map((m) => (
+              <button key={m} className="mini-capa" onClick={() => { clique(`material.${m}`); ir({ t: 'ler', m, p: 1 }) }}>
                 <img src={capa(m)} alt="" loading="lazy" />
                 <span>{MATERIAIS[m].titulo.replace(/^Bônus \d+: /, '')}</span>
               </button>
@@ -104,48 +104,25 @@ export function Painel() {
         </div>
       )}
 
-      {/* 4. o passo a passo, um de cada vez */}
-      {!eu.perfil ? (
-        <div className="card">
-          <p className="eyebrow">Opcional · 1 minuto</p>
-          <h3>Quer um passo a passo feito para você até o Natal?</h3>
-          <p className="sub">Responda 5 perguntas e o app monta o seu caminho.</p>
-          <button className="btn leve" onClick={() => ir({ t: 'pergunta' })}>Responder as perguntas</button>
-        </div>
-      ) : prox ? (
-        <div className="card etapa-card">
-          <img className="foto-etapa" src={fotoEtapa(prox.etapa.n)} alt="" loading="lazy" />
-          <p className="eyebrow">Seu próximo passo · uns {prox.licao.minutos} minutos</p>
-          <h3>{prox.licao.titulo}</h3>
-          <div className="barra"><i style={{ width: `${(estado.licoes.length / TODAS_LICOES.length) * 100}%` }} /></div>
-          <p className="sub" style={{ fontSize: 14 }}>{estado.licoes.length} de {TODAS_LICOES.length} passos feitos</p>
-          <button className="btn" onClick={() => ir({ t: 'licao', id: prox.licao.id })}>Fazer agora</button>
-        </div>
-      ) : null}
-
-      {/* 5. próximo produto, com a capa */}
-      {oferta && (
-        <button className="card oferta-mini" onClick={() => ir({ t: 'oferta', p: oferta, origem: 'painel' })}>
-          <img src={mockup(oferta) ?? capa(PRODUTOS[oferta].libera[0])} alt="" loading="lazy" />
-          <span>
-            <small>🔒 Livro extra, vendido à parte</small>
-            <b>{PRODUTOS[oferta].nome}</b>
-            <span className="sub">{OFERTAS[oferta as Exclude<typeof oferta, 'kit'>].gancho}</span>
-            <span className="tag comprar">Liberar · R${reais(PRODUTOS[oferta].precoCentavos)}</span>
-          </span>
-        </button>
+      {/* 4. extras: separados, com preço e a palavra "extra" */}
+      {extras.length > 0 && (
+        <>
+          <h3 className="divisor-extras">Livros extras (vendidos à parte)</h3>
+          {extras.map((p) => (
+            <button key={p} className="card oferta-mini" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
+              <img src={mockup(p) ?? capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
+              <span>
+                <small>Extra · não está incluído na sua compra</small>
+                <b>{PRODUTOS[p].nome}</b>
+                <span className="sub">{DESEJO[p]}</span>
+                <span className="tag comprar">Ver · R${reais(PRODUTOS[p].precoCentavos)}</span>
+              </span>
+            </button>
+          ))}
+        </>
       )}
 
-      {/* 6. o jogo fica por último, numa linha só */}
-      <button className="card presentes-linha" onClick={() => ir({ t: 'loja' })}>
-        <img src={fotoBau('ouro')} alt="" loading="lazy" />
-        <span>
-          <b>{eu.presente.escolhido ? 'Seu livro de presente' : 'Ganhe 1 livro de presente'}</b>
-          <span className="sub">{textoPresente(eu.presente)}</span>
-        </span>
-      </button>
-
-      <p className="sub" style={{ fontSize: 14, textAlign: 'center' }}>Precisa de ajuda? <Suporte /></p>
+      <p className="sub" style={{ fontSize: 15, textAlign: 'center' }}>Precisa de ajuda? <Suporte /></p>
       <button className="link" onClick={sair}>Sair</button>
       <Instalar />
     </>
