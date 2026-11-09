@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
-import { ofertaDisponivel, precoPresente, reais, tem, useApp } from '../ctx'
-import { FaixaDesconto } from './PresenteDesconto'
+import { ganhaPresente, ofertaDisponivel, precoPresente, reais, tem, useApp } from '../ctx'
+import { AvisoPresente, FaixaDesconto } from './PresenteDesconto'
 import { EXTRAS } from './Painel'
 
 import { Capa } from './Materiais'
@@ -91,6 +91,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
         {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} texto={`${desc.pct}% OFF neste material`} />}
+        {!desc && ganhaPresente(eu, p) && <AvisoPresente />}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
           {desc && <s className="preco-de">R${reais(prod.precoCentavos)}</s>}
           <span className="sub">por</span><span className="preco">R${reais(desc ? desc.precoCentavos : prod.precoCentavos)}</span>

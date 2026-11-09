@@ -293,3 +293,7 @@ body{font-size:17px}
 .mini-capa{position:relative}
 .selo-off{position:absolute;top:6px;right:6px;background:#C9333F;color:#fff;font-weight:800;font-size:14px;padding:3px 8px;border-radius:999px;border:2px solid #F3D27A;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .preco-de{color:#9A8B7E;font-size:18px}
+.aviso-presente{display:flex;gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:14px;background:#FFF4D6;border:2px dashed #E2A23B;color:#5A3A10;font-size:15px;line-height:1.3}
+.aviso-presente b{display:block;color:#C9333F;font-size:14px;text-transform:uppercase;letter-spacing:.02em}
+.aviso-presente .ap-ico{font-size:30px;flex:none}
+.aviso-presente.compacto{font-size:14px}

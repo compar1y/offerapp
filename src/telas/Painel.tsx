@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { ETAPAS } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
-import { ofertaDisponivel, precoPresente, tem, useApp } from '../ctx'
-import { FaixaDesconto } from './PresenteDesconto'
+import { ganhaPresente, ofertaDisponivel, precoPresente, tem, useApp } from '../ctx'
+import { AvisoPresente, FaixaDesconto } from './PresenteDesconto'
 import { Suporte } from './Entrar'
 import { VIDEOAULAS } from './OfertaVideo'
 
@@ -134,7 +134,7 @@ export function Painel() {
           <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Seleção especial</span>
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas. <span className="dinheiro-pulsa" aria-hidden="true">💰</span></p>
-          {presente && <FaixaDesconto pct={presente.pct} ate={presente.ate} />}
+          {presente ? <FaixaDesconto pct={presente.pct} ate={presente.ate} /> : extras.some((p) => ganhaPresente(eu, p)) && <AvisoPresente compacto />}
           {VIDEOAULAS.mostrar && (
             <div className="video-upsell">
               <button className="video-tela" aria-label="Assistir às videoaulas" onClick={abrirVideoaulas}>

@@ -21,13 +21,22 @@ interface Linha { produto: string; status: string; criado_em: string; atualizado
  * Conta a partir da PRIMEIRA compra paga de um extra. Não vale: bump comprado junto com o kit (mesmo pagamento),
  * material ganho de presente (moedas) e compra feita com o próprio desconto (a 2ª compra não renova o prazo).
  */
-export function descontoDe(compras: Linha[], agora = Date.now()): Desconto | null {
+/** extras que contam para o presente (pagos, fora do pedido do kit e sem ser presente de moedas), da mais antiga para a mais nova */
+function extrasQueContam(compras: Linha[]) {
   const pagos = compras.filter((c) => c.status === 'pago')
   const pagamentosDoKit = new Set(pagos.filter((c) => c.produto === 'kit').map((c) => c.pagamento_id).filter(Boolean))
   const extras = pagos
     .filter((c) => EXTRAS_DESCONTO.includes(c.produto as ProdutoId) && c.metodo !== 'presente' && !(c.pagamento_id && pagamentosDoKit.has(c.pagamento_id)))
     .map((c) => ({ ...c, pagoEm: Date.parse(c.atualizado_em ?? c.criado_em) })) // a linha nasce 'pendente' no PIX; vira 'pago' na atualização
     .sort((a, b) => a.pagoEm - b.pagoEm)
+  return extras
+}
+
+/** ela ainda não fez a primeira compra de extra: a próxima compra dá o presente */
+export const presentePendente = (compras: Linha[]) => extrasQueContam(compras).length === 0
+
+export function descontoDe(compras: Linha[], agora = Date.now()): Desconto | null {
+  const extras = extrasQueContam(compras)
   const primeira = extras[0]
   if (!primeira) return null
   // já usou: comprou outro extra depois da primeira compra

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DESCONTO } from '../../shared/desconto'
 
 /** contagem regressiva até `ate` (ISO). Devolve null quando acabou. */
 export function useRelogio(ate: string | undefined | null): string | null {
@@ -26,6 +27,16 @@ export function FaixaDesconto({ pct, ate, texto }: { pct: number; ate: string; t
       <span className="fd-titulo">🎁 Presente da sua primeira compra</span>
       <span className="fd-texto">{texto ?? `${pct}% OFF no próximo material`}</span>
       <span className="fd-relogio">Acaba em <b>{resta}</b></span>
+    </div>
+  )
+}
+
+/** aviso antes da compra (ela ainda não fez a primeira compra de extra) */
+export function AvisoPresente({ compacto }: { compacto?: boolean }) {
+  return (
+    <div className={`aviso-presente${compacto ? ' compacto' : ''}`}>
+      <span className="ap-ico" aria-hidden="true">🎁</span>
+      <span><b>Presente de primeira compra</b>{compacto ? `Comprando qualquer material daqui, você ganha ${DESCONTO.pct}% OFF no próximo, por ${DESCONTO.horas} horas.` : `Comprando este material, você ganha ${DESCONTO.pct}% OFF no próximo material, válido por ${DESCONTO.horas} horas.`}</span>
     </div>
   )
 }

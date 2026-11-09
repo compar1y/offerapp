@@ -2,7 +2,7 @@
 // Só entra no build de prévia; o build de produção não inclui este arquivo.
 import { materiaisLiberados, type ProdutoId } from '../shared/catalogo'
 import { podeEscolher, presenteDe } from '../shared/presente'
-import { descontoDe } from '../shared/desconto'
+import { descontoDe, presentePendente } from '../shared/desconto'
 
 const CHAVE = 'fornada-previa'
 type Usuaria = Record<string, unknown> & { produtos: ProdutoId[]; logada: boolean }
@@ -19,6 +19,7 @@ function gravar(u: Usuaria) {
 let memoria: Usuaria | null = null
 const atual = () => memoria ?? (memoria = ler())
 
+const comprasPrevia = (u: Usuaria) => ((u.compras as { produto: string; criado_em: string; pagamento_id: string }[] | undefined) ?? []).map((c) => ({ ...c, status: 'pago' }))
 const resposta = (dados: unknown, status = 200) => new Response(JSON.stringify(dados), { status, headers: { 'content-type': 'application/json' } })
 
 export function instalarPrevia() {
@@ -34,7 +35,7 @@ export function instalarPrevia() {
     if (rota === '/api/eu' && (init?.method ?? 'GET') === 'GET') {
       if (!u.logada) return resposta({ erro: 'Entre de novo.' }, 401)
       const { produtos, logada: _l, dias, presente, compras: _c, ...resto } = u
-      return resposta({ email: 'maria.exemplo@gmail.com', ...resto, acesso: { produtos, pendentes: [], materiais: materiaisLiberados(produtos), desconto: descontoDe((u.compras as { produto: string; criado_em: string; pagamento_id: string }[] | undefined ?? []).map((c) => ({ ...c, status: 'pago' }))) }, presente: presenteDe(Number(dias), (presente as ProdutoId | null) ?? null) })
+      return resposta({ email: 'maria.exemplo@gmail.com', ...resto, acesso: { produtos, pendentes: [], materiais: materiaisLiberados(produtos), desconto: descontoDe(comprasPrevia(u)), ganhaPresente: presentePendente(comprasPrevia(u)) }, presente: presenteDe(Number(dias), (presente as ProdutoId | null) ?? null) })
     }
     if (rota === '/api/presente') {
       const p = presenteDe(Number(u.dias), (u.presente as ProdutoId | null) ?? null)

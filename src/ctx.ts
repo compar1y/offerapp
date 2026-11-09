@@ -63,3 +63,6 @@ export function precoPresente(eu: Eu, p: ProdutoId, agora = Date.now()) {
   if (!d || !preco || !(Date.parse(d.ate) > agora)) return null
   return { ...preco, pct: d.pct, ate: d.ate }
 }
+
+/** aviso antes da compra: comprando este extra agora, ela ganha o presente da primeira compra */
+export const ganhaPresente = (eu: Eu, p: ProdutoId) => !!eu.acesso.ganhaPresente && !!PRECO_PRESENTE[p]
