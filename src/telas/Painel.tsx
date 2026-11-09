@@ -135,6 +135,7 @@ export function Painel() {
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas. <span className="dinheiro-pulsa" aria-hidden="true">💰</span></p>
           {presente ? <FaixaDesconto pct={presente.pct} ate={presente.ate} /> : extras.some((p) => ganhaPresente(eu, p)) && <AvisoPresente compacto />}
+          {(presente || extras.some((p) => ganhaPresente(eu, p))) && <span className="seta-pulsa" aria-hidden="true">⬇</span>}
           {VIDEOAULAS.mostrar && (
             <div className="video-upsell">
               <button className="video-tela" aria-label="Assistir às videoaulas" onClick={abrirVideoaulas}>
