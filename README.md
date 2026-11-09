@@ -82,10 +82,10 @@
 
 ## Imagens e Etiquetas com o Seu Nome (R$ 12,90)
 
-- Produto `etiquetas` em `shared/catalogo.ts`. Os códigos da Wiapy ficam em `ETIQUETAS_WIAPY` (checkoutUrl, checkoutIds, produtoIds) e estão **vazios**: enquanto o `checkoutUrl` estiver vazio, o card e a tela de venda não aparecem.
+- Produto `etiquetas` em `shared/catalogo.ts`. Códigos da Wiapy em `ETIQUETAS_WIAPY`: checkout `6af20863371815cbecf6456a`, conteúdo `6af207d3371815cbecf61968`. Sem `checkoutUrl`, o card e a tela de venda somem.
 - Antes de ligar a venda: rodar `supabase/migracao-2026-11-09b-etiquetas.sql` (a tabela de compras passa a aceitar `etiquetas`).
 - Entrega (`src/telas/Etiquetas.tsx`, só para quem tem `etiquetas`): ela digita nome e WhatsApp e o app desenha no celular (`src/etiquetas.ts`) 6 imagens (3 Status 9:16, 3 quadradas) e um PDF A4 de 6 páginas com linhas de corte. Salvar: `src/salvar.ts` (download direto; no iPhone com o app instalado, Compartilhar).
-- Foto real da oferta: salvar em `public/img/mockups/etiquetas-foto.webp` e preencher `FOTO_ETIQUETAS` em `src/telas/Etiquetas.tsx`.
+- Capa do card e da oferta: `public/img/mockups/etiquetas.webp`; na oferta, as peças de exemplo aparecem logo abaixo.
 
 ## Colocar no ar (só com a ordem do dono)
 

@@ -40,14 +40,14 @@ export const MATERIAIS: Record<MaterialId, Material> = {
 }
 
 /**
- * Imagens e Etiquetas com o Seu Nome (R$12,90): códigos da Wiapy. VAZIOS até o Levi criar o produto e o checkout.
+ * Imagens e Etiquetas com o Seu Nome (R$12,90): códigos da Wiapy (recebidos do Levi em 09/11).
  * checkoutUrl: o link de pagamento · checkoutIds: o código do link e o id interno do checkout · produtoIds: o id do conteúdo.
- * Com o checkoutUrl vazio, ofertaDisponivel() esconde o card e a tela de venda.
+ * Com o checkoutUrl vazio, ofertaDisponivel() esconderia o card e a tela de venda.
  */
 export const ETIQUETAS_WIAPY: { checkoutUrl: string; checkoutIds: string[]; produtoIds: string[] } = {
-  checkoutUrl: '',
-  checkoutIds: [],
-  produtoIds: [],
+  checkoutUrl: 'https://pay.wiapy.com/6af20863371815cbecf6456a',
+  checkoutIds: ['6af20863371815cbecf6456a'],
+  produtoIds: ['6af207d3371815cbecf61968'],
 }
 
 export interface Produto {
@@ -121,7 +121,6 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     precoCentavos: 1290,
     // não é PDF pronto: o app gera as 6 imagens e o PDF de etiquetas com o nome dela (src/telas/Etiquetas.tsx)
     libera: [],
-    // ainda sem produto na Wiapy: enquanto o link estiver vazio, o card de venda não aparece em lugar nenhum
     checkoutUrl: ETIQUETAS_WIAPY.checkoutUrl,
     checkoutIds: ETIQUETAS_WIAPY.checkoutIds,
     produtoIds: ETIQUETAS_WIAPY.produtoIds,

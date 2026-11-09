@@ -210,19 +210,3 @@ export function VitrineEtiquetas({ compacta }: { compacta?: boolean }) {
     </div>
   )
 }
-
-/**
- * LUGAR DA FOTO REAL (vem do ChatGPT Imagens): confeiteira entregando panetone com a etiqueta e o cartão.
- * Quando o Levi mandar, salve em public/img/mockups/etiquetas-foto.webp e preencha FOTO_ETIQUETAS.
- */
-export const FOTO_ETIQUETAS = ''
-export function FotoEtiquetas() {
-  if (FOTO_ETIQUETAS) return <img className="mockup" src={FOTO_ETIQUETAS} alt="" />
-  // a marcação só aparece na prévia e no desenvolvimento; para a cliente, sem foto não aparece nada
-  if (import.meta.env.VITE_DEMO !== '1' && !import.meta.env.DEV) return null
-  return (
-    <div className="foto-lugar" aria-hidden="true">
-      📷 Lugar da foto real: confeiteira entregando o panetone com a etiqueta e o cartão (vem do ChatGPT Imagens)
-    </div>
-  )
-}
