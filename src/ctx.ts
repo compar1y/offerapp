@@ -17,6 +17,7 @@ export type Tela =
   | { t: 'bau'; b: BauId }
   | { t: 'raspa'; etapa: number }
   | { t: 'oferta'; p: ProdutoId; origem: string }
+  | { t: 'videoaulas' }
   | { t: 'loja' }
   | { t: 'materiais' }
   | { t: 'conquistas' }

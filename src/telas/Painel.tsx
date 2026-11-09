@@ -6,6 +6,7 @@ import { ETAPAS } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
 import { ofertaDisponivel, useApp } from '../ctx'
 import { Suporte } from './Entrar'
+import { VIDEOAULAS } from './OfertaVideo'
 
 export const BAUS: { id: BauId; nome: string; ico: string; como: string }[] = [
   { id: 'prata', nome: 'Prata', ico: '🎁', como: '3 missões do dia' },
@@ -29,19 +30,12 @@ export function proximaLicao(comecaEm: number, feitas: string[]) {
   return null
 }
 
-/** bloco do upsell de videoaulas (produto ainda não existe: sem checkout, o toque só avisa "em breve") */
-export const VIDEOAULAS = {
-  mostrar: true,
-  titulo: 'Videoaulas: veja cada passo sendo feito',
-  checkoutUrl: '' as string,
-}
-
 /** extras vendidos à parte, sempre com preço e a palavra "extra" (aula 21 dicas, dica 6) */
 export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda']
 
 /** Início = área de membros: o que ela comprou primeiro, extras com preço embaixo. Uma tela só. */
 export function Painel() {
-  const { eu, estado, ir, evento, recarregar, sair, toast } = useApp()
+  const { eu, estado, ir, evento, recarregar, sair } = useApp()
   const temReceitas = eu.acesso.materiais.includes('ebook')
   const proxReceita = RECEITAS.find((r) => !estado.receitas.includes(r.n)) ?? RECEITAS[0]
   const seus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro')
@@ -49,8 +43,7 @@ export function Painel() {
   const clique = (botao: string) => evento('inicio.clique', { botao })
   const abrirVideoaulas = () => {
     clique('extra.videoaulas')
-    if (VIDEOAULAS.checkoutUrl) window.open(VIDEOAULAS.checkoutUrl, '_blank', 'noopener')
-    else toast('As videoaulas chegam em breve aqui no app. 🎬')
+    ir({ t: 'videoaulas' })
   }
 
   useEffect(() => {
