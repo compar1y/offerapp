@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
 import { ganhaPresente, ofertaDisponivel, precoPresente, reais, tem, useApp } from '../ctx'
-import { AvisoPresente, FaixaDesconto } from './PresenteDesconto'
+import { AvisoPresente, BarraPresente, FaixaDesconto } from './PresenteDesconto'
 import { EXTRAS } from './Painel'
 
 import { Capa } from './Materiais'
@@ -83,6 +83,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   return (
     <>
+      {desc ? <BarraPresente ate={desc.ate} /> : ganhaPresente(eu, p) && <BarraPresente />}
       <button className="voltar" onClick={agoraNao}>← Voltar</button>
       <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'Material extra, vendido à parte'}</p>
       <h1>{texto.gancho}</h1>

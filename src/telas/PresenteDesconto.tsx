@@ -40,3 +40,14 @@ export function AvisoPresente({ compacto }: { compacto?: boolean }) {
     </div>
   )
 }
+
+/** barrinha fixa no topo da página de oferta, versão curta do aviso / do relógio */
+export function BarraPresente({ ate }: { ate?: string | null }) {
+  const resta = useRelogio(ate)
+  if (ate && !resta) return null
+  return (
+    <div className="barra-presente" role="status">
+      {resta ? <>🎁 <b>{DESCONTO.pct}% OFF</b> aqui · acaba em <b className="br-relogio">{resta}</b></> : <>🎁 Comprou, ganhou <b>{DESCONTO.pct}% OFF</b> no próximo</>}
+    </div>
+  )
+}
