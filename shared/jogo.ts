@@ -1,7 +1,7 @@
 // Regras da gamificação (puras, testáveis). O estado mora no servidor (tabela usuarias.estado) e o app aplica as ações.
 // Regras da base: só ações reais dela, sem contador falso, sem ranking, e moedas e selos nunca se perdem.
 import { ETAPAS } from './conteudo.js'
-import { ehAula } from './aulas.js'
+import { aulaAtual, ehAula } from './aulas.js'
 
 export type BauId = 'prata' | 'ouro' | 'diamante' | 'cristal'
 export type SeloId = 'primeira-foto' | 'etapa-1' | 'etapa-2' | 'etapa-3' | 'etapa-4' | 'etapa-5' | 'sete-dias' | 'cinco-receitas' | 'sos-usado'
@@ -70,7 +70,7 @@ export function abrirApp(e: Estado, hoje: string): Estado {
   const n: Estado = structuredClone(e)
   if (n.missoes.dia !== hoje) n.missoes = { dia: hoje, feitas: [false, false, false] }
   if (n.secreta.semana !== semanaDe(hoje)) n.secreta = { semana: semanaDe(hoje), receitasDias: [], feita: false }
-  if (!Array.isArray(n.aulas)) n.aulas = [] // estado salvo antes das aulas
+  n.aulas = migrarAulas(n.aulas) // estado salvo antes das aulas, ou com os nomes antigos dos vídeos
   marcarMissao(n, 0)
   return n
 }
@@ -231,6 +231,12 @@ export function sanear(x: unknown, hoje: string): Estado {
       receitasDias: strs(sec.receitasDias, 7),
       feita: Boolean(sec.feita),
     },
-    aulas: [...new Set(strs(o.aulas, 50).filter(ehAula))],
+    aulas: migrarAulas(strs(o.aulas, 50)),
   }
+}
+
+/** lista de aulas vistas sem repetição e com os nomes atuais (aula-01.mp4 …) */
+function migrarAulas(v: unknown): string[] {
+  if (!Array.isArray(v)) return []
+  return [...new Set(v.filter((x): x is string => typeof x === 'string').map(aulaAtual).filter((x): x is string => !!x))]
 }

@@ -352,3 +352,15 @@ body{font-size:17px}
 .player-titulo{flex:1}
 .player-moedas{flex:none;margin-left:auto;background:rgba(255,255,255,.16);border:2px solid var(--casca);border-radius:999px;padding:4px 10px;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .player-ja small{font-size:13px;opacity:.9;margin-left:2px}
+
+/* baixar PDF / planilha (Leitor) */
+.baixar-lista{display:flex;flex-direction:column;gap:10px;margin:4px 0 14px}
+a.btn{text-decoration:none;box-sizing:border-box}
+.btn.baixar{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.btn.baixar small{font-family:var(--corpo, inherit);font-weight:600;font-size:13px;opacity:.75}
+.btn.baixar.comprar-pulsa small{flex-basis:100%;opacity:.9}
+
+/* cartão das moedas no Início */
+.moedas-card{display:flex;flex-direction:column;gap:10px}
+.moedas-card .moedas-saldo{font-size:15px;margin:0}
+.moedas-botoes{display:grid;grid-template-columns:1fr;gap:8px}

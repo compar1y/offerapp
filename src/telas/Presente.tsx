@@ -19,8 +19,10 @@ export function PresenteDaFabrica() {
   const [enviando, setEnviando] = useState(false)
   const [ganhou, setGanhou] = useState<ProdutoId | null>(null)
   const pode = !p.escolhido && p.moedas >= CUSTO_PRESENTE
-  const livros = LIVROS_PRESENTE.filter((x) => x === p.escolhido || !tem(eu, x))
-  const outros = (escolhido: ProdutoId) => LIVROS_PRESENTE.filter((x) => x !== escolhido && ofertaDisponivel(eu, x))
+  // A Primeira Encomenda é a versão menor da Encomenda Puxa Encomenda: some para quem já tem a maior
+  const livros = LIVROS_PRESENTE.filter((x) => x === p.escolhido || (!tem(eu, x) && !(x === 'primeira' && tem(eu, 'encomenda'))))
+  // "aproveite e leve também": a Primeira Encomenda só é vendida como downsell, nunca aqui
+  const outros = (escolhido: ProdutoId) => LIVROS_PRESENTE.filter((x) => x !== escolhido && x !== 'primeira' && ofertaDisponivel(eu, x))
   const faltam = diasQueFaltam(p)
 
   async function escolher(x: ProdutoId) {

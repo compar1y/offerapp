@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { AULAS, MODULOS, durLabel, ehAula } from '../shared/aulas'
+import { readdirSync } from 'node:fs'
+import { AULAS, MODULOS, aulaAtual, durLabel, ehAula } from '../shared/aulas'
 import { MOEDAS, abrirApp, assistirAula, estadoNovo, sanear } from '../shared/jogo'
 
-const ARQUIVOS = '06-PizzaPaoePasta.mp4, 07-PizzaPaoePasta.mp4, 08-TamiresMota.mp4, 09-testereceitas.mp4, 12-testereceitas.mp4, 13-LeodeniceCamargo.mp4, 14-receitasdepeso.mp4, 15-minharotinasemgluten.mp4, 16-paesdojoao9725.mp4, 17-porflaviamartins.mp4, 19-Celiane.mp4, 21-bonasseoficial.mp4, 22-bonasseoficial.mp4, 23-sabaru_cs.mp4, 27-AchadONsecreto.mp4, 28-Receitasnaotaobemdescritas-Gla.mp4, 33-cameelam.mp4, 34-CanalRodrigoZilio.mp4, 35-Comerebomdemais.mp4, 42-receitas3s480.mp4, 45-LarissaSuellenn.mp4, 46-DicaseReceitasNoemiDuarte.mp4, 48-NathyeEltonof.mp4, 49-Elianekovalsk.mp4, 50-cantinhogourmetdalu7639.mp4'.split(', ')
+const ANTIGOS = '06-PizzaPaoePasta.mp4, 07-PizzaPaoePasta.mp4, 08-TamiresMota.mp4, 09-testereceitas.mp4, 12-testereceitas.mp4, 13-LeodeniceCamargo.mp4, 14-receitasdepeso.mp4, 15-minharotinasemgluten.mp4, 16-paesdojoao9725.mp4, 17-porflaviamartins.mp4, 19-Celiane.mp4, 21-bonasseoficial.mp4, 22-bonasseoficial.mp4, 23-sabaru_cs.mp4, 27-AchadONsecreto.mp4, 28-Receitasnaotaobemdescritas-Gla.mp4, 33-cameelam.mp4, 34-CanalRodrigoZilio.mp4, 35-Comerebomdemais.mp4, 42-receitas3s480.mp4, 45-LarissaSuellenn.mp4, 46-DicaseReceitasNoemiDuarte.mp4, 48-NathyeEltonof.mp4, 49-Elianekovalsk.mp4, 50-cantinhogourmetdalu7639.mp4'.split(', ')
+const ARQUIVOS = Array.from({ length: 25 }, (_, i) => `aula-${String(i + 1).padStart(2, '0')}.mp4`)
 
 describe('lista de aulas', () => {
   it('os 25 arquivos certos, cada um uma vez, em 4 módulos', () => {
@@ -15,9 +17,21 @@ describe('lista de aulas', () => {
     for (const ruim of ['bonasse', 'youtube', 'canal', 'tamires', 'celiane', 'zilio', 'larissa', 'noemi', 'eliane', 'flavia', 'tutorial', 'chef']) expect(txt).not.toContain(ruim)
   })
   it('nome de arquivo só vale se for de uma aula', () => {
-    expect(ehAula('06-PizzaPaoePasta.mp4')).toBe(true)
+    expect(ehAula('aula-01.mp4')).toBe(true)
+    expect(ehAula('06-PizzaPaoePasta.mp4')).toBe(false)
     expect(ehAula('constructor')).toBe(false)
     expect(ehAula('__proto__')).toBe(false)
+  })
+  it('os vídeos em public/aulas são exatamente aula-01 … aula-25, sem nome de canal', () => {
+    expect(readdirSync('public/aulas').filter((f) => f.endsWith('.mp4')).sort()).toEqual(ARQUIVOS)
+  })
+  it('nomes antigos passam para o novo (progresso de quem já assistiu)', () => {
+    const novos = ANTIGOS.map(aulaAtual)
+    expect(new Set(novos).size).toBe(25)
+    expect(novos.every((n) => n && ehAula(n))).toBe(true)
+    expect(aulaAtual('06-PizzaPaoePasta.mp4')).toBe('aula-01.mp4')
+    expect(aulaAtual('99-outro.mp4')).toBeNull()
+    expect(sanear({ aulas: ['06-PizzaPaoePasta.mp4', 'aula-01.mp4', '34-CanalRodrigoZilio.mp4'] }, '2026-11-09').aulas).toEqual(['aula-01.mp4', aulaAtual('34-CanalRodrigoZilio.mp4')])
   })
   it('duração legível', () => {
     expect(durLabel(12)).toBe('12 s')

@@ -46,9 +46,9 @@ export interface Produto {
   libera: MaterialId[]
   /** links de pagamento na Wiapy (o botão da oferta abre este) */
   checkoutUrl: string
-  /** ids que podem chegar em checkout.id no webhook (código público e id interno) */
+  /** ids que podem chegar em checkout.id no webhook (código público e id interno). Reserva: só vale quando nenhum produto do pedido é reconhecido. */
   checkoutIds: string[]
-  /** ids do produto na Wiapy (products[].id): reconhecem a compra quando o checkout.id do webhook vier com outro id */
+  /** ids dos conteúdos na Wiapy (products[].id): é por eles que o webhook reconhece cada item do pedido */
   produtoIds?: string[]
 }
 
@@ -60,6 +60,8 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     libera: ['ebook', 'fichas-socorro', 'b01', 'b02', 'b03', 'b04', 'b05-guia', 'b05-imprimivel', 'b06', 'b07', 'b08'],
     checkoutUrl: 'https://pay.wiapy.com/r2PHgYwK6CVi',
     checkoutIds: ['r2PHgYwK6CVi', '6accaf7eb11ba1ecaf89b37e'],
+    // conteúdos do kit na Wiapy (E-book), vistos no pedido real
+    produtoIds: ['6accab07c8bdfc2949d11bc6', '6accb04f9b597b6a2bd6a0f1'],
   },
   recheios: {
     id: 'recheios',
@@ -69,6 +71,7 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     // checkout avulso (para quem comprou o kit sem o bump); o mesmo produto também é o bump do kit
     checkoutUrl: 'https://pay.wiapy.com/lNDHn0qgGdy7',
     checkoutIds: ['lNDHn0qgGdy7', '6af0613b371815cbeca7ea24'],
+    produtoIds: ['6ae587c02da3da6ee2a9dcbc'],
   },
   encomenda: {
     id: 'encomenda',
@@ -77,6 +80,8 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     libera: ['encomenda-puxa-encomenda', 'caderninho'],
     checkoutUrl: 'https://pay.wiapy.com/checkout/6aee79cc4fbe72f8a1685733',
     checkoutIds: ['6aee79cc4fbe72f8a1685733'],
+    // conteúdo antigo e o novo "Encomenda App"
+    produtoIds: ['6aee7888b7632434c318aaa4', '6af1f38f371815cbecf1c105'],
   },
   primeira: {
     id: 'primeira',
@@ -85,6 +90,8 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     libera: ['primeira-encomenda', 'caderninho'],
     checkoutUrl: 'https://pay.wiapy.com/checkout/6aee7b90371815cbec6a481c',
     checkoutIds: ['6aee7b90371815cbec6a481c'],
+    // conteúdo antigo e o novo "Primeira App"
+    produtoIds: ['6aee7b444fbe72f8a1689b1f', '6af1f3ee04a3ce9b117a12fb'],
   },
   videoaulas: {
     id: 'videoaulas',
@@ -101,7 +108,8 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
 
 /** como reconhecer o bump dos Recheios dentro do pedido do kit */
 export const BUMP_RECHEIOS = {
-  ids: ['lNDHn0qgGdy7', '6af0613b371815cbeca7ea24'],
+  // 6ae58834…: id do bump no pedido real do kit
+  ids: ['lNDHn0qgGdy7', '6af0613b371815cbeca7ea24', '6ae58834a57aeb7e182e52ba'],
   trechosTitulo: ['recheio'],
   totalComKitCentavos: 3790 + 790,
 }

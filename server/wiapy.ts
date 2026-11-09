@@ -1,7 +1,8 @@
 // Webhook da Wiapy. Formato pela documentação pública (help.wiapy.com, artigo "webhook"):
 //   POST JSON; token no header Authorization; valores em centavos; sem campo de evento.
 //   payment.status: paid | unpaid | credit_card_declined | refunded | chargedback; carrinho abandonado = payment null.
-// Confirmar o formato real no primeiro pedido de teste (WEBHOOK_GUARDAR_BRUTO=1 guarda o corpo sem dados pessoais).
+// Formato real (webhook_bruto, 08/11): checkout.id = id interno do checkout; products[].id = id de cada conteúdo entregue.
+// O app reconhece cada item pelo conteúdo (PRODUTOS[...].produtoIds) e só usa o checkout quando nenhum conteúdo casar.
 import { BUMP_RECHEIOS, PRODUTOS, type ProdutoId } from '../shared/catalogo.js'
 import { PRECO_PRESENTE } from '../shared/desconto.js'
 import { env } from './env.js'
@@ -87,13 +88,16 @@ export function lerPedido(corpo: unknown): Pedido {
   if (!corpo || typeof corpo !== 'object') return base
   if (pagamento === null) return { ...base, tipo: 'abandono' }
 
-  // pelo checkout; se o checkout.id vier com outro id, pelo id do produto (products[].id) de quem tem produtoIds no catálogo
-  const principal = produtoDoCheckout(checkoutId) ?? Object.values(PRODUTOS).find((p) => p.produtoIds?.some((id) => prods.some((x) => x.id === id)))?.id ?? null
-  const produtos: ProdutoId[] = principal ? [principal] : []
+  // TODOS os itens comprados (products[].id), cada um pelo id do conteúdo.
+  // O checkout.id é só reserva: no upsell de 1 clique ele pode vir com o id do checkout do kit.
+  const porItem = Object.values(PRODUTOS)
+    .filter((p) => p.produtoIds?.some((id) => prods.some((x) => x.id === id)))
+    .map((p) => p.id)
+  const produtos: ProdutoId[] = porItem.length ? porItem : ([produtoDoCheckout(checkoutId)].filter(Boolean) as ProdutoId[])
   const valor = centavos(pagamento.amount) ?? centavos(checkout.amount)
 
-  // bump dos Recheios: pelo id (BUMP_RECHEIOS_IDS), pelo título ("recheio") ou pelo valor total kit + bump
-  if (principal === 'kit') {
+  // bump dos Recheios no pedido do kit: pelo id (BUMP_RECHEIOS.ids), pelo título ("recheio") ou pelo valor total kit + bump
+  if (produtos.includes('kit') && !produtos.includes('recheios')) {
     const idsBump = [...BUMP_RECHEIOS.ids, ...idsExtras('BUMP_RECHEIOS_IDS')]
     const casa = (x: { id: string; titulo: string }) => idsBump.includes(x.id) || BUMP_RECHEIOS.trechosTitulo.some((t) => x.titulo.toLowerCase().includes(t))
     const temBump = bumps.some(casa) || prods.some(casa) || valor === BUMP_RECHEIOS.totalComKitCentavos

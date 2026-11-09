@@ -10,6 +10,7 @@ import { Suporte } from './Entrar'
 import { VIDEOAULAS } from './OfertaVideo'
 import { AULAS } from '../../shared/aulas'
 import { podeVerAulas } from '../aulas'
+import { CUSTO_PRESENTE } from '../../shared/presente'
 
 export const BAUS: { id: BauId; nome: string; ico: string; como: string }[] = [
   { id: 'prata', nome: 'Prata', ico: '🎁', como: '3 missões do dia' },
@@ -152,8 +153,6 @@ export function Painel() {
           <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Seleção especial</span>
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas. <span className="dinheiro-pulsa" aria-hidden="true">💰</span></p>
-          {presente ? <FaixaDesconto pct={presente.pct} ate={presente.ate} /> : extras.some((p) => ganhaPresente(eu, p)) && <AvisoPresente compacto />}
-          {(presente || extras.some((p) => ganhaPresente(eu, p))) && <span className="seta-pulsa" aria-hidden="true">⬇</span>}
           {mostrarOfertaVideo && (
             <div className="video-upsell">
               <button className="video-tela" aria-label="Assistir às videoaulas" onClick={abrirVideoaulas}>
@@ -164,6 +163,9 @@ export function Painel() {
               <button className="btn-extra btn-video" onClick={abrirVideoaulas}>▶ Assistir às aulas</button>
             </div>
           )}
+          {/* o presente de 30% vale só para os materiais em PDF (não para as Aulas): o aviso fica junto deles */}
+          {extras.length > 0 && (presente ? <FaixaDesconto pct={presente.pct} ate={presente.ate} /> : extras.some((p) => ganhaPresente(eu, p)) && <AvisoPresente compacto />)}
+          {extras.length > 0 && (presente || extras.some((p) => ganhaPresente(eu, p))) && <span className="seta-pulsa" aria-hidden="true">⬇</span>}
           <div className={`grade-extras${extras.length === 1 ? ' uma' : ''}`}>
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
@@ -176,6 +178,22 @@ export function Painel() {
           </div>
         </div>
       )}
+
+      {/* 5. moedas: onde gastar. São dois saldos: as do Presente (1 por dia de app) e as Moedas Douradas (aulas, receitas, lições) */}
+      <div className="card moedas-card">
+        <h3>🪙 Suas moedas</h3>
+        <p className="sub moedas-saldo">
+          {eu.presente.escolhido
+            ? <>Presente da Fábrica: já escolhido 🎁</>
+            : <>Presente da Fábrica: <b>🪙 {Math.min(eu.presente.moedas, CUSTO_PRESENTE)} de {CUSTO_PRESENTE}</b> (ganha 🪙10 por dia que abre o app)</>}
+          <br />Moedas Douradas: <b>🪙 {estado.moedas}</b> (aulas, receitas e lições)
+        </p>
+        <div className="moedas-botoes">
+          <button className="btn" onClick={() => { clique('moedas.presente'); ir({ t: 'loja' }) }}>🎁 Presente da Fábrica</button>
+          <button className="btn leve" onClick={() => { clique('moedas.lojinha'); ir({ t: 'lojinha' }) }}>🛍️ Lojinha das Moedas Douradas</button>
+          <button className="btn leve" onClick={() => { clique('moedas.materiais'); ir({ t: 'materiais' }) }}>📚 Meus materiais</button>
+        </div>
+      </div>
 
       <p className="sub" style={{ fontSize: 15, textAlign: 'center' }}>Precisa de ajuda? <Suporte /></p>
       <button className="link" onClick={sair}>Sair</button>

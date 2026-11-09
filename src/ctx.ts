@@ -20,6 +20,7 @@ export type Tela =
   | { t: 'oferta'; p: ProdutoId; origem: string }
   | { t: 'videoaulas' }
   | { t: 'loja' }
+  | { t: 'lojinha' }
   | { t: 'materiais' }
   | { t: 'conquistas' }
   | { t: 'aulas' }
@@ -56,15 +57,20 @@ export function ofertaDisponivel(eu: Eu, p: ProdutoId): boolean {
 
 export const reais = (centavos: number) => (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: centavos % 100 ? 2 : 0, maximumFractionDigits: 2 })
 
-/** presente da primeira compra: preço e checkout com desconto, se ainda estiver valendo para este produto.
- *  ATENÇÃO: aparece mesmo sem o checkout com desconto (pedido do Levi, 09/11). Enquanto PRECO_PRESENTE.checkoutUrl estiver vazio,
- *  o botão abre o checkout de preço cheio. Colocar os links antes de o app ir para as compradoras. */
+/** o checkout com desconto deste produto já existe na Wiapy? Sem ele, nada de preço riscado nem aviso de 30% OFF */
+export const temCheckoutDesconto = (p: ProdutoId): boolean => !!PRECO_PRESENTE[p]?.checkoutUrl
+
+/** presente da primeira compra: preço e checkout com desconto, se ainda estiver valendo para este produto
+ *  e se o checkout com desconto existir (sem ele a cobrança sairia com o preço cheio) */
 export function precoPresente(eu: Eu, p: ProdutoId, agora = Date.now()) {
   const d = eu.acesso.desconto
   const preco = PRECO_PRESENTE[p]
-  if (!d || !preco || !(Date.parse(d.ate) > agora)) return null
+  if (!d || !preco || !preco.checkoutUrl || !(Date.parse(d.ate) > agora)) return null
   return { ...preco, pct: d.pct, ate: d.ate }
 }
 
 /** aviso antes da compra: comprando este extra agora, ela ganha o presente da primeira compra */
-export const ganhaPresente = (eu: Eu, p: ProdutoId) => !!eu.acesso.ganhaPresente && !!PRECO_PRESENTE[p]
+export const ganhaPresente = (eu: Eu, p: ProdutoId) => !!eu.acesso.ganhaPresente && !!PRECO_PRESENTE[p] && algumCheckoutDesconto()
+
+/** o presente só é anunciado se existir pelo menos um checkout com desconto para ela usar depois */
+export const algumCheckoutDesconto = (): boolean => Object.values(PRECO_PRESENTE).some((x) => !!x?.checkoutUrl)

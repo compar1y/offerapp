@@ -21,3 +21,14 @@ describe('presente da primeira compra', () => {
     expect(descontoDe([{ produto: 'encomenda', status: 'pendente', criado_em: '2026-11-09T11:00:00Z' }], t('2026-11-09T11:10:00Z'))).toBeNull()
   })
 })
+
+describe('presente de 30% sem checkout com desconto', () => {
+  it('não mostra preço riscado nem aviso enquanto o checkout com desconto não existir', async () => {
+    const { precoPresente, ganhaPresente } = await import('../src/ctx')
+    const { PRECO_PRESENTE } = await import('../shared/desconto')
+    const eu = { acesso: { produtos: ['kit'], pendentes: [], materiais: [], desconto: { pct: 30, ate: new Date(Date.now() + 3600e3).toISOString() }, ganhaPresente: true } } as never
+    expect(Object.values(PRECO_PRESENTE).every((x) => !x?.checkoutUrl)).toBe(true)
+    expect(precoPresente(eu, 'encomenda')).toBeNull()
+    expect(ganhaPresente(eu, 'encomenda')).toBe(false)
+  })
+})
