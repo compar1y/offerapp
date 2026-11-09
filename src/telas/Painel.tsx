@@ -47,7 +47,6 @@ export function Painel() {
 
   return (
     <>
-      <p className="marca">Fábrica de Panetones Caseiros</p>
       <div className="ola">
         <h1>Olá{eu.apelido ? `, ${eu.apelido}` : ''}! 👋</h1>
       </div>
