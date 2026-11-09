@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
 import { ofertaDisponivel, reais, tem, useApp } from '../ctx'
@@ -11,6 +11,8 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   const { eu, estado, trocar, voltar, evento, recarregar, mudar } = useApp()
   const [abriu, setAbriu] = useState(false)
   const [conferindo, setConferindo] = useState(false)
+  // trava contra toque duplo: ao recusar, a tela seguinte abre com o botão verde no mesmo lugar do vermelho
+  const abertaEm = useRef(Date.now())
   const prod = PRODUTOS[p]
   const texto = p === 'kit' ? null : OFERTAS[p]
   const comprado = tem(eu, p)
@@ -22,9 +24,10 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   if (!texto) return null
   // ofertas com downsell ganham o botão vermelho de recusa logo abaixo do botão de compra
-  const temDownsell = p === 'encomenda' && ofertaDisponivel(eu, 'primeira') && !estado.ofertasVistas.includes('downsell-primeira')
+  const mostrarRecusa = origem === 'downsell' || (p === 'encomenda' && ofertaDisponivel(eu, 'primeira') && !estado.ofertasVistas.includes('downsell-primeira'))
 
   async function comprar() {
+    if (Date.now() - abertaEm.current < 900) return
     evento('oferta.clicada', { produto: p, onde: origem })
     if (import.meta.env.VITE_DEMO === '1') {
       const { comprarNaPrevia } = await import('../demo')
@@ -60,7 +63,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <div className="card pop" style={{ textAlign: 'center', gap: 14 }}>
         <div style={{ fontSize: 64 }}>🎉</div>
         <h1>Liberado!</h1>
-        <p><b>{prod.nome}</b> já está no Início, em “Seus bônus e materiais”.</p>
+        <p><b>{prod.nome}</b> já está no Início, em “Minhas compras”.</p>
         <button className="btn" onClick={() => trocar({ t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>
         <button className="link" onClick={() => trocar({ t: 'painel' })}>Voltar ao Início</button>
       </div>
@@ -89,12 +92,12 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         ) : (
           <>
             <button className="btn comprar-pulsa" onClick={comprar}>{texto.botao}</button>
-            {temDownsell && <button className="btn recusar" onClick={agoraNao}>Não, obrigada</button>}
+            {mostrarRecusa && <button className="btn recusar" onClick={agoraNao}>Não, obrigada</button>}
           </>
         )}
         <p className="sub" style={{ fontSize: 13 }}>{texto.garantia} {import.meta.env.VITE_DEMO === '1' ? 'Na prévia, o botão libera na hora, sem pagar.' : 'O pagamento abre numa página segura e o app continua aqui.'}</p>
       </div>
-      {!temDownsell && <button className="link" onClick={agoraNao}>Agora não</button>}
+      {!mostrarRecusa && <button className="link" onClick={agoraNao}>Agora não</button>}
     </>
   )
 }

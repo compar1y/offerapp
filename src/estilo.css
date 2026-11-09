@@ -274,3 +274,12 @@ body{font-size:17px}
 @keyframes pulsa-compra{0%,100%{transform:scale(1);box-shadow:0 5px 0 #0B7A3B,0 0 0 0 rgba(22,192,96,.6)}50%{transform:scale(1.03);box-shadow:0 5px 0 #0B7A3B,0 0 0 12px rgba(22,192,96,0)}}
 .btn.recusar{background:#E0262F;box-shadow:0 5px 0 #8E1218;color:#fff;font-size:17px;padding:12px 16px}
 .btn.recusar:active{box-shadow:0 1px 0 #8E1218}
+/* Minhas compras e extras: quando sobra 1 só, ocupa o meio, sem buraco do lado */
+.grade-extras.uma,.grade-compras.uma{grid-template-columns:minmax(0,1fr);justify-items:center}
+.grade-extras.uma .mini-capa,.grade-compras.uma .mini-capa{width:min(220px,70%)}
+.compras-card{border:2px solid var(--pinheiro)}
+.grade-compras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grade-compras .mini-capa{width:auto}
+.grade-compras .mini-capa img{width:100%}
+.grade-compras .mini-capa > span:not(.btn-abrir){font-size:15px}
+.btn-abrir{display:block;text-align:center;background:var(--pinheiro);color:#fff;font-weight:800;font-size:15px;border-radius:12px;padding:9px 8px;box-shadow:0 4px 0 var(--pinheiro-sombra)}

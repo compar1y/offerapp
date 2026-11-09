@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { ETAPAS } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
-import { ofertaDisponivel, useApp } from '../ctx'
+import { ofertaDisponivel, tem, useApp } from '../ctx'
 import { Suporte } from './Entrar'
 import { VIDEOAULAS } from './OfertaVideo'
 
@@ -32,13 +32,17 @@ export function proximaLicao(comecaEm: number, feitas: string[]) {
 
 /** extras vendidos à parte, sempre com preço e a palavra "extra" (aula 21 dicas, dica 6) */
 export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda']
+/** produtos comprados à parte (mostrados em "Minhas compras") */
+const COMPRAS_EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'primeira']
 
 /** Início = área de membros: o que ela comprou primeiro, extras com preço embaixo. Uma tela só. */
 export function Painel() {
   const { eu, estado, ir, evento, recarregar, sair } = useApp()
   const temReceitas = eu.acesso.materiais.includes('ebook')
   const proxReceita = RECEITAS.find((r) => !estado.receitas.includes(r.n)) ?? RECEITAS[0]
-  const seus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro')
+  // compras feitas depois do kit (bump dos Recheios, Encomenda, Primeira Encomenda) ficam em "Minhas compras", logo abaixo das receitas
+  const compras = [...new Set(COMPRAS_EXTRAS.filter((p) => tem(eu, p)).flatMap((p) => PRODUTOS[p].libera))].filter((m) => eu.acesso.materiais.includes(m))
+  const seus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro' && !compras.includes(m))
   const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
   const clique = (botao: string) => evento('inicio.clique', { botao })
   const abrirVideoaulas = () => {
@@ -83,6 +87,22 @@ export function Painel() {
         </div>
       )}
 
+      {/* 1b. o que ela comprou além do kit */}
+      {compras.length > 0 && (
+        <div className="card compras-card">
+          <h3>🛍️ Minhas compras</h3>
+          <div className={`grade-compras${compras.length === 1 ? ' uma' : ''}`}>
+            {compras.map((m) => (
+              <button key={m} className="mini-capa" onClick={() => { clique(`compra.${m}`); ir({ t: 'ler', m, p: 1 }) }}>
+                <img src={capa(m)} alt="" loading="lazy" />
+                <span>{MATERIAIS[m].titulo}</span>
+                <span className="btn-abrir">📖 Abrir</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 2. socorro sempre à mão */}
       {eu.acesso.materiais.includes('fichas-socorro') && (
         <button className="cartao-cena sos-cena" onClick={() => { clique('socorro'); ir({ t: 'sos' }) }}>
@@ -122,7 +142,7 @@ export function Painel() {
               <button className="btn-extra btn-video" onClick={abrirVideoaulas}>▶ Assistir às aulas</button>
             </div>
           )}
-          <div className="grade-extras">
+          <div className={`grade-extras${extras.length === 1 ? ' uma' : ''}`}>
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
                 <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
