@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { CUSTO_PRESENTE, diasQueFaltam, LIVROS_PRESENTE, MOEDAS_POR_DIA } from '../../shared/presente'
 import { api, ErroApi } from '../api'
-import { reais, tem, useApp } from '../ctx'
+import { ofertaDisponivel, reais, tem, useApp } from '../ctx'
 import { capa, cena, mockup } from '../imagens'
 import { DESEJO } from './Materiais'
 
@@ -20,7 +20,7 @@ export function PresenteDaFabrica() {
   const [ganhou, setGanhou] = useState<ProdutoId | null>(null)
   const pode = !p.escolhido && p.moedas >= CUSTO_PRESENTE
   const livros = LIVROS_PRESENTE.filter((x) => x === p.escolhido || !tem(eu, x))
-  const outros = (escolhido: ProdutoId) => LIVROS_PRESENTE.filter((x) => x !== escolhido && !tem(eu, x) && PRODUTOS[x].checkoutUrl)
+  const outros = (escolhido: ProdutoId) => LIVROS_PRESENTE.filter((x) => x !== escolhido && ofertaDisponivel(eu, x))
   const faltam = diasQueFaltam(p)
 
   async function escolher(x: ProdutoId) {

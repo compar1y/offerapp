@@ -35,7 +35,8 @@ export function Leitor({ m, p: inicial }: { m: MaterialId; p: number }) {
           if (!it.isIntersecting) continue
           const p = Number((it.target as HTMLElement).dataset.p)
           setAtual(p)
-          history.replaceState({ t: 'ler', m, p }, '')
+          const st = history.state as { t?: string; m?: string } | null
+          if (st?.t === 'ler' && st.m === m) history.replaceState({ t: 'ler', m, p }, '')
           if (vistas.current.has(p)) continue
           vistas.current.add(p)
           if (m === 'ebook') evento('receita.aberta', { n: p })

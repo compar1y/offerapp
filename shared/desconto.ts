@@ -27,7 +27,7 @@ function extrasQueContam(compras: Linha[]) {
   const pagamentosDoKit = new Set(pagos.filter((c) => c.produto === 'kit').map((c) => c.pagamento_id).filter(Boolean))
   const extras = pagos
     .filter((c) => EXTRAS_DESCONTO.includes(c.produto as ProdutoId) && c.metodo !== 'presente' && !(c.pagamento_id && pagamentosDoKit.has(c.pagamento_id)))
-    .map((c) => ({ ...c, pagoEm: Date.parse(c.atualizado_em ?? c.criado_em) })) // a linha nasce 'pendente' no PIX; vira 'pago' na atualização
+    .map((c) => ({ ...c, pagoEm: Date.parse(c.criado_em) })) // criado_em: o webhook reescreve atualizado_em a cada reenvio, o que reabriria o prazo
     .sort((a, b) => a.pagoEm - b.pagoEm)
   return extras
 }

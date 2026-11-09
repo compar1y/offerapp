@@ -28,7 +28,7 @@ export function OfertaVideo() {
   const { voltar, evento, toast } = useApp()
   useEffect(() => { evento('oferta.vista', { produto: 'videoaulas', onde: 'pagina' }) }, [evento])
   const comprar = () => {
-    evento('oferta.clique', { produto: 'videoaulas' })
+    evento('oferta.clicada', { produto: 'videoaulas', onde: 'videoaulas' })
     if (VIDEOAULAS.checkoutUrl) window.open(VIDEOAULAS.checkoutUrl, '_blank', 'noopener')
     else toast('As videoaulas chegam em breve aqui no app. 🎬')
   }

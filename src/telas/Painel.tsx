@@ -5,7 +5,7 @@ import { MATERIAIS, PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { ETAPAS } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
 import { ganhaPresente, ofertaDisponivel, precoPresente, tem, useApp } from '../ctx'
-import { AvisoPresente, FaixaDesconto } from './PresenteDesconto'
+import { AvisoPresente, FaixaDesconto, useRelogio } from './PresenteDesconto'
 import { Suporte } from './Entrar'
 import { VIDEOAULAS } from './OfertaVideo'
 
@@ -45,6 +45,7 @@ export function Painel() {
   const compras = [...new Set(COMPRAS_EXTRAS.filter((p) => tem(eu, p)).flatMap((p) => PRODUTOS[p].libera))].filter((m) => eu.acesso.materiais.includes(m))
   const seus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro' && !compras.includes(m))
   const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
+  useRelogio(eu.acesso.desconto?.ate)
   const presente = extras.map((p) => precoPresente(eu, p)).find(Boolean) ?? null
   const clique = (botao: string) => evento('inicio.clique', { botao })
   const abrirVideoaulas = () => {

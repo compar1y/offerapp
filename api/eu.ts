@@ -16,7 +16,8 @@ export async function GET(req: Request): Promise<Response> {
     if (error) throw error
     if (acesso.produtos.length === 0) return json({ erro: 'Seu acesso foi encerrado. Fale com o suporte.' }, 403)
     await db().from('usuarias').update({ visto_em: new Date().toISOString() }).eq('email', email)
-    const presente = await marcarDiaEContar(email)
+    // as moedas são extra: se a contagem falhar, o app abre do mesmo jeito
+    const presente = await marcarDiaEContar(email).catch(() => ({ dias: 0, moedas: 0, escolhido: null }))
     return json({ email, perfil: data?.perfil ?? null, respostas: data?.respostas ?? null, avatar: data?.avatar ?? null, apelido: data?.apelido ?? '', estado: data?.estado && Object.keys(data.estado).length ? sanear(data.estado, hojeBR()) : null, acesso, presente })
   } catch (e) {
     return falha(e)

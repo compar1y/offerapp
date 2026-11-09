@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
 import { ganhaPresente, ofertaDisponivel, precoPresente, reais, tem, useApp } from '../ctx'
-import { AvisoPresente, BarraPresente, FaixaDesconto } from './PresenteDesconto'
+import { AvisoPresente, BarraPresente, FaixaDesconto, useRelogio } from './PresenteDesconto'
 import { EXTRAS } from './Painel'
 
 import { Capa } from './Materiais'
@@ -19,6 +19,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   const texto = p === 'kit' ? null : OFERTAS[p]
   const comprado = tem(eu, p)
   const pendente = eu.acesso.pendentes.includes(p)
+  useRelogio(eu.acesso.desconto?.ate) // re-renderiza a cada segundo enquanto o desconto vale; ao acabar, o preço normal volta
   const desc = precoPresente(eu, p)
 
   useEffect(() => {
