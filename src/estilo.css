@@ -226,7 +226,12 @@ body{font-size:17px}
 .grade-inicio .mini-capa{width:auto}
 .grade-inicio .mini-capa img{width:100%}
 .divisor-extras{margin:8px 0 -4px;font-size:15px;text-transform:uppercase;letter-spacing:.05em;color:var(--fita);text-align:center}
-.extras-card{border:2px solid var(--casca);background:var(--casca-clara)}
+.extras-card{position:relative;border:2px solid #E2A23B;background:linear-gradient(160deg,#3A2416 0%,#24160E 100%);color:#FBEFE3;box-shadow:0 0 0 4px rgba(226,162,59,.18),0 12px 28px rgba(46,30,20,.35);margin-top:10px;padding-top:26px}
+.extras-card h3{font-family:var(--display);color:#F3C468;font-size:22px;text-align:center}
+.sub-extras{margin:-6px 0 4px;text-align:center;font-size:15px;color:#E9D7C3}
+.selo-extras{position:absolute;top:-14px;left:50%;transform:translateX(-50%);white-space:nowrap;background:linear-gradient(90deg,#E2A23B,#F6D27A,#E2A23B);color:#2E1E14;font-weight:800;font-size:13px;letter-spacing:.04em;padding:5px 14px;border-radius:999px;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.extras-card .mini-capa{color:#FBEFE3}
+.grade-extras .mini-capa img{border:2px solid #E2A23B !important}
 .grade-extras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .grade-extras .mini-capa{width:auto}
 .grade-extras .mini-capa img{width:100%;box-shadow:0 6px 16px rgba(46,30,20,.2)}
