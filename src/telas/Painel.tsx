@@ -88,7 +88,7 @@ export function Painel() {
       )}
 
       {/* 3. bônus e livros que ela já tem, todos com capa */}
-      {(seus.length > 0 || extras.length > 0) && (
+      {seus.length > 0 && (
         <div className="card">
           <h3>Seus bônus e livros</h3>
           <div className="grade-inicio">
@@ -98,7 +98,15 @@ export function Painel() {
                 <span>{MATERIAIS[m].titulo.replace(/^Bônus \d+: /, '')}</span>
               </button>
             ))}
-            {/* extras: mesma cara dos outros; o toque leva à página de compra (pedido do Levi) */}
+          </div>
+        </div>
+      )}
+
+      {/* 4. extras: seção separada, mesma cara dos outros; o toque leva à página de compra (pedido do Levi) */}
+      {extras.length > 0 && (
+        <div className="card">
+          <h3>Mais livros da Fábrica</h3>
+          <div className="grade-inicio">
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
                 <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
