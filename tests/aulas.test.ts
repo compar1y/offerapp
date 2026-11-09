@@ -103,9 +103,11 @@ describe('produto Videoaulas', () => {
 
 describe('banco', () => {
   it('a tabela de compras aceita todos os produtos do catálogo', async () => {
-    const { readFileSync } = await import('node:fs')
+    const { readFileSync, readdirSync } = await import('node:fs')
     const { PRODUTOS } = await import('../shared/catalogo')
-    for (const arq of ['supabase/schema.sql', 'supabase/migracao-2026-11-09-videoaulas.sql']) {
+    // o schema e a migração mais nova
+    const ultima = readdirSync('supabase').filter((f) => f.startsWith('migracao-')).sort().pop()!
+    for (const arq of ['supabase/schema.sql', `supabase/${ultima}`]) {
       const sql = readFileSync(arq, 'utf8')
       const lista = sql.match(/check \(produto in \(([^)]*)\)\)/)![1]
       for (const p of Object.keys(PRODUTOS)) expect(lista, `${arq}: ${p}`).toContain(`'${p}'`)

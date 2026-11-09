@@ -4,7 +4,7 @@
 create table if not exists compras (
   id bigint generated always as identity primary key,
   email text not null,
-  produto text not null check (produto in ('kit','recheios','encomenda','primeira','videoaulas')),
+  produto text not null check (produto in ('kit','recheios','encomenda','primeira','videoaulas','etiquetas')),
   status text not null check (status in ('pago','pendente','recusado','estornado')),
   pagamento_id text not null,
   checkout_id text,

@@ -7,6 +7,7 @@ import { EXTRAS } from './Painel'
 
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
+import { FotoEtiquetas, VitrineEtiquetas } from './Etiquetas'
 
 /** página curta antes do checkout (TSL interna). O pagamento abre em outra aba; ao voltar, o app confere se liberou. */
 export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
@@ -76,7 +77,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
             <button className="btn comprar-pulsa" onClick={() => trocar({ t: 'painel' })}>🎁 Ver meu desconto</button>
           </>
         )}
-        <button className={presente ? 'btn leve' : 'btn'} onClick={() => trocar({ t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>
+        <button className={presente ? 'btn leve' : 'btn'} onClick={() => trocar(p === 'etiquetas' ? { t: 'etiquetas' } : { t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>
         <button className="link" onClick={() => trocar({ t: 'painel' })}>Voltar ao Início</button>
       </div>
     )
@@ -89,7 +90,12 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'Material extra, vendido à parte'}</p>
       <h1>{texto.gancho}</h1>
       <div className="card oferta">
-        {mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
+        {p === 'etiquetas' ? (
+          <>
+            <FotoEtiquetas />
+            <VitrineEtiquetas />
+          </>
+        ) : mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
         {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} de={reais(prod.precoCentavos)} por={reais(desc.precoCentavos)} />}
