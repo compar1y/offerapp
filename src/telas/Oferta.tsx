@@ -21,6 +21,8 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   }, [p, origem, evento])
 
   if (!texto) return null
+  // ofertas com downsell ganham o botão vermelho de recusa logo abaixo do botão de compra
+  const temDownsell = p === 'encomenda' && ofertaDisponivel(eu, 'primeira') && !estado.ofertasVistas.includes('downsell-primeira')
 
   async function comprar() {
     evento('oferta.clicada', { produto: p, onde: origem })
@@ -85,11 +87,14 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
             <button className="link" onClick={comprar}>Abrir o pagamento de novo</button>
           </>
         ) : (
-          <button className="btn comprar-pulsa" onClick={comprar}>{texto.botao}</button>
+          <>
+            <button className="btn comprar-pulsa" onClick={comprar}>{texto.botao}</button>
+            {temDownsell && <button className="btn recusar" onClick={agoraNao}>Não, obrigada</button>}
+          </>
         )}
         <p className="sub" style={{ fontSize: 13 }}>{texto.garantia} {import.meta.env.VITE_DEMO === '1' ? 'Na prévia, o botão libera na hora, sem pagar.' : 'O pagamento abre numa página segura e o app continua aqui.'}</p>
       </div>
-      <button className="link" onClick={agoraNao}>Agora não</button>
+      {!temDownsell && <button className="link" onClick={agoraNao}>Agora não</button>}
     </>
   )
 }
