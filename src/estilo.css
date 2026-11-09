@@ -239,3 +239,8 @@ body{font-size:17px}
 .btn-extra{display:block;text-align:center;background:var(--pinheiro);color:#fff;font-weight:800;font-size:15px;border-radius:12px;padding:10px 8px;box-shadow:0 4px 0 var(--pinheiro-sombra);animation:liberar 1.4s ease-in-out infinite}
 .selo-extras .estrela{color:#C9333F;font-size:16px;margin-right:2px;text-shadow:0 1px 0 rgba(255,255,255,.4)}
 .extras-card .btn-extra{background:linear-gradient(90deg,#E2A23B,#F6D27A,#E2A23B);color:#2E1E14;box-shadow:0 4px 0 #9A6A1E}
+.faixa-recheio{display:flex;align-items:center;gap:10px;width:100%;margin-top:8px;padding:10px 14px;border-radius:14px;border:2px solid #E2A23B;background:linear-gradient(160deg,#3A2416,#24160E);color:#FBEFE3;font:inherit;text-align:left;cursor:pointer;box-shadow:0 0 0 3px rgba(226,162,59,.15)}
+.faixa-recheio b{color:#F3C468;font-size:20px}
+.faixa-recheio span{display:flex;flex-direction:column;flex:1;font-weight:800;font-size:16px;line-height:1.25}
+.faixa-recheio small{font-weight:600;font-size:14px;color:#F3C468}
+.faixa-recheio i{font-style:normal;font-size:26px;color:#F3C468}

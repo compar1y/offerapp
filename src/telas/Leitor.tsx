@@ -3,7 +3,7 @@ import { MATERIAIS, type MaterialId } from '../../shared/catalogo'
 import { RECEITAS } from '../../shared/receitas'
 import { fazerReceita } from '../../shared/jogo'
 import { urlPagina } from '../api'
-import { temMaterial, useApp } from '../ctx'
+import { ofertaDisponivel, temMaterial, useApp } from '../ctx'
 
 /** páginas em pé têm 1054×1492; o Caderninho é deitado. Serve só para reservar o espaço antes da imagem chegar. */
 const proporcao = (m: MaterialId) => (m === 'caderninho' ? '1.414 / 1' : '1054 / 1492')
@@ -13,7 +13,8 @@ const proporcao = (m: MaterialId) => (m === 'caderninho' ? '1.414 / 1' : '1054 /
  * As imagens só carregam quando chegam perto da tela (loading="lazy"). Abre já na página pedida.
  */
 export function Leitor({ m, p: inicial }: { m: MaterialId; p: number }) {
-  const { eu, estado, voltar, mudar, evento, toast } = useApp()
+  const { eu, estado, ir, voltar, mudar, evento, toast } = useApp()
+  const mostrarRecheios = m === 'ebook' && ofertaDisponivel(eu, 'recheios')
   const mat = MATERIAIS[m]
   const alvo = Math.min(Math.max(1, inicial), mat.paginas)
   const [atual, setAtual] = useState(alvo)
@@ -97,6 +98,19 @@ export function Leitor({ m, p: inicial }: { m: MaterialId; p: number }) {
                   }}
                 >
                   {feita ? `Receita ${receita.n} feita ✓` : `Fiz a receita ${receita.n} ✓`}
+                </button>
+              )}
+              {receita && mostrarRecheios && (
+                <button
+                  className="faixa-recheio"
+                  onClick={() => {
+                    evento('inicio.clique', { botao: 'extra.recheios', origem: 'fim-receita', n: receita.n })
+                    ir({ t: 'oferta', p: 'recheios', origem: 'receita' })
+                  }}
+                >
+                  <b aria-hidden="true">★</b>
+                  <span>Quer rechear este panetone?<small>Veja os 10 Recheios que Mais Vendem</small></span>
+                  <i aria-hidden="true">›</i>
                 </button>
               )}
             </div>
