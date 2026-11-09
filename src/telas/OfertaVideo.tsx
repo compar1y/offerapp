@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { cena } from '../imagens'
 import { reais, useApp } from '../ctx'
+import { PRODUTOS } from '../../shared/catalogo'
 import { podeVerAulas } from '../aulas'
 
 /**
@@ -12,7 +13,8 @@ export const VIDEOAULAS = {
   titulo: 'Videoaulas: veja cada passo sendo feito',
   nome: 'Videoaulas da Fábrica',
   precoCentavos: 1990,
-  checkoutUrl: '' as string,
+  // o mesmo link de shared/catalogo.ts (PRODUTOS.videoaulas)
+  checkoutUrl: PRODUTOS.videoaulas.checkoutUrl as string,
   gancho: 'Ler a receita é bom. Ver a massa sendo feita, de perto, é o que tira a dúvida na hora.',
   itens: [
     'Vídeos curtos de cada etapa: sova, ponto da massa, modelagem e forno',

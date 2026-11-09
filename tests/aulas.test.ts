@@ -57,16 +57,44 @@ describe('aula no jogo', () => {
 })
 
 describe('produto Videoaulas', () => {
-  it('existe no catálogo sem checkout inventado e não libera PDF', async () => {
+  it('no catálogo com o checkout e o produto da Wiapy, sem liberar PDF', async () => {
     const { PRODUTOS } = await import('../shared/catalogo')
     expect(PRODUTOS.videoaulas.precoCentavos).toBe(1990)
-    expect(PRODUTOS.videoaulas.checkoutUrl).toBe('')
-    expect(PRODUTOS.videoaulas.checkoutIds).toEqual([])
+    expect(PRODUTOS.videoaulas.checkoutUrl).toBe('https://pay.wiapy.com/6af1e13a04a3ce9b11749472')
     expect(PRODUTOS.videoaulas.libera).toEqual([])
   })
-  it('nenhum checkout cai nas Videoaulas por engano', async () => {
-    const { produtoDoCheckout } = await import('../server/wiapy')
-    expect(produtoDoCheckout('')).toBeNull()
+  const pedido = (checkoutId: string, produtoId: string, status = 'paid') => ({
+    customer: { email: 'ana@exemplo.com' },
+    checkout: { id: checkoutId, amount: 1990, orderbump: [] },
+    payment: { id: 'pay_v', status, amount: 1990, payment_method: 'pix' },
+    products: [{ id: produtoId, title: 'Aulas em Vídeo: Panetone e Chocotone Passo a Passo' }],
+  })
+  it('webhook libera as Videoaulas pelo checkout', async () => {
+    const { lerPedido } = await import('../server/wiapy')
+    expect(lerPedido(pedido('6af1e13a04a3ce9b11749472', 'x')).produtos).toEqual(['videoaulas'])
+  })
+  it('webhook libera as Videoaulas pelo id do produto quando o checkout vem com outro id', async () => {
+    const { lerPedido } = await import('../server/wiapy')
+    const p = lerPedido(pedido('id-interno-desconhecido', '6af1e083371815cbecec6d54'))
+    expect(p.produtos).toEqual(['videoaulas'])
+    expect(p.status).toBe('pago')
+  })
+  it('PIX pendente não libera; outros checkouts não viram Videoaulas', async () => {
+    const { lerPedido, produtoDoCheckout } = await import('../server/wiapy')
+    expect(lerPedido(pedido('6af1e13a04a3ce9b11749472', 'x', 'waiting_payment')).status).not.toBe('pago')
+    expect(lerPedido(pedido('outro', 'outro')).produtos).toEqual([])
     expect(produtoDoCheckout('r2PHgYwK6CVi')).toBe('kit')
+  })
+})
+
+describe('banco', () => {
+  it('a tabela de compras aceita todos os produtos do catálogo', async () => {
+    const { readFileSync } = await import('node:fs')
+    const { PRODUTOS } = await import('../shared/catalogo')
+    for (const arq of ['supabase/schema.sql', 'supabase/migracao-2026-11-09-videoaulas.sql']) {
+      const sql = readFileSync(arq, 'utf8')
+      const lista = sql.match(/check \(produto in \(([^)]*)\)\)/)![1]
+      for (const p of Object.keys(PRODUTOS)) expect(lista, `${arq}: ${p}`).toContain(`'${p}'`)
+    }
   })
 })

@@ -48,6 +48,8 @@ export interface Produto {
   checkoutUrl: string
   /** ids que podem chegar em checkout.id no webhook (código público e id interno) */
   checkoutIds: string[]
+  /** ids do produto na Wiapy (products[].id): reconhecem a compra quando o checkout.id do webhook vier com outro id */
+  produtoIds?: string[]
 }
 
 export const PRODUTOS: Record<ProdutoId, Produto> = {
@@ -90,9 +92,10 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     precoCentavos: 1990,
     // as 25 aulas em vídeo (shared/aulas.ts). Não libera PDF: o acesso às aulas sai de ter este produto (src/aulas.ts, podeVerAulas).
     libera: [],
-    // sem checkout ainda: o Levi decide. Com o link, preencher aqui e em VIDEOAULAS.checkoutUrl (src/telas/OfertaVideo.tsx), e os ids abaixo.
-    checkoutUrl: '',
-    checkoutIds: [],
+    // "Aulas em Vídeo: Panetone e Chocotone Passo a Passo" na Wiapy (decisão do Levi, 09/11)
+    checkoutUrl: 'https://pay.wiapy.com/6af1e13a04a3ce9b11749472',
+    checkoutIds: ['6af1e13a04a3ce9b11749472'],
+    produtoIds: ['6af1e083371815cbecec6d54'],
   },
 }
 

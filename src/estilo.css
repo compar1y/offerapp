@@ -349,3 +349,6 @@ body{font-size:17px}
 /* no player, o aviso de moedas desce do topo para não cobrir os botões de baixo */
 .player ~ .toast{bottom:auto;top:calc(76px + env(safe-area-inset-top,0px))}
 @media (prefers-reduced-motion:reduce){.player-grande{transition:none}.player-gira{animation-duration:3s}}
+.player-titulo{flex:1}
+.player-moedas{flex:none;margin-left:auto;background:rgba(255,255,255,.16);border:2px solid var(--casca);border-radius:999px;padding:4px 10px;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.player-ja small{font-size:13px;opacity:.9;margin-left:2px}

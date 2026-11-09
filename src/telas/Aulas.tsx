@@ -197,6 +197,7 @@ function Player({ file }: { file: string }) {
           <small>{aula.modulo.titulo} · aula {posNoModulo} de {aula.modulo.aulas.length}</small>
           <strong>{aula.titulo}</strong>
         </div>
+        <span className="player-moedas" title="Moedas Douradas" aria-label={`${estado.moedas} Moedas Douradas`}>🪙 {estado.moedas}</span>
       </div>
 
       <div className="player-palco">
@@ -278,7 +279,7 @@ function Player({ file }: { file: string }) {
           {vista ? (
             <span className="player-vista" role="status">✓ Assistida</span>
           ) : (
-            <button className="player-ja" onClick={() => marcar('botao')}>Já assisti</button>
+            <button className="player-ja" onClick={() => marcar('botao')}>Já assisti <small>+{MOEDAS.aula} 🪙</small></button>
           )}
           <button className={`player-nav${acabou && prox ? ' proxima' : ''}`} onClick={() => ir(prox)} disabled={!prox} aria-label={prox ? `Próxima aula: ${prox.titulo}` : 'Esta é a última aula'}>Próxima ›</button>
         </div>

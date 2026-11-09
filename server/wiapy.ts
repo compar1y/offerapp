@@ -87,7 +87,8 @@ export function lerPedido(corpo: unknown): Pedido {
   if (!corpo || typeof corpo !== 'object') return base
   if (pagamento === null) return { ...base, tipo: 'abandono' }
 
-  const principal = produtoDoCheckout(checkoutId)
+  // pelo checkout; se o checkout.id vier com outro id, pelo id do produto (products[].id) de quem tem produtoIds no catálogo
+  const principal = produtoDoCheckout(checkoutId) ?? Object.values(PRODUTOS).find((p) => p.produtoIds?.some((id) => prods.some((x) => x.id === id)))?.id ?? null
   const produtos: ProdutoId[] = principal ? [principal] : []
   const valor = centavos(pagamento.amount) ?? centavos(checkout.amount)
 
