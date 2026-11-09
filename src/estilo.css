@@ -257,3 +257,13 @@ body{font-size:17px}
 @keyframes pulsa-dinheiro{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
 .dinheiro-pulsa{display:inline-block;animation:pulsa-dinheiro 1.2s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.dinheiro-pulsa{animation:none}}
+/* bloco do upsell de videoaulas: mesma largura da grade dos 2 cards */
+.video-upsell{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
+.video-tela{position:relative;display:block;width:100%;aspect-ratio:16/9;padding:0;border:2px solid #E2A23B;border-radius:14px;overflow:hidden;background:#000;cursor:pointer}
+.video-tela img{width:100%;height:100%;object-fit:cover;filter:brightness(.6)}
+.video-tela .play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:68px;height:68px;border-radius:50%;display:grid;place-items:center;padding-left:6px;font-size:28px;color:#2E1E14;background:linear-gradient(135deg,#F6D27A,#E2A23B);box-shadow:0 0 0 8px rgba(246,210,122,.25),0 8px 20px rgba(0,0,0,.4);animation:pulsa-dinheiro 1.6s ease-in-out infinite}
+.video-tela .video-titulo{position:absolute;left:0;right:0;bottom:0;padding:22px 12px 10px;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#FBEFE3;font-weight:800;font-size:16px;text-align:left}
+.btn-video{border:0;font-family:inherit;cursor:pointer;width:100%}
+.video-tela .play{top:40%}
+.video-tela .video-titulo{font-family:inherit;font-size:15px;padding-top:28px}
+.btn-video{font:inherit;font-weight:800;font-size:16px}

@@ -29,17 +29,29 @@ export function proximaLicao(comecaEm: number, feitas: string[]) {
   return null
 }
 
+/** bloco do upsell de videoaulas (produto ainda não existe: sem checkout, o toque só avisa "em breve") */
+export const VIDEOAULAS = {
+  mostrar: true,
+  titulo: 'Videoaulas: veja cada passo sendo feito',
+  checkoutUrl: '' as string,
+}
+
 /** extras vendidos à parte, sempre com preço e a palavra "extra" (aula 21 dicas, dica 6) */
 export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda']
 
 /** Início = área de membros: o que ela comprou primeiro, extras com preço embaixo. Uma tela só. */
 export function Painel() {
-  const { eu, estado, ir, evento, recarregar, sair } = useApp()
+  const { eu, estado, ir, evento, recarregar, sair, toast } = useApp()
   const temReceitas = eu.acesso.materiais.includes('ebook')
   const proxReceita = RECEITAS.find((r) => !estado.receitas.includes(r.n)) ?? RECEITAS[0]
   const seus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro')
   const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
   const clique = (botao: string) => evento('inicio.clique', { botao })
+  const abrirVideoaulas = () => {
+    clique('extra.videoaulas')
+    if (VIDEOAULAS.checkoutUrl) window.open(VIDEOAULAS.checkoutUrl, '_blank', 'noopener')
+    else toast('As videoaulas chegam em breve aqui no app. 🎬')
+  }
 
   useEffect(() => {
     if (extras.length) evento('oferta.vista', { produto: extras.join(','), onde: 'inicio' })
@@ -102,11 +114,21 @@ export function Painel() {
       )}
 
       {/* 4. extras: seção separada, mesma cara dos outros; o toque leva à página de compra (pedido do Levi) */}
-      {extras.length > 0 && (
+      {(extras.length > 0 || VIDEOAULAS.mostrar) && (
         <div className="card extras-card">
           <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Seleção especial</span>
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas. <span className="dinheiro-pulsa" aria-hidden="true">💰</span></p>
+          {VIDEOAULAS.mostrar && (
+            <div className="video-upsell">
+              <button className="video-tela" aria-label="Assistir às videoaulas" onClick={abrirVideoaulas}>
+                <img src={cena('receitas')} alt="" loading="lazy" />
+                <span className="play" aria-hidden="true">▶</span>
+                <span className="video-titulo">{VIDEOAULAS.titulo}</span>
+              </button>
+              <button className="btn-extra btn-video" onClick={abrirVideoaulas}>▶ Assistir às aulas</button>
+            </div>
+          )}
           <div className="grade-extras">
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
