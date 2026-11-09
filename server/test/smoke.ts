@@ -1366,7 +1366,7 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
       const b = G.pickMissions(d, { bump: true, conta: true, extra: true })
       assert.ok(b.every((id) => G.missionById(id)))
     }
-    const union = new Set(Array.from({ length: 40 }, (_, i) => G.pickMissions(G.addDays(T0, i), { bump: true, conta: true, extra: true })).flat())
+    const union = new Set(Array.from({ length: 40 }, (_, i) => G.pickMissions(G.addDays(T0, i), { bump: true, conta: true, extra: true, aula: true })).flat())
     assert.equal(union.size, G.MISSIONS.length, 'o rodízio passa por todas as missões')
     assert.equal(G.PF.missao, 4)
     assert.equal(G.MISSION_MAX, 18)
@@ -1622,6 +1622,61 @@ ok('combo "Biblioteca completa": desligado e sem preço, soma automática, risca
     const ev = await eventApi.POST(new Request('http://x/api/event', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'catalog.view', props: {} }) }))
     assert.ok(ev.status < 500)
     ok('ranking no servidor (dentro de api/event.ts): 401 sem sessão, 405, 409 sem entrar, apelido único, lista só com 10 reais, sem e-mail na resposta, PF só sobe (0 a 420, semana atual), mínimo configurável, sair apaga')
+  }
+}
+
+// ---------------------------------------------------------------- aulas em vídeo: lista e pontos
+{
+  const G = await import('../../shared/game.js')
+  const A = await import('../../shared/aulas.js')
+  const T0 = '2026-11-09'
+  const pfOf = (st: import('../../shared/game.js').GameState, pre: string) => st.pfLog.filter((e) => e.k.startsWith(pre)).reduce((t, e) => t + e.pf, 0)
+  const FILES = '06-PizzaPaoePasta.mp4, 07-PizzaPaoePasta.mp4, 08-TamiresMota.mp4, 09-testereceitas.mp4, 12-testereceitas.mp4, 13-LeodeniceCamargo.mp4, 14-receitasdepeso.mp4, 15-minharotinasemgluten.mp4, 16-paesdojoao9725.mp4, 17-porflaviamartins.mp4, 19-Celiane.mp4, 21-bonasseoficial.mp4, 22-bonasseoficial.mp4, 23-sabaru_cs.mp4, 27-AchadONsecreto.mp4, 28-Receitasnaotaobemdescritas-Gla.mp4, 33-cameelam.mp4, 34-CanalRodrigoZilio.mp4, 35-Comerebomdemais.mp4, 42-receitas3s480.mp4, 45-LarissaSuellenn.mp4, 46-DicaseReceitasNoemiDuarte.mp4, 48-NathyeEltonof.mp4, 49-Elianekovalsk.mp4, 50-cantinhogourmetdalu7639.mp4'.split(', ')
+
+  // 40. lista: os 25 arquivos, cada um uma vez, títulos sem marca/canal/inglês
+  {
+    assert.equal(A.AULAS.length, 25)
+    assert.deepEqual([...A.AULAS.map((a) => a.arquivo)].sort(), [...FILES].sort(), 'exatamente os 25 arquivos')
+    assert.ok(A.MODULOS.every((m) => m.aulas.length > 0))
+    const txt = A.AULAS.map((a) => `${a.titulo} ${a.sub} ${a.modulo.titulo} ${a.modulo.lead}`).join(' ').toLowerCase()
+    for (const bad of ['bonasse', 'youtube', 'canal', 'tamires', 'celiane', 'zilio', 'larissa', 'noemi', 'eliane', 'flavia', 'tutorial', 'chef', 'mix', 'cookies', 'brownie', 'top']) assert.ok(!txt.includes(bad), `sem "${bad}" nos títulos`)
+    assert.ok(A.AULAS.every((a) => a.dur > 0 && a.dur < 120))
+    assert.equal(A.durLabel(12), '12 s')
+    assert.equal(A.durLabel(106), '1 min 46 s')
+    assert.equal(A.durLabel(60), '1 min')
+    ok('aulas em vídeo: os 25 arquivos certos, cada um em um módulo, títulos sem marca, canal ou inglês, duração legível')
+  }
+
+  // 41. pontos da aula: +3 uma vez por aula, no máximo 3 por dia, dentro do teto; missão "Assista uma aula" só com aulas
+  {
+    let st = G.emptyGame(T0)
+    const c = (arquivo: string, today = T0) => ({ today, arquivo, title: arquivo, aulas: true })
+    const r1 = G.onAulaAssistida(st, c(FILES[0]))
+    assert.equal(pfOf(r1.st, 'aula:'), G.PF.aula)
+    assert.equal(G.PF.aula, 3)
+    const again = G.onAulaAssistida(r1.st, c(FILES[0]))
+    assert.equal(pfOf(again.st, 'aula:'), 3, 'rever a mesma aula não paga de novo')
+    assert.equal(G.onAulaAssistida(G.onAulaAssistida(r1.st, c(FILES[0], G.addDays(T0, 1))).st, c(FILES[0], G.addDays(T0, 2))).st.pfLog.filter((e) => e.k.startsWith('aula:')).length, 1, 'nem em outro dia')
+    st = r1.st
+    for (const f of FILES.slice(1, 6)) st = G.onAulaAssistida(st, c(f)).st
+    assert.equal(pfOf(st, 'aula:'), G.AULA_POR_DIA * G.PF.aula, 'no máximo 3 aulas pagas por dia')
+    const amanha = G.onAulaAssistida(st, c(FILES[6], G.addDays(T0, 1))).st
+    assert.equal(pfOf(amanha, 'aula:'), (G.AULA_POR_DIA + 1) * G.PF.aula, 'dia novo volta a contar')
+    // teto de 60 vale para tudo
+    const cheio = { ...G.emptyGame(T0), pf: 60, pfLog: [{ d: T0, k: 'x', pf: 60, txt: 'x' }] }
+    assert.equal(pfOf(G.onAulaAssistida(cheio, c(FILES[0])).st, 'aula:'), 0)
+    // missão do dia
+    const nopool = Array.from({ length: 40 }, (_, i) => G.pickMissions(G.addDays(T0, i), { bump: true, conta: true, extra: true })).flat()
+    assert.ok(!nopool.includes('aula'), 'sem aulas disponíveis, a missão não aparece')
+    assert.ok(Array.from({ length: 40 }, (_, i) => G.pickMissions(G.addDays(T0, i), { bump: false, conta: false, extra: false, aula: true })).flat().includes('aula'))
+    const m = { ...G.emptyGame(T0), missoes: { d: T0, itens: ['aula', 'foto', 'nota'], feitos: [], todas: false } }
+    const m1 = G.onAulaAssistida(m, c(FILES[0]))
+    assert.equal(pfOf(m1.st, 'missao:'), G.PF.missao)
+    const m2 = G.onAulaAssistida(m1.st, c(FILES[0]))
+    assert.equal(pfOf(m2.st, 'missao:'), G.PF.missao, 'missão paga uma vez por dia')
+    assert.equal(G.onAulaAssistida(m2.st, c(FILES[0])).st, m2.st, 'sem nada novo, o estado não muda')
+    assert.ok(G.pfOnDay(m2.st, T0) <= G.DAILY_CAP)
+    ok('aulas no jogo: +3 PF uma vez por aula, até 3 aulas por dia, teto de 60, missão "Assista uma aula" só quando há aulas e uma vez por dia')
   }
 }
 

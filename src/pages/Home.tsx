@@ -13,10 +13,13 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { GameEntry, MissionsCard, NextUnlockCard, WelcomeBack } from '../components/Game'
 import { useGame } from '../lib/game'
+import { AULAS, AULAS_ON } from '../data/aulas'
+import { useAulas, watchedCount } from '../lib/aulas'
 
 export function Home() {
   const s = useStore()
   const game = useGame()
+  const aulasVistas = watchedCount(useAulas())
   const { seen, total } = progress(s)
   const main = ITEM_BY_ID.main
   const bonuses = ITEMS.filter((i) => i.kind === 'bonus' && !i.extra)
@@ -106,6 +109,15 @@ export function Home() {
               </div>
             ))}
           </Carousel>
+        </Section>
+      )}
+
+      {hasMain && (
+        <Section title="Aulas em vídeo" lead={`${AULAS.length} aulas curtas para ver no celular: panetone, chocotone, recheios e salgado.`}>
+          <ProgressBar seen={aulasVistas} total={AULAS.length} noun="aulas assistidas" />
+          <Link className="btn btn-open btn-block" to="/aulas">
+            {!AULAS_ON ? 'Ver a lista de aulas' : aulasVistas > 0 ? 'Continuar as aulas' : 'Assistir às aulas'}
+          </Link>
         </Section>
       )}
 

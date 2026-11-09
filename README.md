@@ -204,6 +204,16 @@ Textos completos em `COMUNICACAO-OFERTAS.md` (seção "Gamificação v3") e regr
 - **Flags:** `VITE_RANK_ENABLED=false` esconde o ranking (padrão ligado); `VITE_CATALOG_ENABLED` e `VITE_CALC_ENABLED` seguem como antes (a barra e as missões NÃO dependem do catálogo). Variável de servidor: `RANK_MIN_PARTICIPANTS`.
 - **Decisão sobre "ranking e diário fora do modo sem pressão":** no modo sem pressão (e com o jogo desligado) o ranking e o diário somem das telas e as rotas voltam para `/fornada`; os dados ficam guardados e voltam quando a cliente sair do modo. Sair do ranking é outro botão.
 
+## Aulas em vídeo (`/aulas`, `/aulas/:arquivo`)
+
+- **O que é:** 25 aulas curtas, verticais 9:16, sem rosto, em 4 módulos (Panetone tradicional, Chocotone, Recheios e versões especiais, Panetone salgado). Só para quem tem o kit (`main`). A entrada fica na Início, em "Aulas em vídeo".
+- **Lista:** `shared/aulas.ts` (título, linha curta, duração e o nome exato do `.mp4`). A ordem da lista é a ordem de "Próxima" e "Anterior".
+- **Vídeos:** referenciados só pelo nome do arquivo. Sem YouTube e sem embed. O endereço é `VITE_AULAS_VIDEO_BASE_URL` + `/` + nome (`src/data/aulas.ts`). Com a base vazia, a lista aparece e o player mostra "vídeo sendo preparado". Nenhum `.mp4` vai para o git.
+- **Player** (`src/pages/Aulas.tsx`): tela cheia no celular, botão grande de assistir e pausar, barra arrastável, anterior e próxima, "Já assisti", e retoma de onde parou.
+- **Progresso:** fica no aparelho, em `panetone-aulas:v1:<email>` = `{ [arquivo]: { progressSec, watched, updatedAt } }` (`src/lib/aulas.ts`).
+- **Minha fornada:** aula assistida (chegou ao fim ou tocou em "Já assisti") vale +3 PF uma vez por aula, no máximo 3 aulas pagas por dia, dentro do teto de 60 (`onAulaAssistida` em `shared/game.ts`, `gameAulaAssistida` em `src/lib/game.ts`). A missão do dia "Assista uma aula" só entra no rodízio quando os vídeos estão hospedados. Nada fica trancado por ponto.
+- **Testar no celular sem publicar:** copie os `.mp4` para `public/aulas-teste/` (ignorada pelo git), crie `.env.local` com `VITE_AULAS_VIDEO_BASE_URL=./aulas-teste` e rode `npm run dev -- --host`. Abra no celular o endereço "Network" que aparece no terminal, com o celular no mesmo Wi-Fi, e entre com qualquer e-mail e o código `123456`.
+
 ## Estados de compra e liberação
 
 | `payment.status` (Wiapy) | Estado no app | Efeito |

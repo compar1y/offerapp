@@ -135,13 +135,13 @@ export function SupportButton() {
   )
 }
 
-export function ProgressBar({ seen, total }: { seen: number; total: number }) {
+export function ProgressBar({ seen, total, noun = 'materiais vistos' }: { seen: number; total: number; noun?: string }) {
   const pct = total ? Math.round((seen / total) * 100) : 0
   return (
-    <div className="progress" role="group" aria-label={`${seen} de ${total} materiais vistos`}>
+    <div className="progress" role="group" aria-label={`${seen} de ${total} ${noun}`}>
       <div className="progress-label">
         <strong>
-          {seen} de {total} materiais vistos
+          {seen} de {total} {noun}
         </strong>
         <span>{pct}%</span>
       </div>

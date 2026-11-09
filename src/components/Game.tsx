@@ -520,6 +520,7 @@ const MISSION_TO: Record<string, string> = {
   ingr: '/produto/main',
   fav: '/produto/main',
   socorro: '/produto/bump',
+  aula: '/aulas',
 }
 export function MissionsCard() {
   const st = useGame()

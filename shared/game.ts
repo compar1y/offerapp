@@ -42,8 +42,10 @@ export const PF = {
   secreto: 5, // selo surpresa (uma vez cada)
   constancia: 10, // selo surpresa de 14 dias
   venda1: 10, // primeira venda anotada no diário (uma vez)
+  aula: 3, // aula em vídeo assistida até o fim ou marcada "Já assisti", uma vez por aula (máx. 3 aulas por dia)
 } as const
 export const CONTA_POR_DIA = 2
+export const AULA_POR_DIA = 3
 export const DAILY_CAP = 60
 export const WEEKLY_CHALLENGE_MAX = 3 * PF.desafio + PF.desafioTodos // 90
 export const DELIVERED_PER_DAY = 3
@@ -505,6 +507,7 @@ export interface BaseCtx {
   hasBump?: boolean
   contaOk?: boolean // pode fazer conta na Conta da Fornada (comprou ou ainda tem a rodada grátis)
   hour?: number // hora local (0 a 23) de quando a cliente marcou; só os selos de horário usam
+  aulas?: boolean // as aulas em vídeo estão disponíveis (tem o kit e os vídeos estão hospedados)
 }
 export interface DoneCtx extends BaseCtx {
   item: string
@@ -719,7 +722,7 @@ export interface MissionDef {
   id: string
   ev: string
   txt: string
-  need?: 'conta' | 'bump' | 'extra'
+  need?: 'conta' | 'bump' | 'extra' | 'aula'
 }
 export const MISSIONS: MissionDef[] = [
   { id: 'feita', ev: 'feita', txt: 'Faça uma receita e marque "Fiz essa"' },
@@ -730,17 +733,18 @@ export const MISSIONS: MissionDef[] = [
   { id: 'ingr', ev: 'ingr', txt: 'Separe os ingredientes antes de começar uma receita' },
   { id: 'fav', ev: 'fav', txt: 'Marque uma receita como favorita' },
   { id: 'socorro', ev: 'socorro', txt: 'Use uma Ficha de Socorro e conte se resolveu', need: 'bump' },
+  { id: 'aula', ev: 'aula', txt: 'Assista uma aula em vídeo', need: 'aula' },
 ]
 export const missionById = (id: string): MissionDef | undefined => MISSIONS.find((m) => m.id === id)
 export const MISSION_MAX = 3 * PF.missao + PF.missaoTodas // 18 PF por dia, sempre dentro do teto de 60
-export function pickMissions(today: string, can: { bump: boolean; conta: boolean; extra: boolean }): string[] {
-  const pool = MISSIONS.filter((m) => m.need !== 'bump' || can.bump).filter((m) => m.need !== 'conta' || can.conta).filter((m) => m.need !== 'extra' || can.extra)
+export function pickMissions(today: string, can: { bump: boolean; conta: boolean; extra: boolean; aula?: boolean }): string[] {
+  const pool = MISSIONS.filter((m) => m.need !== 'bump' || can.bump).filter((m) => m.need !== 'conta' || can.conta).filter((m) => m.need !== 'extra' || can.extra).filter((m) => m.need !== 'aula' || !!can.aula)
   const n = pool.length
   const step = n <= 4 ? 1 : Math.ceil(n / 3)
   const start = dayNum(today) % n
   return [0, 1, 2].map((i) => pool[(start + i * step) % n].id)
 }
-const canMissions = (st: GameState, c: BaseCtx) => ({ bump: !!c.hasBump, conta: !!c.contaOk, extra: EXTRAS.some((e) => extraUnlocked(e, st)) })
+const canMissions = (st: GameState, c: BaseCtx) => ({ bump: !!c.hasBump, conta: !!c.contaOk, extra: EXTRAS.some((e) => extraUnlocked(e, st)), aula: !!c.aulas })
 function ensureDay(st: GameState, c: BaseCtx): void {
   if (st.missoes?.d === c.today) return
   st.missoes = { d: c.today, itens: pickMissions(c.today, canMissions(st, c)), feitos: [], todas: false }
@@ -778,6 +782,18 @@ export function onExtraAberto(inp: GameState, c: BaseCtx): Res {
   const msgs: string[] = []
   ensureDay(st, c)
   missionEv(st, msgs, c.today, 'extra')
+  return msgs.length ? { st, msgs } : { st: inp, msgs }
+}
+
+/** aula em vídeo assistida (chegou ao fim ou a cliente tocou em "Já assisti"): +3 PF uma vez por aula, no máximo 3 aulas pagas por dia,
+ * dentro do teto de 60. Rever a mesma aula não paga de novo, mas cumpre a missão do dia "Assista uma aula". Nada fica trancado por ponto. */
+export function onAulaAssistida(inp: GameState, c: BaseCtx & { arquivo: string; title: string }): Res {
+  const st = clone(inp)
+  const msgs: string[] = []
+  ensureDay(st, c)
+  const k = `aula:${c.arquivo}`
+  if (!hasOnce(st, k) && countKey(st, c.today, 'aula:') < AULA_POR_DIA) award(st, msgs, c.today, k, PF.aula, `Aula assistida: ${c.title}`)
+  missionEv(st, msgs, c.today, 'aula')
   return msgs.length ? { st, msgs } : { st: inp, msgs }
 }
 

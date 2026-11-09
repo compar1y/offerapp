@@ -34,3 +34,7 @@ pdfs-app/
 *.pdf
 !public/demo/amostra-modo-demonstracao.pdf
 dist*
+
+# vídeos das aulas: nunca no repositório (teste local em public/aulas-teste/)
+*.mp4
+public/aulas-teste/

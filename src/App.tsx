@@ -8,6 +8,7 @@ import { Encomendas, ExtraView, Extras, Fornada, Livro, Mes, Pontos, Ranking, Se
 import { Account } from './pages/Account'
 import { Catalog } from './pages/Catalog'
 import { Journey } from './pages/Journey'
+import { AulaPlayer, Aulas } from './pages/Aulas'
 import { CALC_ENABLED, CATALOG_ENABLED } from './data/config'
 import { CalcApp } from './calc/CalcApp'
 
@@ -50,6 +51,8 @@ export default function App() {
         <Route path="/produto/:id" element={<Private><Item /></Private>} />
         {CATALOG_ENABLED && <Route path="/catalogo" element={<Private><Catalog /></Private>} />}
         {CATALOG_ENABLED && <Route path="/caminho" element={<Private><Journey /></Private>} />}
+        <Route path="/aulas" element={<Kit><Aulas /></Kit>} />
+        <Route path="/aulas/:arquivo" element={<Kit><AulaPlayer /></Kit>} />
         <Route path="/fornada" element={<Kit><Fornada /></Kit>} />
         <Route path="/fornada/pontos" element={<Kit><Pontos /></Kit>} />
         <Route path="/fornada/selos" element={<Kit><Selos /></Kit>} />

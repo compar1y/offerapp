@@ -4,6 +4,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { ITEM_BY_ID, TRACKS, shortTitle, type ItemId, type OfferId } from '../../shared/catalog'
 import * as G from '../../shared/game'
 import { CALC_ENABLED, RANK_ENABLED } from '../data/config'
+import { AULAS_ON } from '../data/aulas'
 import { getState, owns, useStore } from './store'
 import { rankLeave, rankScore, thisWeek } from './rank'
 import { catalogOffers } from './offers'
@@ -114,7 +115,7 @@ const contaOkNow = (): boolean => {
   const t = getState().session?.tools?.calculadora
   return !!t && (t.owned || !t.roundUsed)
 }
-const base = (): G.BaseCtx => ({ today: today(), hasBump: owns(getState(), 'bump'), contaOk: contaOkNow(), hour: new Date().getHours() })
+const base = (): G.BaseCtx => ({ today: today(), hasBump: owns(getState(), 'bump'), contaOk: contaOkNow(), hour: new Date().getHours(), aulas: AULAS_ON && owns(getState(), 'main') })
 const ownedGameItems = (): string[] => (getState().session?.items ?? []) as string[]
 const uid = (): string => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
 
@@ -226,3 +227,6 @@ export const markLastItem = (item: string) => {
 
 // Conta da Fornada: ao concluir uma conta ("Fiz minha conta" +15 PF uma vez; +5 PF por receita nova, máx. 2/dia). Abrir a ferramenta: 0 PF.
 export const gameContaFeita = (receita: number | null) => apply(G.onContaFeita(cur().st, { ...base(), receita }))
+
+// Aulas em vídeo: aula assistida (+3 PF uma vez por aula, máx. 3 por dia) e missão do dia "Assista uma aula".
+export const gameAulaAssistida = (arquivo: string, title: string) => apply(G.onAulaAssistida(cur().st, { ...base(), arquivo, title }))

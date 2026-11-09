@@ -8,4 +8,5 @@ interface ImportMetaEnv {
   readonly VITE_COMBO_MIN_AVAILABLE?: string
   readonly VITE_CALC_ENABLED?: 'true' | 'false'
   readonly VITE_RANK_ENABLED?: 'true' | 'false'
+  readonly VITE_AULAS_VIDEO_BASE_URL?: string
 }
