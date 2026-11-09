@@ -178,7 +178,7 @@ export function Painel() {
           <div className={`grade-extras${extras.length === 1 ? ' uma' : ''}`}>
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
-                {p === 'etiquetas' ? <VitrineEtiquetas compacta /> : <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />}
+                <img src={p === 'etiquetas' ? '/img/mockups/etiquetas-capa.webp' : capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
                 {precoPresente(eu, p) && <span className="selo-off">-{precoPresente(eu, p)!.pct}%</span>}
                 <span>{PRODUTOS[p].nome}</span>
                 <span className="btn-extra">{p === 'etiquetas' ? '🏷️ Quero com o meu nome' : '📖 Ver material'}</span>

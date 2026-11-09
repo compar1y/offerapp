@@ -7,7 +7,7 @@ import { EXTRAS } from './Painel'
 
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
-import { FotoEtiquetas, VitrineEtiquetas } from './Etiquetas'
+import { VitrineEtiquetas } from './Etiquetas'
 
 /** página curta antes do checkout (TSL interna). O pagamento abre em outra aba; ao voltar, o app confere se liberou. */
 export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
@@ -90,12 +90,9 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'Material extra, vendido à parte'}</p>
       <h1>{texto.gancho}</h1>
       <div className="card oferta">
-        {p === 'etiquetas' ? (
-          <>
-            <FotoEtiquetas />
-            <VitrineEtiquetas />
-          </>
-        ) : mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
+        {mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
+        {/* as peças de verdade, com o nome de exemplo, logo abaixo da capa */}
+        {p === 'etiquetas' && <VitrineEtiquetas />}
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
         {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} de={reais(prod.precoCentavos)} por={reais(desc.precoCentavos)} />}

@@ -1,6 +1,6 @@
 // Imagens e Etiquetas com o Seu Nome: produto escondido até ter checkout, webhook pelos dois códigos, nada liberado sem compra.
-import { afterEach, describe, expect, it } from 'vitest'
-import { ETIQUETAS_WIAPY, PRODUTOS, materiaisLiberados } from '../shared/catalogo'
+import { describe, expect, it } from 'vitest'
+import { PRODUTOS, materiaisLiberados } from '../shared/catalogo'
 import { ARQUIVOS, podeBaixar, podeVerAulasCom } from '../shared/acesso'
 import { OFERTAS } from '../shared/conteudo'
 import { lerPedido } from '../server/wiapy'
@@ -15,22 +15,20 @@ const pedido = (checkoutId: string, produtos: string[]) => ({
   products: produtos.map((id) => ({ id, title: 'Produto' })),
 })
 
-afterEach(() => {
-  ETIQUETAS_WIAPY.checkoutUrl = ''
-  ETIQUETAS_WIAPY.checkoutIds.length = 0
-  ETIQUETAS_WIAPY.produtoIds.length = 0
-  PRODUTOS.etiquetas.checkoutUrl = ''
-})
-
 describe('produto Imagens e Etiquetas', () => {
-  it('no catálogo a R$12,90, com os códigos da Wiapy ainda vazios', () => {
-    expect(PRODUTOS.etiquetas).toMatchObject({ id: 'etiquetas', precoCentavos: 1290, checkoutUrl: '', checkoutIds: [], produtoIds: [] })
+  it('no catálogo a R$12,90, com o checkout e o conteúdo da Wiapy', () => {
+    expect(PRODUTOS.etiquetas).toMatchObject({
+      id: 'etiquetas',
+      precoCentavos: 1290,
+      checkoutUrl: 'https://pay.wiapy.com/6af20863371815cbecf6456a',
+      checkoutIds: ['6af20863371815cbecf6456a'],
+      produtoIds: ['6af207d3371815cbecf61968'],
+    })
     expect(OFERTAS.etiquetas.botao).toBe('Quero com o meu nome')
   })
-  it('card de venda escondido enquanto não houver checkout; quem já tem também não vê', () => {
-    expect(ofertaDisponivel(eu(['kit']), 'etiquetas')).toBe(false)
-    PRODUTOS.etiquetas.checkoutUrl = 'https://pay.wiapy.com/exemplo'
+  it('card de venda aparece para quem não comprou e some para quem já tem', () => {
     expect(ofertaDisponivel(eu(['kit']), 'etiquetas')).toBe(true)
+    expect(ofertaDisponivel(eu(['kit', 'videoaulas', 'encomenda']), 'etiquetas')).toBe(true)
     expect(ofertaDisponivel(eu(['kit', 'etiquetas']), 'etiquetas')).toBe(false)
   })
   it('a entrega só abre para quem tem "etiquetas"', () => {
@@ -42,16 +40,11 @@ describe('produto Imagens e Etiquetas', () => {
     for (const a of ARQUIVOS) expect(podeBaixar(['etiquetas'], a)).toBe(false)
     expect(podeVerAulasCom(['etiquetas'], 'venda')).toBe(false)
   })
-  it('sem códigos cadastrados, nenhum pedido vira etiquetas', () => {
-    expect(lerPedido(pedido('', [])).produtos).toEqual([])
+  it('webhook: libera pelo conteúdo (inclusive no checkout do kit) e, na falta dele, pelo checkout', () => {
+    expect(lerPedido(pedido('6accaf7eb11ba1ecaf89b37e', ['6af207d3371815cbecf61968'])).produtos).toEqual(['etiquetas'])
+    expect(lerPedido(pedido('6af20863371815cbecf6456a', ['6af207d3371815cbecf61968'])).produtos).toEqual(['etiquetas'])
+    expect(lerPedido(pedido('6af20863371815cbecf6456a', ['desconhecido'])).produtos).toEqual(['etiquetas'])
     expect(lerPedido(pedido('qualquer', ['qualquer'])).produtos).not.toContain('etiquetas')
-  })
-  it('com os códigos: libera pelo conteúdo (inclusive no checkout do kit) e, na falta dele, pelo checkout', () => {
-    ETIQUETAS_WIAPY.checkoutIds.push('codigoCheckoutEtq', 'idInternoCheckoutEtq')
-    ETIQUETAS_WIAPY.produtoIds.push('idConteudoEtq')
-    expect(lerPedido(pedido('6accaf7eb11ba1ecaf89b37e', ['idConteudoEtq'])).produtos).toEqual(['etiquetas'])
-    expect(lerPedido(pedido('idInternoCheckoutEtq', ['desconhecido'])).produtos).toEqual(['etiquetas'])
-    expect(lerPedido(pedido('codigoCheckoutEtq', [])).produtos).toEqual(['etiquetas'])
   })
 })
 
