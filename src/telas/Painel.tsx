@@ -1,11 +1,10 @@
-import { capa, cena, mockup } from '../imagens'
+import { capa, cena } from '../imagens'
 import { RECEITAS } from '../../shared/receitas'
 import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS, type ProdutoId } from '../../shared/catalogo'
-import { DESEJO } from './Materiais'
 import { ETAPAS } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
-import { ofertaDisponivel, reais, useApp } from '../ctx'
+import { ofertaDisponivel, useApp } from '../ctx'
 import { Suporte } from './Entrar'
 
 export const BAUS: { id: BauId; nome: string; ico: string; como: string }[] = [
@@ -89,7 +88,7 @@ export function Painel() {
       )}
 
       {/* 3. bônus e livros que ela já tem, todos com capa */}
-      {seus.length > 0 && (
+      {(seus.length > 0 || extras.length > 0) && (
         <div className="card">
           <h3>Seus bônus e livros</h3>
           <div className="grade-inicio">
@@ -99,26 +98,15 @@ export function Painel() {
                 <span>{MATERIAIS[m].titulo.replace(/^Bônus \d+: /, '')}</span>
               </button>
             ))}
+            {/* extras: mesma cara dos outros; o toque leva à página de compra (pedido do Levi) */}
+            {extras.map((p) => (
+              <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
+                <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
+                <span>{PRODUTOS[p].nome}</span>
+              </button>
+            ))}
           </div>
         </div>
-      )}
-
-      {/* 4. extras: separados, com preço e a palavra "extra" */}
-      {extras.length > 0 && (
-        <>
-          <h3 className="divisor-extras">Livros extras (vendidos à parte)</h3>
-          {extras.map((p) => (
-            <button key={p} className="card oferta-mini" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
-              <img src={mockup(p) ?? capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
-              <span>
-                <small>Extra · não está incluído na sua compra</small>
-                <b>{PRODUTOS[p].nome}</b>
-                <span className="sub">{DESEJO[p]}</span>
-                <span className="tag comprar">Ver · R${reais(PRODUTOS[p].precoCentavos)}</span>
-              </span>
-            </button>
-          ))}
-        </>
       )}
 
       <p className="sub" style={{ fontSize: 15, textAlign: 'center' }}>Precisa de ajuda? <Suporte /></p>
