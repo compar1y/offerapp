@@ -134,6 +134,90 @@ function bloco(c: Ctx, texto: string, x: number, y: number, o: { fonte: (px: num
   return y + px + (partes.length - 1) * alt + px * 0.3
 }
 
+// ---------- nome que se ajusta ao espaço ----------
+
+/** 8 pt no PDF impresso (A4 a 150 dpi: 1 pt = 150/72 px) */
+export const PX_MIN_PDF = Math.ceil((8 * 150) / 72)
+
+export interface CaixaNome {
+  /** largura útil */
+  largura: number
+  /** altura reservada para o nome; nada mais é desenhado dentro dela */
+  altura: number
+  /** fonte ideal (px) */
+  max: number
+  /** menor fonte numa linha só (padrão 60% da ideal) */
+  minUma?: number
+  /** piso absoluto, usado só quando nem em 2 linhas cabe na fonte mínima */
+  piso?: number
+  /** altura de cada linha em relação à fonte (padrão 1.15) */
+  entre?: number
+}
+export interface NomeAjustado { px: number; linhas: string[]; cortado: boolean }
+
+/** a melhor quebra em 2 linhas: as duas com largura parecida, evitando uma palavra sozinha embaixo */
+export function quebraEquilibrada(palavras: string[], medir: (t: string) => number): [string, string] | null {
+  if (palavras.length < 2) return null
+  let melhor: { l: [string, string]; nota: number } | null = null
+  for (let i = 1; i < palavras.length; i++) {
+    const a = palavras.slice(0, i).join(' ')
+    const b = palavras.slice(i).join(' ')
+    // palavra sozinha embaixo só quando não houver outro jeito (nome de 2 palavras)
+    const sozinha = palavras.length >= 3 && palavras.length - i === 1 ? 1e6 : 0
+    const nota = Math.max(medir(a), medir(b)) + sozinha
+    if (!melhor || nota < melhor.nota) melhor = { l: [a, b], nota }
+  }
+  return melhor!.l
+}
+
+/**
+ * Regra do nome (igual em etiquetas, cartões e imagens):
+ * 1. uma linha só, diminuindo a letra até `minUma` (60% da ideal);
+ * 2. se não couber, 2 linhas centralizadas, quebradas em ponto equilibrado, com a maior letra que caiba na caixa;
+ * 3. nunca sai da caixa (largura × altura). Último recurso: piso absoluto e reticências.
+ * `medir(texto, px)` devolve a largura do texto na fonte do nome.
+ */
+export function ajustarNome(nome: string, cx: CaixaNome, medir: (t: string, px: number) => number): NomeAjustado {
+  const limpo = nome.trim().replace(/\s+/g, ' ')
+  if (!limpo) return { px: 0, linhas: [], cortado: false }
+  const entre = cx.entre ?? 1.15
+  const minUma = Math.max(cx.minUma ?? Math.round(cx.max * 0.6), cx.piso ?? 1)
+  const piso = Math.min(cx.piso ?? minUma, minUma)
+  const maxUma = Math.min(cx.max, Math.floor(cx.altura / entre))
+  for (let px = maxUma; px >= minUma; px--) if (medir(limpo, px) <= cx.largura) return { px, linhas: [limpo], cortado: false }
+  const palavras = limpo.split(' ')
+  const maxDuas = Math.min(cx.max, Math.floor(cx.altura / (2 * entre)))
+  for (let px = maxDuas; px >= piso; px--) {
+    const q = quebraEquilibrada(palavras, (t) => medir(t, px))
+    if (q && q.every((l) => medir(l, px) <= cx.largura)) return { px, linhas: q, cortado: false }
+  }
+  // nem no piso: uma palavra enorme ou nome comprido demais. Corta com reticências, sem sair da caixa.
+  const px = Math.min(piso, maxDuas)
+  const q = quebraEquilibrada(palavras, (t) => medir(t, px)) ?? [limpo, '']
+  const linhas = q.filter(Boolean).map((l) => {
+    let u = l
+    while (u.length > 1 && medir(u === l ? u : `${u}…`, px) > cx.largura) u = u.slice(0, -1)
+    return u === l ? u : `${u}…`
+  })
+  return { px, linhas, cortado: true }
+}
+
+/** desenha o nome centrado (na horizontal e na vertical) dentro da caixa reservada que começa em `topo` */
+function nomeNaCaixa(c: Ctx, nome: string, x: number, topo: number, caixa: CaixaNome, cor: string) {
+  const r = ajustarNome(nome, caixa, (t, px) => { c.font = cursiva(px); return c.measureText(t).width })
+  if (!r.linhas.length) return
+  const entre = caixa.entre ?? 1.15
+  c.save()
+  c.font = cursiva(r.px)
+  c.fillStyle = cor
+  c.textAlign = 'center'
+  c.textBaseline = 'middle'
+  const alt = r.px * entre
+  const y0 = topo + (caixa.altura - alt * r.linhas.length) / 2 + alt / 2
+  r.linhas.forEach((l, i) => c.fillText(l, x, y0 + i * alt))
+  c.restore()
+}
+
 const display = (peso = 800) => (px: number) => `${peso} ${px}px ${DISPLAY}`
 const texto = (peso = 600) => (px: number) => `${peso} ${px}px ${TEXTO}`
 const cursiva = (px: number) => `700 ${px}px ${CURSIVA}`
@@ -265,9 +349,13 @@ function fundo(c: Ctx, w: number, h: number) {
 }
 
 /** faixa com o nome dela: assinatura da peça */
+// a caixa do nome tem altura fixa (cabe 1 linha na letra ideal ou 2 linhas menores): o que vem embaixo nunca se mexe
+export const caixaAssinatura = (larg: number, max: number): CaixaNome => ({ largura: larg, altura: Math.round(max * 1.6), max })
 function assinatura(c: Ctx, d: DadosEtiquetas, x: number, y: number, larg: number, max: number, cor = COR.fitaEscura): number {
   if (!d.nome.trim()) return y
-  return bloco(c, d.nome, x, y, { fonte: cursiva, largura: larg, max, min: Math.round(max * 0.45), linhas: 2, cor, entre: 1.05 })
+  const caixa = caixaAssinatura(larg, max)
+  nomeNaCaixa(c, d.nome, x, y, caixa, cor)
+  return y + caixa.altura
 }
 
 function whats(c: Ctx, d: DadosEtiquetas, id: string, x: number, y: number, larg: number, px: number): number {
@@ -414,7 +502,15 @@ function cabecalho(c: Ctx, t: string) {
   c.fillText(`${t}  ·  ✂ corte nas linhas tracejadas  ·  imprima em A4, tamanho real (100%)`, A4.w / 2, 50)
 }
 
-function etiqueta(c: Ctx, d: DadosEtiquetas, x: number, y: number, w: number, h: number, pb: boolean, embranco: boolean) {
+/** caixa do nome na etiqueta: começa logo abaixo de "Feito à mão por" e para 24 px acima do "Sabor:" */
+export const caixaEtiqueta = (w: number, h: number) => {
+  const p = 22
+  const topo = p + 26 + 30 + 9 + 4 // "Feito à mão por" (30 px) + respiro
+  const sabor = h - p - 58 - 24 * 0.8 // topo das letras de "Sabor:"
+  return { topo, caixa: { largura: w - 90, altura: Math.floor(sabor - 24 - topo), max: 56, piso: PX_MIN_PDF } as CaixaNome }
+}
+
+function etiqueta(c: Ctx, d: DadosEtiquetas, x: number, y: number, w: number, h: number, pb: boolean, embranco: boolean, sabor = '') {
   const p = 22
   const cor = (cc: string) => (pb ? '#222' : cc)
   c.save()
@@ -427,11 +523,9 @@ function etiqueta(c: Ctx, d: DadosEtiquetas, x: number, y: number, w: number, h:
   const cx = x + w / 2
   let yy = y + p + 26
   yy = bloco(c, 'Feito à mão por', cx, yy, { fonte: display(700), largura: w - 140, max: 30, cor: cor(COR.pinheiro), linhas: 1 })
-  if (!embranco && d.nome.trim()) yy = bloco(c, d.nome, cx, yy + 2, { fonte: cursiva, largura: w - 90, max: 56, min: 26, linhas: 2, cor: cor(COR.fitaEscura), entre: 1 })
-  else {
-    linhaDeCorte(c, cx - (w - 160) / 2, yy + 50, cx + (w - 160) / 2, yy + 50)
-    yy += 62
-  }
+  const ce = caixaEtiqueta(w, h)
+  if (!embranco && d.nome.trim()) nomeNaCaixa(c, d.nome, cx, y + ce.topo, ce.caixa, cor(COR.fitaEscura))
+  else linhaDeCorte(c, cx - (w - 160) / 2, yy + 50, cx + (w - 160) / 2, yy + 50)
   // sabor
   const ys = y + h - p - 58
   c.fillStyle = cor(COR.chocolate)
@@ -440,8 +534,12 @@ function etiqueta(c: Ctx, d: DadosEtiquetas, x: number, y: number, w: number, h:
   c.fillText('Sabor:', x + p + 34, ys)
   c.strokeStyle = cor('#8A7A6A'); c.lineWidth = 2
   c.beginPath(); c.moveTo(x + p + 120, ys + 4); c.lineTo(x + w - p - 34, ys + 4); c.stroke()
+  if (sabor.trim()) bloco(c, sabor, (x + p + 126 + x + w - p - 34) / 2, ys - 30, { fonte: texto(700), largura: w - 2 * p - 166, max: 26, min: PX_MIN_PDF, linhas: 1, cor: cor(COR.chocolate) })
   c.restore()
 }
+
+/** caixa do nome no cartão: altura fixa; o WhatsApp vem sempre logo abaixo dela */
+export const caixaCartao = (w: number): CaixaNome => ({ largura: w - 150, altura: 110, max: 52, piso: PX_MIN_PDF })
 
 function cartao(c: Ctx, d: DadosEtiquetas, x: number, y: number, w: number, h: number, tipo: 'presente' | 'obrigada', pb: boolean, embranco: boolean) {
   const p = 26
@@ -474,20 +572,38 @@ function cartao(c: Ctx, d: DadosEtiquetas, x: number, y: number, w: number, h: n
   // assinatura embaixo
   const yb = y + h - p - 200
   if (!embranco && d.nome.trim()) {
-    const fim = bloco(c, d.nome, cx, yb, { fonte: cursiva, largura: w - 150, max: 52, min: 26, linhas: 2, cor: cor(COR.fitaEscura), entre: 1 })
+    const caixa = caixaCartao(w)
+    nomeNaCaixa(c, d.nome, cx, yb, caixa, cor(COR.fitaEscura))
     const n = formatarWhats(d.whatsapp)
-    if (n && !d.semWhats.includes(`cartao-${tipo}`)) bloco(c, `WhatsApp ${n}`, cx, fim + 4, { fonte: texto(800), largura: w - 150, max: 24, linhas: 1, cor: cor(COR.pinheiro) })
+    if (n && !d.semWhats.includes(`cartao-${tipo}`)) bloco(c, `WhatsApp ${n}`, cx, yb + caixa.altura + 8, { fonte: texto(800), largura: w - 150, max: 24, linhas: 1, cor: cor(COR.pinheiro) })
   } else {
     linhaDeCorte(c, cx - (w - 200) / 2, yb + 60, cx + (w - 200) / 2, yb + 60)
   }
   c.restore()
 }
 
+/** as etiquetas da folha se revezam entre os sabores dela; sem sabores, a linha fica para escrever à mão */
+export function saborDaEtiqueta(d: DadosEtiquetas, i: number): string {
+  const l = listaSabores(d.sabores)
+  return l.length ? l[i % l.length] : ''
+}
+
+/** uma etiqueta sozinha (para a demonstração da venda); sem nome, sai a etiqueta em branco */
+export function desenharEtiquetaAvulsa(canvas: HTMLCanvasElement, d: DadosEtiquetas) {
+  const w = 537
+  const h = 306
+  canvas.width = w
+  canvas.height = h
+  const c = canvas.getContext('2d')!
+  c.clearRect(0, 0, w, h)
+  etiqueta(c, d, 0, 0, w, h, false, !d.nome.trim(), saborDaEtiqueta(d, 0))
+}
+
 export interface PaginaPdf { titulo: string; desenhar(c: Ctx, d: DadosEtiquetas): void }
 
 export const PAGINAS_PDF: PaginaPdf[] = [
-  { titulo: 'Etiquetas coloridas', desenhar: (c, d) => { cabecalho(c, 'Etiquetas coloridas'); grade(c, 2, 5, 14 * MM, (x, y, w, h) => etiqueta(c, d, x, y, w, h, false, false)) } },
-  { titulo: 'Etiquetas em preto e branco', desenhar: (c, d) => { cabecalho(c, 'Etiquetas em preto e branco'); grade(c, 2, 5, 14 * MM, (x, y, w, h) => etiqueta(c, d, x, y, w, h, true, false)) } },
+  { titulo: 'Etiquetas coloridas', desenhar: (c, d) => { cabecalho(c, 'Etiquetas coloridas'); grade(c, 2, 5, 14 * MM, (x, y, w, h, i) => etiqueta(c, d, x, y, w, h, false, false, saborDaEtiqueta(d, i))) } },
+  { titulo: 'Etiquetas em preto e branco', desenhar: (c, d) => { cabecalho(c, 'Etiquetas em preto e branco'); grade(c, 2, 5, 14 * MM, (x, y, w, h, i) => etiqueta(c, d, x, y, w, h, true, false, saborDaEtiqueta(d, i))) } },
   { titulo: 'Cartões de presente e de agradecimento', desenhar: (c, d) => { cabecalho(c, 'Cartões de presente e de agradecimento'); grade(c, 2, 2, 14 * MM, (x, y, w, h, i) => cartao(c, d, x, y, w, h, i < 2 ? 'presente' : 'obrigada', false, false)) } },
   { titulo: 'Cartões em preto e branco', desenhar: (c, d) => { cabecalho(c, 'Cartões em preto e branco'); grade(c, 2, 2, 14 * MM, (x, y, w, h, i) => cartao(c, d, x, y, w, h, i < 2 ? 'presente' : 'obrigada', true, false)) } },
   { titulo: 'Etiquetas em branco para escrever à mão', desenhar: (c, d) => { cabecalho(c, 'Etiquetas em branco para escrever à mão'); grade(c, 2, 5, 14 * MM, (x, y, w, h) => etiqueta(c, d, x, y, w, h, true, true)) } },

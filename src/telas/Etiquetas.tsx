@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { PRODUTOS } from '../../shared/catalogo'
 import { ofertaDisponivel, tem, useApp } from '../ctx'
 import {
-  DADOS_VAZIOS, EXEMPLO, IMAGENS, carregarFontes, desenharImagem, formatarWhats, imagemPng, nomeArquivo, pdfEtiquetas,
+  DADOS_VAZIOS, EXEMPLO, IMAGENS, carregarFontes, desenharEtiquetaAvulsa, desenharImagem, formatarWhats, imagemPng, nomeArquivo, pdfEtiquetas,
   type DadosEtiquetas, type IdImagem,
 } from '../etiquetas'
 import { iosInstalado, podeCompartilhar, compartilhar, salvarNoCelular } from '../salvar'
@@ -94,7 +94,7 @@ function Gerador() {
       <button className="voltar" onClick={voltar}>← Voltar</button>
       <p className="eyebrow">Seu material</p>
       <h1>{PRODUTOS.etiquetas.nome}</h1>
-      <p className="sub">Escreva uma vez. Todas as peças saem com o seu nome.</p>
+      <p className="sub">Escreva uma vez. Todas as peças saem na hora com os seus dados.</p>
 
       <div className="card form-etiquetas">
         <label>Nome do seu negócio (ou o seu nome)
@@ -103,13 +103,13 @@ function Gerador() {
         <label>Seu WhatsApp <small>(opcional)</small>
           <input value={d.whatsapp} onChange={muda('whatsapp')} inputMode="tel" maxLength={20} placeholder="(11) 98765-4321" autoComplete="tel" />
         </label>
-        <label>Seus sabores <small>(um por linha, até 6)</small>
+        <label>Seus sabores <small>(opcional, um por linha, até 6: vão nas etiquetas e na imagem de sabores)</small>
           <textarea value={d.sabores} onChange={muda('sabores')} rows={4} maxLength={240} placeholder={'Frutas cristalizadas\nGotas de chocolate\nDoce de leite'} />
         </label>
-        <label>Pedidos até o dia
+        <label>Pedidos até o dia <small>(opcional: vai na imagem “Pedidos até”)</small>
           <input value={d.ate} onChange={muda('ate')} maxLength={12} placeholder="20/12" />
         </label>
-        <label>Como você entrega
+        <label>Como você entrega <small>(opcional: vai na imagem “Entrega ou retirada”)</small>
           <input value={d.entrega} onChange={muda('entrega')} maxLength={90} placeholder="Entrego no bairro ou você retira aqui" />
         </label>
         {!d.nome.trim() && <p className="sub" style={{ fontSize: 14, margin: 0 }}>Sem nome, as peças saem sem assinatura e as etiquetas ficam com a linha para escrever à mão.</p>}
@@ -207,6 +207,40 @@ export function VitrineEtiquetas({ compacta }: { compacta?: boolean }) {
       {status && <img className="ve-status ve-1" src={status} alt="" />}
       {quadrada && <img className="ve-quadrada" src={quadrada} alt="" />}
       {!compacta && <span className="ve-nome">Exemplo com o nome “Panetones da Dona Cida”</span>}
+    </div>
+  )
+}
+
+/** "digite o seu nome → sai pronto": o nome de exemplo aparece letra por letra e a etiqueta se desenha junto, de verdade */
+export function DigiteSaiPronto() {
+  const ref = useRef<HTMLCanvasElement>(null)
+  const nome = EXEMPLO.nome
+  const [n, setN] = useState(0)
+  const [fontes, setFontes] = useState(false)
+  useEffect(() => { let vivo = true; carregarFontes().then(() => vivo && setFontes(true)); return () => { vivo = false } }, [])
+  useEffect(() => {
+    if (!fontes) return
+    let parado = false
+    try { parado = window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch { /* sem matchMedia */ }
+    if (parado) { setN(nome.length); return }
+    // digita, segura o resultado pronto por 3 s e recomeça
+    const t = setInterval(() => setN((x) => (x >= nome.length + 30 ? 0 : x + 1)), 100)
+    return () => clearInterval(t)
+  }, [fontes, nome])
+  const digitado = nome.slice(0, Math.min(n, nome.length))
+  useEffect(() => {
+    if (ref.current && fontes) desenharEtiquetaAvulsa(ref.current, { ...EXEMPLO, nome: digitado, sabores: 'Frutas cristalizadas' })
+  }, [digitado, fontes])
+  return (
+    <div className="digite-pronto" aria-label="Exemplo: você digita o nome do seu negócio e a etiqueta sai pronta">
+      <div className="dp-passo"><b>1</b> Você digita</div>
+      <div className="dp-campo" aria-hidden="true">
+        <small>Nome do seu negócio</small>
+        <span>{digitado}<i className="dp-cursor" /></span>
+      </div>
+      <div className="dp-seta" aria-hidden="true">⬇ em segundos</div>
+      <div className="dp-passo"><b>2</b> Sai pronto, com o seu nome</div>
+      <canvas ref={ref} className="dp-etiqueta" role="img" aria-label="Etiqueta “Feito à mão por Panetones da Dona Cida”, sabor Frutas cristalizadas" />
     </div>
   )
 }
