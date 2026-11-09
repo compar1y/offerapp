@@ -268,3 +268,4 @@ body{font-size:17px}
 .video-tela .video-titulo{font-family:inherit;font-size:15px;padding-top:28px}
 .btn-video{font:inherit;font-weight:800;font-size:16px}
 .card.oferta .video-tela{cursor:default}
+.video-tela .play{left:0;right:0;top:0;bottom:0;margin:auto;transform:none}
