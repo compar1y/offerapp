@@ -43,20 +43,20 @@ export function PresenteDaFabrica() {
       <button className="voltar" onClick={voltar}>← Voltar</button>
       <img className="foto-faixa" src={cena('presentes')} alt="" />
       <p className="eyebrow">Presente da Fábrica</p>
-      <h1>{p.escolhido ? 'Seu presente já é seu' : 'Escolha 1 livro de presente'}</h1>
+      <h1>{p.escolhido ? 'Seu presente já é seu' : 'Escolha 1 material de presente'}</h1>
       {!p.escolhido && (
-        <p>Cada dia que você abre o app, ganha <b>🪙{MOEDAS_POR_DIA}</b>. Juntou <b>🪙{CUSTO_PRESENTE}</b>, escolhe 1 destes livros, de graça. Vale 1 por pessoa.</p>
+        <p>Cada dia que você abre o app, ganha <b>🪙{MOEDAS_POR_DIA}</b>. Juntou <b>🪙{CUSTO_PRESENTE}</b>, escolhe 1 destes materiais, de graça. Vale 1 por pessoa.</p>
       )}
 
       {!p.escolhido && (
         <div className="card saldo">
           <b>🪙 {Math.min(p.moedas, CUSTO_PRESENTE)} de {CUSTO_PRESENTE} moedas</b>
           <div className="barra"><i style={{ width: `${Math.min(100, (p.moedas / CUSTO_PRESENTE) * 100)}%` }} /></div>
-          <span className="sub">{pode ? 'Pronto! Escolha o seu livro aqui embaixo.' : `Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}. É só abrir o app amanhã de novo.`}</span>
+          <span className="sub">{pode ? 'Pronto! Escolha o seu material aqui embaixo.' : `Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}. É só abrir o app amanhã de novo.`}</span>
         </div>
       )}
 
-      {livros.length === 0 && <div className="card"><p>Você já tem todos os livros. Obrigada por estar com a gente! 💛</p></div>}
+      {livros.length === 0 && <div className="card"><p>Você já tem todos os materiais. Obrigada por estar com a gente! 💛</p></div>}
 
       <div className="lista">
         {livros.map((x) => {
@@ -85,7 +85,7 @@ export function PresenteDaFabrica() {
         <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="conf-t">
           <div className="card pop" style={{ gap: 12 }}>
             <h3 id="conf-t">Escolher "{PRODUTOS[confirmar].nome}"?</h3>
-            <p className="sub">Você só pode escolher 1 livro de presente. Depois de escolher, não dá para trocar.</p>
+            <p className="sub">Você só pode escolher 1 material de presente. Depois de escolher, não dá para trocar.</p>
             <button className="btn" disabled={enviando} onClick={() => escolher(confirmar)}>{enviando ? 'Liberando…' : 'Sim, quero este'}</button>
             <button className="link" onClick={() => setConfirmar(null)}>Ver os outros</button>
           </div>

@@ -65,7 +65,7 @@ export function Painel() {
         <div className="card destaque">
           <img className="capa-destaque" src={capa('ebook')} alt="" />
           <div className="destaque-txt">
-            <p className="eyebrow">Seu livro de receitas</p>
+            <p className="eyebrow">Seu material de receitas</p>
             <h2>100 receitas de panetone</h2>
           </div>
           <button className="btn grande" onClick={() => { clique('abrir-receitas'); ir({ t: 'ler', m: 'ebook', p: proxReceita.n }) }}>
@@ -89,7 +89,7 @@ export function Painel() {
       {/* 3. bônus e livros que ela já tem, todos com capa */}
       {seus.length > 0 && (
         <div className="card">
-          <h3>Seus bônus e livros</h3>
+          <h3>Seus bônus e materiais</h3>
           <div className="grade-inicio">
             {seus.map((m) => (
               <button key={m} className="mini-capa" onClick={() => { clique(`material.${m}`); ir({ t: 'ler', m, p: 1 }) }}>
@@ -104,13 +104,13 @@ export function Painel() {
       {/* 4. extras: seção separada, mesma cara dos outros; o toque leva à página de compra (pedido do Levi) */}
       {extras.length > 0 && (
         <div className="card extras-card">
-          <h3>Mais livros da Fábrica</h3>
+          <h3>Mais materiais da Fábrica</h3>
           <div className="grade-extras">
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
                 <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
                 <span>{PRODUTOS[p].nome}</span>
-                <span className="btn-extra">📖 Ver livro</span>
+                <span className="btn-extra">📖 Ver material</span>
               </button>
             ))}
           </div>

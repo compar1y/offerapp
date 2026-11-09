@@ -23,9 +23,9 @@ export function presenteDe(diasDistintos: number, escolhido: ProdutoId | null): 
 
 /** pode escolher este livro agora? devolve o motivo quando não pode */
 export function podeEscolher(p: Presente, produto: ProdutoId, jaTem: ProdutoId[]): true | string {
-  if (!LIVROS_PRESENTE.includes(produto)) return 'Este livro não está entre os presentes.'
+  if (!LIVROS_PRESENTE.includes(produto)) return 'Este material não está entre os presentes.'
   if (p.escolhido) return 'Você já escolheu o seu presente.'
-  if (jaTem.includes(produto)) return 'Você já tem este livro.'
+  if (jaTem.includes(produto)) return 'Você já tem este material.'
   if (p.moedas < CUSTO_PRESENTE) return `Faltam ${CUSTO_PRESENTE - p.moedas} moedas.`
   return true
 }
