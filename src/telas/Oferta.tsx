@@ -90,11 +90,14 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'Material extra, vendido à parte'}</p>
       <h1>{texto.gancho}</h1>
       <div className="card oferta">
-        {mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
+        {p === 'etiquetas'
+          ? <img className="foto-oferta" src="/img/mockups/etiquetas-destaque.webp" width={800} height={1000} loading="lazy" alt="Confeiteira de avental vinho amarrando no panetone a etiqueta redonda “Panetones da Dona Cida”" />
+          : mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
         {/* as peças de verdade, com o nome de exemplo, logo abaixo da capa */}
         {p === 'etiquetas' && <VitrineEtiquetas />}
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
+        {p === 'etiquetas' && <img className="foto-oferta" src="/img/mockups/etiquetas-detalhe.webp" width={800} height={800} loading="lazy" alt="Etiqueta redonda “Panetones da Dona Cida” com fita vinho ao lado dos cartões “Feito com carinho para o seu Natal”" />}
         {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} de={reais(prod.precoCentavos)} por={reais(desc.precoCentavos)} />}
         {!desc && ganhaPresente(eu, p) && <AvisoPresente />}
         {!desc && (
