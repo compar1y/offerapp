@@ -85,7 +85,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
             <button className="link" onClick={comprar}>Abrir o pagamento de novo</button>
           </>
         ) : (
-          <button className="btn fita" onClick={comprar}>{texto.botao}</button>
+          <button className="btn comprar-pulsa" onClick={comprar}>{texto.botao}</button>
         )}
         <p className="sub" style={{ fontSize: 13 }}>{texto.garantia} {import.meta.env.VITE_DEMO === '1' ? 'Na prévia, o botão libera na hora, sem pagar.' : 'O pagamento abre numa página segura e o app continua aqui.'}</p>
       </div>
