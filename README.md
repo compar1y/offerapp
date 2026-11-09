@@ -61,6 +61,15 @@
 | `WEBHOOK_GUARDAR_BRUTO` | `1` guarda o corpo do webhook sem dados pessoais (para conferir o formato no primeiro pedido) |
 | `CHECKOUT_IDS_KIT` e as outras `CHECKOUT_IDS_*` | ids extras de checkout, se a Wiapy mandar outro id |
 | `BUMP_RECHEIOS_IDS` | id do bump, se precisar |
+| `VITE_AULAS_VIDEO_BASE_URL` | pasta pública dos 25 `.mp4` das aulas em vídeo (build do app, não é segredo). Vazio = a lista aparece e o player avisa "vídeo sendo preparado" |
+
+## Aulas em vídeo
+
+- 25 aulas curtas, verticais, em 4 módulos (`shared/aulas.ts`): Panetone tradicional (10), Chocotone (8), Recheios e versões especiais (4), Panetone salgado (3). Só para quem tem o kit; a entrada fica no painel, abaixo de "Minhas 100 receitas".
+- Vídeo só pelo nome do arquivo: `VITE_AULAS_VIDEO_BASE_URL` + `/` + nome (`src/aulas.ts`). Sem YouTube, sem embed. Nenhum `.mp4` vai para o git.
+- Player em tela cheia (`src/telas/Aulas.tsx`): botão grande de assistir/pausar, barra arrastável, anterior/próxima, "Já assisti" e retoma de onde parou (o tempo fica no aparelho, em `fornada-aulas:v1:<email>`).
+- Jogo: aula assistida (chegou ao fim ou "Já assisti") entra em `estado.aulas` no servidor, vale 🪙 5 uma vez por aula e conta a missão do meio da Fornada do Dia ("Fazer uma lição, uma receita ou assistir a uma aula"). Rever não paga de novo (`assistirAula` em `shared/jogo.ts`).
+- Testar no celular sem publicar: copie os `.mp4` para `public/aulas-teste/` (ignorada pelo git), rode `VITE_DEMO=1 VITE_AULAS_VIDEO_BASE_URL=./aulas-teste npx vite --host` e abra no celular o endereço "Network" do terminal, no mesmo Wi-Fi.
 
 ## Colocar no ar (só com a ordem do dono)
 

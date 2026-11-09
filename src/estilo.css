@@ -306,3 +306,46 @@ body{font-size:17px}
 .faixa-desconto .fd-preco{font-size:17px;line-height:1.2}
 .faixa-desconto .fd-preco s{opacity:.75}
 .faixa-desconto .fd-preco b{font-family:var(--display);font-size:34px;color:#fff;margin-left:2px}
+/* aulas em vídeo: lista */
+.aula-item .check{color:var(--chocolate-2);font-size:13px}
+.aula-item .check.ok{color:#fff}
+.aula-item b{display:block;line-height:1.3}
+.aula-linha{display:block;font-size:13px;font-weight:600;line-height:1.35;margin-top:2px}
+.aula-item.ok .aula-linha{color:var(--pinheiro)}
+.aula-play{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--fita);color:#fff;font-size:13px;padding-left:2px}
+
+/* aulas em vídeo: player vertical em tela cheia (abaixo do aviso, que fica em cima dele) */
+.player{position:fixed;inset:0;z-index:14;display:flex;flex-direction:column;background:#000;color:#fff;height:100vh;height:100dvh;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.player-topo{display:flex;align-items:center;gap:10px;padding:8px 12px}
+.player-fechar{flex:none;min-height:48px;padding:0 14px;border:0;border-radius:24px;background:rgba(255,255,255,.16);color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.player-titulo{min-width:0;display:grid}
+.player-titulo small{color:rgba(255,255,255,.75);font-size:13px}
+.player-titulo strong{font-family:var(--display);font-size:17px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* o vídeo ocupa só o espaço entre o topo e os botões, sem passar por cima deles */
+.player-palco{position:relative;flex:1;min-height:0;overflow:hidden;display:flex;align-items:center}
+.player-video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.player-grande{position:absolute;top:50%;left:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:34px;display:grid;place-items:center;cursor:pointer;transition:opacity .2s}
+.player-grande.some{opacity:0;pointer-events:none}
+.player-gira{width:40px;height:40px;border:4px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:player-gira .9s linear infinite}
+@keyframes player-gira{to{transform:rotate(360deg)}}
+.player-msg{position:absolute;left:20px;right:20px;padding:20px;border-radius:20px;background:rgba(255,255,255,.1);text-align:center;display:flex;flex-direction:column;gap:8px}
+.player-baixo{padding:8px 12px 12px;display:grid;gap:10px}
+.player-barra{display:flex;align-items:center;gap:10px}
+.player-pp{flex:none;width:56px;height:56px;border:0;border-radius:50%;background:#fff;color:#000;font-size:20px;cursor:pointer}
+.player-tempo{flex:none;font-variant-numeric:tabular-nums;font-size:14px;color:rgba(255,255,255,.85)}
+.player-busca{flex:1;min-width:0;height:44px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;touch-action:none}
+.player-busca::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(to right,#fff var(--pct,0%),rgba(255,255,255,.3) var(--pct,0%))}
+.player-busca::-moz-range-track{height:8px;border-radius:4px;background:rgba(255,255,255,.3)}
+.player-busca::-moz-range-progress{height:8px;border-radius:4px;background:#fff}
+.player-busca::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-10px;border-radius:50%;background:#fff;border:3px solid var(--fita)}
+.player-busca::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--fita)}
+.player-acoes{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:8px}
+.player-nav,.player-ja,.player-vista{min-height:56px;border-radius:28px;font-family:var(--display);font-weight:800;font-size:17px;display:grid;place-items:center}
+.player-nav{border:2px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer}
+.player-nav:disabled,.player-pp:disabled{opacity:.35}
+.player-nav.proxima{background:#fff;color:#000;border-color:#fff}
+.player-ja{border:0;background:var(--fita);color:#fff;cursor:pointer}
+.player-vista{background:var(--pinheiro);color:#fff}
+/* no player, o aviso de moedas desce do topo para não cobrir os botões de baixo */
+.player ~ .toast{bottom:auto;top:calc(76px + env(safe-area-inset-top,0px))}
+@media (prefers-reduced-motion:reduce){.player-grande{transition:none}.player-gira{animation-duration:3s}}

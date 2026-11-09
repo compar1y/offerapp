@@ -1,6 +1,7 @@
 // Regras da gamificação (puras, testáveis). O estado mora no servidor (tabela usuarias.estado) e o app aplica as ações.
 // Regras da base: só ações reais dela, sem contador falso, sem ranking, e moedas e selos nunca se perdem.
 import { ETAPAS } from './conteudo.js'
+import { ehAula } from './aulas.js'
 
 export type BauId = 'prata' | 'ouro' | 'diamante' | 'cristal'
 export type SeloId = 'primeira-foto' | 'etapa-1' | 'etapa-2' | 'etapa-3' | 'etapa-4' | 'etapa-5' | 'sete-dias' | 'cinco-receitas' | 'sos-usado'
@@ -19,9 +20,11 @@ export interface Estado {
   /** ofertas que já apareceram ao fim de uma etapa (aparecem 1 vez) */
   ofertasVistas: string[]
   secreta: { semana: string; receitasDias: string[]; feita: boolean }
+  /** aulas em vídeo já assistidas (nome do arquivo .mp4) */
+  aulas: string[]
 }
 
-export const MOEDAS = { licao: 20, receita: 15, missao: 10, tresMissoes: 30, secreta: 100 }
+export const MOEDAS = { licao: 20, receita: 15, missao: 10, tresMissoes: 30, secreta: 100, aula: 5 }
 
 export function estadoNovo(hoje: string): Estado {
   return {
@@ -36,6 +39,7 @@ export function estadoNovo(hoje: string): Estado {
     selos: [],
     ofertasVistas: [],
     secreta: { semana: semanaDe(hoje), receitasDias: [], feita: false },
+    aulas: [],
   }
 }
 
@@ -66,6 +70,7 @@ export function abrirApp(e: Estado, hoje: string): Estado {
   const n: Estado = structuredClone(e)
   if (n.missoes.dia !== hoje) n.missoes = { dia: hoje, feitas: [false, false, false] }
   if (n.secreta.semana !== semanaDe(hoje)) n.secreta = { semana: semanaDe(hoje), receitasDias: [], feita: false }
+  if (!Array.isArray(n.aulas)) n.aulas = [] // estado salvo antes das aulas
   marcarMissao(n, 0)
   return n
 }
@@ -137,6 +142,18 @@ export function fazerReceita(e: Estado, num: number): Estado {
       n.moedas += MOEDAS.secreta
     }
   }
+  return n
+}
+
+/** aula em vídeo assistida (chegou ao fim ou tocou em "Já assisti"): +5 moedas uma vez por aula e conta como a missão
+ * "Fazer uma lição, uma receita ou assistir a uma aula". Rever a mesma aula não paga de novo. Nada fica trancado por moeda. */
+export function assistirAula(e: Estado, arquivo: string): Estado {
+  const n = structuredClone(e)
+  if (!Array.isArray(n.aulas)) n.aulas = []
+  if (!ehAula(arquivo) || n.aulas.includes(arquivo)) return n
+  n.aulas.push(arquivo)
+  n.moedas += MOEDAS.aula
+  marcarMissao(n, 1)
   return n
 }
 
@@ -214,5 +231,6 @@ export function sanear(x: unknown, hoje: string): Estado {
       receitasDias: strs(sec.receitasDias, 7),
       feita: Boolean(sec.feita),
     },
+    aulas: [...new Set(strs(o.aulas, 50).filter(ehAula))],
   }
 }

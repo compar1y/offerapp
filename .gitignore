@@ -5,3 +5,7 @@ dist
 .vercel
 paginas-local
 dist-previa
+
+# vídeos: só os das aulas, que ficam dentro do app em public/aulas/
+*.mp4
+!public/aulas/*.mp4
