@@ -2,8 +2,9 @@ import type { Presente } from '../shared/presente'
 import type { MaterialId, ProdutoId } from '../shared/catalogo'
 import type { PerfilId } from '../shared/conteudo'
 import type { Estado } from '../shared/jogo'
+import type { Desconto } from '../shared/desconto'
 
-export interface Acesso { produtos: ProdutoId[]; pendentes: ProdutoId[]; materiais: MaterialId[] }
+export interface Acesso { produtos: ProdutoId[]; pendentes: ProdutoId[]; materiais: MaterialId[]; desconto?: Desconto | null }
 export interface Eu {
   email: string
   perfil: PerfilId | null

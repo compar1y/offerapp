@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { ETAPAS } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
-import { ofertaDisponivel, tem, useApp } from '../ctx'
+import { ofertaDisponivel, precoPresente, tem, useApp } from '../ctx'
+import { FaixaDesconto } from './PresenteDesconto'
 import { Suporte } from './Entrar'
 import { VIDEOAULAS } from './OfertaVideo'
 
@@ -44,6 +45,7 @@ export function Painel() {
   const compras = [...new Set(COMPRAS_EXTRAS.filter((p) => tem(eu, p)).flatMap((p) => PRODUTOS[p].libera))].filter((m) => eu.acesso.materiais.includes(m))
   const seus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro' && !compras.includes(m))
   const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
+  const presente = extras.map((p) => precoPresente(eu, p)).find(Boolean) ?? null
   const clique = (botao: string) => evento('inicio.clique', { botao })
   const abrirVideoaulas = () => {
     clique('extra.videoaulas')
@@ -132,6 +134,7 @@ export function Painel() {
           <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Seleção especial</span>
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas. <span className="dinheiro-pulsa" aria-hidden="true">💰</span></p>
+          {presente && <FaixaDesconto pct={presente.pct} ate={presente.ate} />}
           {VIDEOAULAS.mostrar && (
             <div className="video-upsell">
               <button className="video-tela" aria-label="Assistir às videoaulas" onClick={abrirVideoaulas}>
@@ -146,6 +149,7 @@ export function Painel() {
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
                 <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
+                {precoPresente(eu, p) && <span className="selo-off">-{precoPresente(eu, p)!.pct}%</span>}
                 <span>{PRODUTOS[p].nome}</span>
                 <span className="btn-extra">📖 Ver material</span>
               </button>

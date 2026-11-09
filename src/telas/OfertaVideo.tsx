@@ -38,7 +38,7 @@ export function OfertaVideo() {
   }
   return (
     <>
-      <button className="voltar" onClick={voltar}>← Agora não</button>
+      <button className="voltar" onClick={voltar}>← Voltar</button>
       <p className="eyebrow">Material extra, vendido à parte</p>
       <h1>{VIDEOAULAS.gancho}</h1>
       <div className="card oferta">

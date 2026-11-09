@@ -3,6 +3,7 @@
 //   payment.status: paid | unpaid | credit_card_declined | refunded | chargedback; carrinho abandonado = payment null.
 // Confirmar o formato real no primeiro pedido de teste (WEBHOOK_GUARDAR_BRUTO=1 guarda o corpo sem dados pessoais).
 import { BUMP_RECHEIOS, PRODUTOS, type ProdutoId } from '../shared/catalogo.js'
+import { PRECO_PRESENTE } from '../shared/desconto.js'
 import { env } from './env.js'
 
 export type StatusCompra = 'pago' | 'pendente' | 'recusado' | 'estornado'
@@ -57,7 +58,7 @@ const idsExtras = (nome: string) =>
 export function produtoDoCheckout(checkoutId: string): ProdutoId | null {
   if (!checkoutId) return null
   for (const p of Object.values(PRODUTOS)) {
-    const ids = [...p.checkoutIds, ...idsExtras(`CHECKOUT_IDS_${p.id.toUpperCase()}`)]
+    const ids = [...p.checkoutIds, ...(PRECO_PRESENTE[p.id]?.checkoutIds ?? []), ...idsExtras(`CHECKOUT_IDS_${p.id.toUpperCase()}`)]
     if (ids.includes(checkoutId)) return p.id
   }
   return null

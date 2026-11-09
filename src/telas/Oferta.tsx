@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
-import { ofertaDisponivel, reais, tem, useApp } from '../ctx'
+import { ofertaDisponivel, precoPresente, reais, tem, useApp } from '../ctx'
+import { FaixaDesconto } from './PresenteDesconto'
+import { EXTRAS } from './Painel'
 
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
@@ -17,6 +19,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   const texto = p === 'kit' ? null : OFERTAS[p]
   const comprado = tem(eu, p)
   const pendente = eu.acesso.pendentes.includes(p)
+  const desc = precoPresente(eu, p)
 
   useEffect(() => {
     evento('oferta.vista', { produto: p, onde: origem })
@@ -28,14 +31,14 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   async function comprar() {
     if (Date.now() - abertaEm.current < 900) return
-    evento('oferta.clicada', { produto: p, onde: origem })
+    evento('oferta.clicada', { produto: p, onde: origem, desconto: desc ? desc.pct : 0 })
     if (import.meta.env.VITE_DEMO === '1') {
       const { comprarNaPrevia } = await import('../demo')
       comprarNaPrevia(p)
       await recarregar()
       return
     }
-    window.open(prod.checkoutUrl, '_blank', 'noopener')
+    window.open(desc?.checkoutUrl || prod.checkoutUrl, '_blank', 'noopener')
     setAbriu(true)
   }
 
@@ -59,12 +62,20 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   if (comprado) {
     const primeiro = prod.libera[0]
+    // presente da primeira compra: aparece logo depois de liberar, se ainda tiver material extra para ela
+    const presente = EXTRAS.filter((x) => ofertaDisponivel(eu, x)).map((x) => precoPresente(eu, x)).find(Boolean)
     return (
       <div className="card pop" style={{ textAlign: 'center', gap: 14 }}>
         <div style={{ fontSize: 64 }}>🎉</div>
         <h1>Liberado!</h1>
         <p><b>{prod.nome}</b> já está no Início, em “Minhas compras”.</p>
-        <button className="btn" onClick={() => trocar({ t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>
+        {presente && (
+          <>
+            <FaixaDesconto pct={presente.pct} ate={presente.ate} texto={`Você ganhou ${presente.pct}% OFF no próximo material da Seleção especial.`} />
+            <button className="btn comprar-pulsa" onClick={() => trocar({ t: 'painel' })}>🎁 Ver meu desconto</button>
+          </>
+        )}
+        <button className={presente ? 'btn leve' : 'btn'} onClick={() => trocar({ t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>
         <button className="link" onClick={() => trocar({ t: 'painel' })}>Voltar ao Início</button>
       </div>
     )
@@ -72,14 +83,18 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   return (
     <>
-      <button className="voltar" onClick={agoraNao}>← Agora não</button>
+      <button className="voltar" onClick={agoraNao}>← Voltar</button>
       <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'Material extra, vendido à parte'}</p>
       <h1>{texto.gancho}</h1>
       <div className="card oferta">
         {mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span className="sub">por</span><span className="preco">R${reais(prod.precoCentavos)}</span></div>
+        {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} texto={`${desc.pct}% OFF neste material`} />}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {desc && <s className="preco-de">R${reais(prod.precoCentavos)}</s>}
+          <span className="sub">por</span><span className="preco">R${reais(desc ? desc.precoCentavos : prod.precoCentavos)}</span>
+        </div>
         {abriu || pendente ? (
           <>
             <div className="aviso">
@@ -97,7 +112,6 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         )}
         <p className="sub" style={{ fontSize: 13 }}>{texto.garantia} {import.meta.env.VITE_DEMO === '1' ? 'Na prévia, o botão libera na hora, sem pagar.' : 'O pagamento abre numa página segura e o app continua aqui.'}</p>
       </div>
-      {!mostrarRecusa && <button className="link" onClick={agoraNao}>Agora não</button>}
     </>
   )
 }

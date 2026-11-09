@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
 import { PRODUTOS, type MaterialId, type ProdutoId } from '../shared/catalogo'
+import { PRECO_PRESENTE } from '../shared/desconto'
 import type { BauId, Estado } from '../shared/jogo'
 import type { Eu, Salvavel } from './api'
 
@@ -52,3 +53,13 @@ export function ofertaDisponivel(eu: Eu, p: ProdutoId): boolean {
 }
 
 export const reais = (centavos: number) => (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: centavos % 100 ? 2 : 0, maximumFractionDigits: 2 })
+
+/** presente da primeira compra: preço e checkout com desconto, se ainda estiver valendo para este produto.
+ *  No app de verdade só aparece quando existe o checkout com desconto na Wiapy (nunca mostra um preço que ela não vai pagar). */
+export function precoPresente(eu: Eu, p: ProdutoId, agora = Date.now()) {
+  const d = eu.acesso.desconto
+  const preco = PRECO_PRESENTE[p]
+  if (!d || !preco || !(Date.parse(d.ate) > agora)) return null
+  if (!preco.checkoutUrl && import.meta.env.VITE_DEMO !== '1') return null
+  return { ...preco, pct: d.pct, ate: d.ate }
+}

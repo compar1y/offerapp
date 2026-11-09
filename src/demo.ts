@@ -2,6 +2,7 @@
 // Só entra no build de prévia; o build de produção não inclui este arquivo.
 import { materiaisLiberados, type ProdutoId } from '../shared/catalogo'
 import { podeEscolher, presenteDe } from '../shared/presente'
+import { descontoDe } from '../shared/desconto'
 
 const CHAVE = 'fornada-previa'
 type Usuaria = Record<string, unknown> & { produtos: ProdutoId[]; logada: boolean }
@@ -32,8 +33,8 @@ export function instalarPrevia() {
     if (rota === '/api/sair') { gravar({ ...u, logada: false }); return resposta({ ok: true }) }
     if (rota === '/api/eu' && (init?.method ?? 'GET') === 'GET') {
       if (!u.logada) return resposta({ erro: 'Entre de novo.' }, 401)
-      const { produtos, logada: _l, dias, presente, ...resto } = u
-      return resposta({ email: 'maria.exemplo@gmail.com', ...resto, acesso: { produtos, pendentes: [], materiais: materiaisLiberados(produtos) }, presente: presenteDe(Number(dias), (presente as ProdutoId | null) ?? null) })
+      const { produtos, logada: _l, dias, presente, compras: _c, ...resto } = u
+      return resposta({ email: 'maria.exemplo@gmail.com', ...resto, acesso: { produtos, pendentes: [], materiais: materiaisLiberados(produtos), desconto: descontoDe((u.compras as { produto: string; criado_em: string; pagamento_id: string }[] | undefined ?? []).map((c) => ({ ...c, status: 'pago' }))) }, presente: presenteDe(Number(dias), (presente as ProdutoId | null) ?? null) })
     }
     if (rota === '/api/presente') {
       const p = presenteDe(Number(u.dias), (u.presente as ProdutoId | null) ?? null)
@@ -50,7 +51,10 @@ export function instalarPrevia() {
 /** na prévia, "comprar" libera na hora (não abre a Wiapy) */
 export function comprarNaPrevia(p: ProdutoId) {
   const u = atual()
-  if (!u.produtos.includes(p)) gravar({ ...u, produtos: [...u.produtos, p] })
+  if (u.produtos.includes(p)) return
+  const compras = (u.compras as unknown[] | undefined) ?? []
+  const agora = new Date().toISOString()
+  gravar({ ...u, produtos: [...u.produtos, p], compras: [...compras, { produto: p, criado_em: agora, pagamento_id: `previa-${p}` }] })
 }
 
 export function recomecarPrevia() {
