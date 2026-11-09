@@ -71,7 +71,7 @@ export function Painel() {
           <img className="capa-destaque" src={capa('ebook')} alt="" />
           <div className="destaque-txt">
             <p className="eyebrow">Seu material de receitas</p>
-            <h2>100 receitas de panetone</h2>
+            <h2>100 receitas de panetone e chocotone</h2>
           </div>
           <button className="btn grande" onClick={() => { clique('abrir-receitas'); ir({ t: 'ler', m: 'ebook', p: proxReceita.n }) }}>
             📖 Abrir minhas 100 receitas
