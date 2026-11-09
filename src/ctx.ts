@@ -20,6 +20,8 @@ export type Tela =
   | { t: 'loja' }
   | { t: 'materiais' }
   | { t: 'conquistas' }
+  | { t: 'aulas' }
+  | { t: 'aula'; a: string }
 
 export interface Ctx {
   eu: Eu

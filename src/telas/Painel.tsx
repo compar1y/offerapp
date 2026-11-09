@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS } from '../../shared/catalogo'
 import { AVATARES, ETAPAS, OFERTAS, PERFIS, TODAS_LICOES } from '../../shared/conteudo'
 import { fazerMissaoDoPerfil, hojeBR, type BauId } from '../../shared/jogo'
-import { ofertaDisponivel, reais, useApp } from '../ctx'
+import { ofertaDisponivel, reais, tem, useApp } from '../ctx'
+import { AULAS } from '../../shared/aulas'
 import { Suporte } from './Entrar'
 
 export const BAUS: { id: BauId; nome: string; ico: string; como: string }[] = [
@@ -31,7 +32,7 @@ export function Painel() {
   const { eu, estado, ir, mudar, evento, recarregar, sair } = useApp()
   const perfil = PERFIS[eu.perfil ?? 'iniciante']
   const prox = proximaLicao(perfil.comecaEm, estado.licoes)
-  const missoes = ['Abrir o app hoje', 'Fazer uma lição ou uma receita', perfil.missao]
+  const missoes = ['Abrir o app hoje', 'Fazer uma lição, uma receita ou assistir a uma aula', perfil.missao]
   const oferta = perfil.ofertas.find((p) => ofertaDisponivel(eu, p))
   const dias = diasParaNatal()
   const feitasTotal = estado.licoes.length
@@ -97,6 +98,9 @@ export function Painel() {
       )}
 
       <button className="btn leve" style={{ fontSize: 18 }} onClick={() => ir({ t: 'receitas' })}>📖 Minhas 100 receitas</button>
+      {tem(eu, 'kit') && (
+        <button className="btn leve" style={{ fontSize: 18 }} onClick={() => ir({ t: 'aulas' })}>🎬 Aulas em vídeo · {(estado.aulas ?? []).length} de {AULAS.length}</button>
+      )}
       <button className="sos" onClick={() => ir({ t: 'sos' })}><span className="ico">🆘</span><span><b>SOS Massa</b>Deu algo errado? Toque aqui.</span></button>
 
       <div className="card">

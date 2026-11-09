@@ -5,3 +5,7 @@ dist
 .vercel
 paginas-local
 dist-previa
+
+# vídeos das aulas: nunca no repositório (teste local em public/aulas-teste/)
+*.mp4
+public/aulas-teste/

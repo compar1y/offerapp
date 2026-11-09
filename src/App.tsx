@@ -12,6 +12,7 @@ import { Sos } from './telas/Sos'
 import { BauTela, Loja, Raspa } from './telas/Presentes'
 import { Oferta } from './telas/Oferta'
 import { Conquistas, Materiais } from './telas/Materiais'
+import { AulaTela, Aulas } from './telas/Aulas'
 
 type Fase = { f: 'carregando' } | { f: 'entrar'; aviso?: string } | { f: 'bloqueada'; msg: string } | { f: 'dentro' }
 
@@ -170,6 +171,8 @@ function Rota({ tela }: { tela: Tela }) {
     case 'loja': return <Loja />
     case 'materiais': return <Materiais />
     case 'conquistas': return <Conquistas />
+    case 'aulas': return <Aulas />
+    case 'aula': return <AulaTela key={tela.a} a={tela.a} />
     default: return <Painel />
   }
 }
