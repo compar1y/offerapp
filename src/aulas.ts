@@ -3,11 +3,19 @@
 // VITE_AULAS_VIDEO_BASE_URL troca a pasta se um dia precisar; vazio = a pasta do app. "off" esconde os vídeos e mostra "sendo preparado".
 // Quais aulas ela já assistiu fica no estado do jogo (servidor, estado.aulas). O tempo de cada aula fica só neste aparelho.
 import { ehAula } from '../shared/aulas'
+import type { Eu } from './api'
+import { tem } from './ctx'
 
 const env = (import.meta.env.VITE_AULAS_VIDEO_BASE_URL ?? '').trim()
 export const AULAS_VIDEO_BASE_URL: string = env && env !== 'off' ? env : './aulas'
 export const AULAS_ON: boolean = env !== 'off'
 export const aulaVideoUrl = (file: string): string => `${AULAS_VIDEO_BASE_URL.replace(/\/$/, '')}/${encodeURIComponent(file)}`
+
+// Quem vê as aulas (flag de build, decisão do Levi):
+//   'venda' (padrão): só quem comprou a oferta Videoaulas (produto 'videoaulas'); as outras veem a página de venda.
+//   'kit': VITE_AULAS_ACESSO=kit libera para quem tem o kit, e a oferta Videoaulas some para ela.
+export const AULAS_ACESSO: 'venda' | 'kit' = import.meta.env.VITE_AULAS_ACESSO === 'kit' ? 'kit' : 'venda'
+export const podeVerAulas = (eu: Eu): boolean => tem(eu, 'videoaulas') || (AULAS_ACESSO === 'kit' && tem(eu, 'kit'))
 
 export interface AulaTempo { progressSec: number; updatedAt: number }
 type Tempos = Record<string, AulaTempo>

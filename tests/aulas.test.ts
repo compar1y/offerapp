@@ -55,3 +55,18 @@ describe('aula no jogo', () => {
     expect(sanear({ aulas: [ARQUIVOS[0], ARQUIVOS[0], 'constructor', 'x.mp4', 5] }, d1).aulas).toEqual([ARQUIVOS[0]])
   })
 })
+
+describe('produto Videoaulas', () => {
+  it('existe no catálogo sem checkout inventado e não libera PDF', async () => {
+    const { PRODUTOS } = await import('../shared/catalogo')
+    expect(PRODUTOS.videoaulas.precoCentavos).toBe(1990)
+    expect(PRODUTOS.videoaulas.checkoutUrl).toBe('')
+    expect(PRODUTOS.videoaulas.checkoutIds).toEqual([])
+    expect(PRODUTOS.videoaulas.libera).toEqual([])
+  })
+  it('nenhum checkout cai nas Videoaulas por engano', async () => {
+    const { produtoDoCheckout } = await import('../server/wiapy')
+    expect(produtoDoCheckout('')).toBeNull()
+    expect(produtoDoCheckout('r2PHgYwK6CVi')).toBe('kit')
+  })
+})

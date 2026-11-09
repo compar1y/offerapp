@@ -145,7 +145,8 @@ export const LOJA: ItemLoja[] = [
 
 export interface TextoOferta { gancho: string; itens: string[]; botao: string; garantia: string }
 
-export const OFERTAS: Record<Exclude<ProdutoId, 'kit'>, TextoOferta> = {
+// a oferta Videoaulas tem página própria (src/telas/OfertaVideo.tsx)
+export const OFERTAS: Record<Exclude<ProdutoId, 'kit' | 'videoaulas'>, TextoOferta> = {
   recheios: {
     gancho: 'Seu panetone já saiu do forno. Agora é o recheio que faz a pessoa pedir outro.',
     itens: ['Os 10 recheios mais pedidos no Natal, de brigadeiro a pistache', 'Ingredientes, modo de preparo e rendimento de cada um', 'Quanto custa cada recheio e por quanto vender'],

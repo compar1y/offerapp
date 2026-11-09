@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { cena } from '../imagens'
 import { reais, useApp } from '../ctx'
+import { podeVerAulas } from '../aulas'
 
 /**
  * Upsell de videoaulas (produto ainda em produção). Sem checkout, o botão só avisa "em breve".
@@ -25,10 +26,20 @@ export const VIDEOAULAS = {
 }
 
 export function OfertaVideo() {
-  const { voltar, evento, toast } = useApp()
-  useEffect(() => { evento('oferta.vista', { produto: 'videoaulas', onde: 'pagina' }) }, [evento])
-  const comprar = () => {
+  const { eu, voltar, trocar, evento, toast, recarregar } = useApp()
+  const libera = podeVerAulas(eu)
+  // quem já tem as aulas não vê a venda: vai direto para a lista
+  useEffect(() => { if (libera) trocar({ t: 'aulas' }) }, [libera, trocar])
+  useEffect(() => { if (!libera) evento('oferta.vista', { produto: 'videoaulas', onde: 'pagina' }) }, [evento, libera])
+  const comprar = async () => {
     evento('oferta.clicada', { produto: 'videoaulas', onde: 'videoaulas' })
+    if (import.meta.env.VITE_DEMO === '1') {
+      // na prévia, comprar libera na hora (igual às outras ofertas)
+      const { comprarNaPrevia } = await import('../demo')
+      comprarNaPrevia('videoaulas')
+      await recarregar()
+      return
+    }
     if (VIDEOAULAS.checkoutUrl) window.open(VIDEOAULAS.checkoutUrl, '_blank', 'noopener')
     else toast('As videoaulas chegam em breve aqui no app. 🎬')
   }

@@ -10,7 +10,8 @@ const ABAS: Aba[] = [
   { id: 'jornada', nome: 'Passos', ico: '✅', vai: { t: 'jornada' }, ativa: (t) => t.t === 'jornada' || t.t === 'licao' },
 ]
 
-const SEM_MENU = new Set(['boas', 'pergunta', 'resultado', 'avatar'])
+// o player de aula é tela cheia: sem a barra de baixo
+const SEM_MENU = new Set(['boas', 'pergunta', 'resultado', 'avatar', 'aula'])
 
 /** barra de baixo, em formato de pílula, como a de um celular: 5 abas com nomes simples.
  *  Presentes e moedas ficam no Início (não são o que ela comprou). */

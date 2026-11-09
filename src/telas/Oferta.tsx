@@ -16,7 +16,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   // trava contra toque duplo: ao recusar, a tela seguinte abre com o botão verde no mesmo lugar do vermelho
   const abertaEm = useRef(Date.now())
   const prod = PRODUTOS[p]
-  const texto = p === 'kit' ? null : OFERTAS[p]
+  const texto = p === 'kit' || p === 'videoaulas' ? null : OFERTAS[p]
   const comprado = tem(eu, p)
   const pendente = eu.acesso.pendentes.includes(p)
   useRelogio(eu.acesso.desconto?.ate) // re-renderiza a cada segundo enquanto o desconto vale; ao acabar, o preço normal volta

@@ -65,11 +65,12 @@
 
 ## Aulas em vídeo
 
-- 25 aulas curtas, verticais, em 4 módulos (`shared/aulas.ts`): Panetone tradicional (10), Chocotone (8), Recheios e versões especiais (4), Panetone salgado (3). Só para quem tem o kit; a entrada fica no painel, abaixo de "Minhas 100 receitas".
-- Vídeo só pelo nome do arquivo: `VITE_AULAS_VIDEO_BASE_URL` + `/` + nome (`src/aulas.ts`). Sem YouTube, sem embed. Nenhum `.mp4` vai para o git.
-- Player em tela cheia (`src/telas/Aulas.tsx`): botão grande de assistir/pausar, barra arrastável, anterior/próxima, "Já assisti" e retoma de onde parou (o tempo fica no aparelho, em `fornada-aulas:v1:<email>`).
-- Jogo: aula assistida (chegou ao fim ou "Já assisti") entra em `estado.aulas` no servidor, vale 🪙 5 uma vez por aula e conta a missão do meio da Fornada do Dia ("Fazer uma lição, uma receita ou assistir a uma aula"). Rever não paga de novo (`assistirAula` em `shared/jogo.ts`).
-- Testar no celular sem publicar: copie os `.mp4` para `public/aulas-teste/` (ignorada pelo git), rode `VITE_DEMO=1 VITE_AULAS_VIDEO_BASE_URL=./aulas-teste npx vite --host` e abra no celular o endereço "Network" do terminal, no mesmo Wi-Fi.
+- 25 aulas curtas, verticais, em 4 módulos (`shared/aulas.ts`): Panetone tradicional (10), Chocotone (8), Recheios e versões especiais (4), Panetone salgado (3).
+- **Vídeos dentro do app:** os 25 `.mp4` ficam em `public/aulas/` e são servidos em `./aulas/<nome>`. Sem serviço externo, sem YouTube, sem embed. `VITE_AULAS_VIDEO_BASE_URL` só troca a pasta se um dia precisar; `off` esconde os vídeos ("sendo preparado").
+- **Quem vê (flag `VITE_AULAS_ACESSO`):** padrão = só quem comprou a oferta Videoaulas (produto `videoaulas`, R$ 19,90, ainda SEM checkout: quem não comprou vê a página de venda). `VITE_AULAS_ACESSO=kit` libera para quem tem o kit e esconde a oferta. Quando o checkout existir: `checkoutUrl`/`checkoutIds` em `shared/catalogo.ts` (ou `CHECKOUT_IDS_VIDEOAULAS`) e `VIDEOAULAS.checkoutUrl` em `src/telas/OfertaVideo.tsx`.
+- Player em tela cheia (`src/telas/Aulas.tsx`, sem o menu de baixo): botão grande de assistir/pausar, barra arrastável, anterior/próxima, "Já assisti" e retoma de onde parou (tempo no aparelho, em `fornada-aulas:v1:<email>`).
+- Jogo: aula assistida entra em `estado.aulas` no servidor, vale 🪙 5 uma vez por aula e conta a missão do meio da Fornada do Dia (`assistirAula` em `shared/jogo.ts`). Rever não paga de novo.
+- Testar no celular sem publicar: `VITE_DEMO=1 npx vite --host` e abra no celular o endereço "Network" do terminal (mesmo Wi-Fi). Na prévia, o botão de compra das Videoaulas libera na hora.
 
 ## Colocar no ar (só com a ordem do dono)
 

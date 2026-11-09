@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AULAS, AULA_BY_FILE, MODULOS, durLabel, ehAula } from '../../shared/aulas'
 import { MOEDAS, assistirAula } from '../../shared/jogo'
-import { AULAS_ON, aulaVideoUrl, gravarTempo, lerTempos } from '../aulas'
+import { AULAS_ON, aulaVideoUrl, gravarTempo, lerTempos, podeVerAulas } from '../aulas'
 import { useApp } from '../ctx'
 
 const GRAVAR_A_CADA_SEG = 3
@@ -11,8 +11,19 @@ const relogio = (s: number): string => {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`
 }
 
+// sem acesso (aulas vendidas à parte e ela ainda não comprou): vai para a página da oferta Videoaulas
+function useSemAcesso(): boolean {
+  const { eu, trocar } = useApp()
+  const sem = !podeVerAulas(eu)
+  useEffect(() => {
+    if (sem) trocar({ t: 'videoaulas' })
+  }, [sem, trocar])
+  return sem
+}
+
 export function Aulas() {
   const { eu, estado, ir, voltar } = useApp()
+  if (useSemAcesso()) return null
   const vistas = estado.aulas ?? []
   const tempos = lerTempos(eu.email)
   // a última aula mexida e não terminada vira o "Continuar de onde parei"
@@ -56,12 +67,13 @@ export function Aulas() {
 
 export function AulaTela({ a }: { a: string }) {
   const { voltar } = useApp()
+  const sem = useSemAcesso()
   const valida = ehAula(a)
   useEffect(() => {
-    if (!valida) voltar()
-  }, [valida, voltar])
+    if (!valida && !sem) voltar()
+  }, [valida, sem, voltar])
   // key: trocar de aula remonta o player do zero (tempo, erro, carregamento)
-  return valida ? <Player key={a} file={a} /> : null
+  return valida && !sem ? <Player key={a} file={a} /> : null
 }
 
 function Player({ file }: { file: string }) {

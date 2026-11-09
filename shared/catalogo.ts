@@ -1,7 +1,7 @@
 // Produtos, materiais e o que cada compra libera. Fonte única para o app (src/) e o servidor (api/, server/).
 // Regra do Levi: tudo o que a cliente comprou fica ABERTO desde o primeiro minuto. Nada comprado é travado por progresso.
 
-export type ProdutoId = 'kit' | 'recheios' | 'encomenda' | 'primeira'
+export type ProdutoId = 'kit' | 'recheios' | 'encomenda' | 'primeira' | 'videoaulas'
 
 export type MaterialId =
   | 'ebook'
@@ -83,6 +83,16 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     libera: ['primeira-encomenda', 'caderninho'],
     checkoutUrl: 'https://pay.wiapy.com/checkout/6aee7b90371815cbec6a481c',
     checkoutIds: ['6aee7b90371815cbec6a481c'],
+  },
+  videoaulas: {
+    id: 'videoaulas',
+    nome: 'Videoaulas da Fábrica',
+    precoCentavos: 1990,
+    // as 25 aulas em vídeo (shared/aulas.ts). Não libera PDF: o acesso às aulas sai de ter este produto (src/aulas.ts, podeVerAulas).
+    libera: [],
+    // sem checkout ainda: o Levi decide. Com o link, preencher aqui e em VIDEOAULAS.checkoutUrl (src/telas/OfertaVideo.tsx), e os ids abaixo.
+    checkoutUrl: '',
+    checkoutIds: [],
   },
 }
 
