@@ -32,6 +32,10 @@ export function OfertaVideo() {
     if (VIDEOAULAS.checkoutUrl) window.open(VIDEOAULAS.checkoutUrl, '_blank', 'noopener')
     else toast('As videoaulas chegam em breve aqui no app. 🎬')
   }
+  const recusar = () => {
+    evento('oferta.recusada', { produto: 'videoaulas' })
+    voltar()
+  }
   return (
     <>
       <button className="voltar" onClick={voltar}>← Agora não</button>
@@ -47,9 +51,10 @@ export function OfertaVideo() {
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span className="sub">por</span><span className="preco">R${reais(VIDEOAULAS.precoCentavos)}</span></div>
         <p className="sub" style={{ fontSize: 15 }}>{VIDEOAULAS.ancora}</p>
         <button className="btn comprar-pulsa" onClick={comprar}>{VIDEOAULAS.botao}</button>
+        {/* tem downsell (Aula do Ponto Certo, R$9,90): por enquanto a recusa volta ao Início; quando o downsell existir, leva para ele */}
+        <button className="btn recusar" onClick={recusar}>Não, obrigada</button>
         <p className="sub" style={{ fontSize: 13 }}>{VIDEOAULAS.garantia} O pagamento abre numa página segura e o app continua aqui.</p>
       </div>
-      <button className="link" onClick={voltar}>Agora não</button>
     </>
   )
 }
