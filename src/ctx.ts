@@ -55,11 +55,11 @@ export function ofertaDisponivel(eu: Eu, p: ProdutoId): boolean {
 export const reais = (centavos: number) => (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: centavos % 100 ? 2 : 0, maximumFractionDigits: 2 })
 
 /** presente da primeira compra: preço e checkout com desconto, se ainda estiver valendo para este produto.
- *  No app de verdade só aparece quando existe o checkout com desconto na Wiapy (nunca mostra um preço que ela não vai pagar). */
+ *  ATENÇÃO: aparece mesmo sem o checkout com desconto (pedido do Levi, 09/11). Enquanto PRECO_PRESENTE.checkoutUrl estiver vazio,
+ *  o botão abre o checkout de preço cheio. Colocar os links antes de o app ir para as compradoras. */
 export function precoPresente(eu: Eu, p: ProdutoId, agora = Date.now()) {
   const d = eu.acesso.desconto
   const preco = PRECO_PRESENTE[p]
   if (!d || !preco || !(Date.parse(d.ate) > agora)) return null
-  if (!preco.checkoutUrl && import.meta.env.VITE_DEMO !== '1') return null
   return { ...preco, pct: d.pct, ate: d.ate }
 }
