@@ -104,13 +104,14 @@ export function Painel() {
 
       {/* 4. extras: seção separada, mesma cara dos outros; o toque leva à página de compra (pedido do Levi) */}
       {extras.length > 0 && (
-        <div className="card">
+        <div className="card extras-card">
           <h3>Mais livros da Fábrica</h3>
-          <div className="grade-inicio">
+          <div className="grade-extras">
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
                 <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
                 <span>{PRODUTOS[p].nome}</span>
+                <span className="btn-extra">📖 Ver livro</span>
               </button>
             ))}
           </div>

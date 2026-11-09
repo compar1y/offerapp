@@ -226,3 +226,9 @@ body{font-size:17px}
 .grade-inicio .mini-capa{width:auto}
 .grade-inicio .mini-capa img{width:100%}
 .divisor-extras{margin:8px 0 -4px;font-size:15px;text-transform:uppercase;letter-spacing:.05em;color:var(--fita);text-align:center}
+.extras-card{border:2px solid var(--casca);background:var(--casca-clara)}
+.grade-extras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grade-extras .mini-capa{width:auto}
+.grade-extras .mini-capa img{width:100%;box-shadow:0 6px 16px rgba(46,30,20,.2)}
+.grade-extras .mini-capa > span:not(.btn-extra){font-size:15px}
+.btn-extra{display:block;text-align:center;background:var(--pinheiro);color:#fff;font-weight:800;font-size:15px;border-radius:12px;padding:10px 8px;box-shadow:0 4px 0 var(--pinheiro-sombra);animation:liberar 1.4s ease-in-out infinite}
