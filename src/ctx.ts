@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import { PRODUTOS, type MaterialId, type ProdutoId } from '../shared/catalogo'
+import { PRODUTOS, vendaLigada, type MaterialId, type ProdutoId } from '../shared/catalogo'
 import { PRECO_PRESENTE } from '../shared/desconto'
 import type { BauId, Estado } from '../shared/jogo'
 import type { Eu, Salvavel } from './api'
@@ -52,7 +52,7 @@ export const temMaterial = (eu: Eu, m: MaterialId) => eu.acesso.materiais.includ
  *  A Primeira Encomenda é só downsell: aparece uma vez, depois de ela recusar a Encomenda Puxa Encomenda,
  *  e nunca no catálogo nem no Início. Some para quem já tem a Encomenda Puxa Encomenda. */
 export function ofertaDisponivel(eu: Eu, p: ProdutoId): boolean {
-  if (p === 'kit' || !PRODUTOS[p].checkoutUrl || tem(eu, p)) return false
+  if (p === 'kit' || !PRODUTOS[p].checkoutUrl || !vendaLigada(p) || tem(eu, p)) return false
   if (p === 'primeira' && tem(eu, 'encomenda')) return false
   return true
 }

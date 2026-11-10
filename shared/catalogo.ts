@@ -51,15 +51,25 @@ export const ETIQUETAS_WIAPY: { checkoutUrl: string; checkoutIds: string[]; prod
 }
 
 /**
- * Respostas com a Conta Feita (R$9,90): códigos da Wiapy. AINDA VAZIOS: o Caixa está criando o produto e o checkout (10/11).
- * Com o checkoutUrl vazio, ofertaDisponivel() esconde o card e a tela de venda, e o webhook não reconhece nada como 'contafeita'.
- * Quando os IDs chegarem: checkoutUrl = link de pagamento, checkoutIds = código do link (e id interno), produtoIds = id do conteúdo.
+ * Respostas com a Conta Feita (R$9,90): códigos da Wiapy (recebidos do Levi em 10/11).
+ * checkoutUrl: o link de pagamento · checkoutIds: o código do link · produtoIds: o id do conteúdo.
+ * O webhook reconhece estes ids como 'contafeita' com a venda ligada ou desligada.
  */
 export const CONTAFEITA_WIAPY: { checkoutUrl: string; checkoutIds: string[]; produtoIds: string[] } = {
-  checkoutUrl: '',
-  checkoutIds: [],
-  produtoIds: [],
+  checkoutUrl: 'https://pay.wiapy.com/6af2a90804a3ce9b119ec3a8',
+  checkoutIds: ['6af2a90804a3ce9b119ec3a8'],
+  produtoIds: ['6af2a8a304a3ce9b119ebf8d'],
 }
+
+/**
+ * CHAVE ÚNICA DA VENDA do Respostas com a Conta Feita.
+ * true: o card da Seleção especial e a tela de oferta aparecem para quem não comprou.
+ * false: nada da venda aparece para quem não comprou (quem já comprou continua com a ferramenta).
+ */
+export const CONTAFEITA_VENDA_LIGADA: boolean = true
+
+/** a venda deste produto está ligada? (só o Conta Feita tem chave; os outros dependem só do checkout) */
+export const vendaLigada = (p: ProdutoId, contafeitaLigada: boolean = CONTAFEITA_VENDA_LIGADA): boolean => p !== 'contafeita' || contafeitaLigada
 
 export interface Produto {
   id: ProdutoId

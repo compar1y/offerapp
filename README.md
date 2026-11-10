@@ -91,8 +91,8 @@
 
 Ferramenta dentro do app (`src/telas/ContaFeita.tsx`, contas e textos em `src/contafeita.ts`): ela preenche uma encomenda (até 3 itens, entrega ou retirada, "uma parte agora", "tudo antes" ou "tudo na entrega", quanto já recebeu) e copia 5 respostas prontas, que são as mensagens 07, 18, 19, 20 e 23/24 do bônus 04, preenchidas e com a conta feita. Nada vai para o servidor: a encomenda, o nome e a chave PIX ficam no `localStorage` do celular.
 
-- **Escondido** enquanto `CONTAFEITA_WIAPY` (em `shared/catalogo.ts`) estiver vazio. Para ligar: preencher `checkoutUrl`, `checkoutIds` e `produtoIds` com os códigos da Wiapy.
-- Antes de ligar, rodar `supabase/migracao-2026-11-10-contafeita.sql` no SQL Editor do Supabase (inclui `contafeita` na `compras_produto_check`).
+- **Chave da venda:** `CONTAFEITA_VENDA_LIGADA` em `shared/catalogo.ts`. `true` mostra o card da Seleção especial e a oferta para quem não comprou; `false` esconde tudo da venda (quem comprou continua com a ferramenta). Os códigos da Wiapy estão em `CONTAFEITA_WIAPY`, e o webhook reconhece `contafeita` com a chave ligada ou desligada.
+- Precisa estar rodado `supabase/migracao-2026-11-10-contafeita.sql` no SQL Editor do Supabase (inclui `contafeita` na `compras_produto_check`).
 - Comprar `contafeita` não libera PDF nem aulas.
 
 ## Colocar no ar (só com a ordem do dono)
