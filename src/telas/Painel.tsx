@@ -11,7 +11,6 @@ import { VIDEOAULAS } from './OfertaVideo'
 import { AULAS } from '../../shared/aulas'
 import { podeVerAulas } from '../aulas'
 import { VitrineEtiquetas } from './Etiquetas'
-import { CapaContaFeita } from './ContaFeita'
 
 export const BAUS: { id: BauId; nome: string; ico: string; como: string }[] = [
   { id: 'prata', nome: 'Prata', ico: '🎁', como: '3 missões do dia' },
@@ -121,8 +120,8 @@ export function Painel() {
       {/* 1a3. Respostas com a Conta Feita: a ferramenta de encomenda */}
       {tem(eu, 'contafeita') && (
         <button className="card contafeita-entrada" onClick={() => { clique('contafeita'); ir({ t: 'contafeita' }) }}>
-          <b>💬 Respostas com a Conta Feita</b>
-          <span>Preencha a encomenda da cliente e copie as respostas prontas, com a conta feita.</span>
+          <img src="/img/mockups/contafeita.webp" alt="" loading="lazy" />
+          <span><b>💬 Respostas com a Conta Feita</b>Preencha a encomenda da cliente e copie as respostas prontas, com a conta feita.</span>
         </button>
       )}
 
@@ -187,9 +186,7 @@ export function Painel() {
           <div className={`grade-extras${extras.length === 1 ? ' uma' : ''}`}>
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
-                {p === 'contafeita'
-                  ? <CapaContaFeita />
-                  : <img src={p === 'etiquetas' ? '/img/mockups/etiquetas-capa.webp' : capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />}
+                <img src={p === 'etiquetas' ? '/img/mockups/etiquetas-capa.webp' : p === 'contafeita' ? '/img/mockups/contafeita-capa.webp' : capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
                 {precoPresente(eu, p) && <span className="selo-off">-{precoPresente(eu, p)!.pct}%</span>}
                 <span>{PRODUTOS[p].nome}</span>
                 {p === 'etiquetas' && <span className="mini-capa-sub">✍️ Personalizado na hora com os seus dados</span>}

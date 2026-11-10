@@ -95,7 +95,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         {p === 'etiquetas'
           ? <img className="foto-oferta" src="/img/mockups/etiquetas-destaque.webp" width={800} height={1000} loading="lazy" alt="Confeiteira de avental vinho amarrando no panetone a etiqueta redonda “Panetones da Dona Cida”" />
           : p === 'contafeita'
-            ? <PreenchePronto />
+            ? <><img className="foto-oferta" src="/img/mockups/contafeita.webp" width={800} height={800} loading="lazy" alt="Capa Respostas com a Conta Feita: celular com a mensagem da conta de 2 panetones de frutas, entre dois panetones embalados com fita vinho" /><PreenchePronto /></>
             : mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
         {/* as peças de verdade, com o nome de exemplo, logo abaixo da capa */}
         {p === 'etiquetas' && <DigiteSaiPronto />}
