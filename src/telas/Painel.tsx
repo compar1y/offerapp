@@ -10,7 +10,6 @@ import { Suporte } from './Entrar'
 import { VIDEOAULAS } from './OfertaVideo'
 import { AULAS } from '../../shared/aulas'
 import { podeVerAulas } from '../aulas'
-import { CUSTO_PRESENTE } from '../../shared/presente'
 import { VitrineEtiquetas } from './Etiquetas'
 
 export const BAUS: { id: BauId; nome: string; ico: string; como: string }[] = [
@@ -189,21 +188,7 @@ export function Painel() {
         </div>
       )}
 
-      {/* 5. moedas: onde gastar. São dois saldos: as do Presente (1 por dia de app) e as Moedas Douradas (aulas, receitas, lições) */}
-      <div className="card moedas-card">
-        <h3>🪙 Suas moedas</h3>
-        <p className="sub moedas-saldo">
-          {eu.presente.escolhido
-            ? <>Presente da Fábrica: já escolhido 🎁</>
-            : <>Presente da Fábrica: <b>🪙 {Math.min(eu.presente.moedas, CUSTO_PRESENTE)} de {CUSTO_PRESENTE}</b> (ganha 🪙10 por dia que abre o app)</>}
-          <br />Moedas Douradas: <b>🪙 {estado.moedas}</b> (aulas, receitas e lições)
-        </p>
-        <div className="moedas-botoes">
-          <button className="btn" onClick={() => { clique('moedas.presente'); ir({ t: 'loja' }) }}>🎁 Presente da Fábrica</button>
-          <button className="btn leve" onClick={() => { clique('moedas.lojinha'); ir({ t: 'lojinha' }) }}>🛍️ Lojinha das Moedas Douradas</button>
-          <button className="btn leve" onClick={() => { clique('moedas.materiais'); ir({ t: 'materiais' }) }}>📚 Meus materiais</button>
-        </div>
-      </div>
+      <button className="btn leve" onClick={() => { clique('materiais'); ir({ t: 'materiais' }) }}>📚 Meus materiais</button>
 
       <p className="sub" style={{ fontSize: 15, textAlign: 'center' }}>Precisa de ajuda? <Suporte /></p>
       <button className="link" onClick={sair}>Sair</button>
