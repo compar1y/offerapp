@@ -251,19 +251,3 @@ export function PreenchePronto() {
     </div>
   )
 }
-
-/** capa provisória do card (até a capa de verdade chegar): o título e um balão com a conta */
-export function CapaContaFeita() {
-  return (
-    <div className="capa-cf" aria-hidden="true">
-      <b>Respostas com a Conta Feita</b>
-      <div className="capa-cf-balao">
-        <span>2 × Panetone de frutas</span>
-        <span>1 × Chocotone</span>
-        <span>Entrega: R$ 10,00</span>
-        <strong>Total: R$ 150,00</strong>
-      </div>
-      <i>📋 Copiar</i>
-    </div>
-  )
-}

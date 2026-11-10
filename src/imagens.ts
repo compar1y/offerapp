@@ -13,5 +13,5 @@ export const fotoBau = (b: string) => `img/baus/${b}.webp`
 const PERFIL_ARQ: Record<string, string> = { desacreditada: 'desacreditada', semClientes: 'sem-clientes', semPreco: 'sem-preco', corrida: 'corrida', iniciante: 'iniciante' }
 export const fotoPerfil = (p: string) => `img/perfis/${PERFIL_ARQ[p] ?? 'iniciante'}.webp`
 
-const MOCKUP: Partial<Record<ProdutoId, string>> = { recheios: 'recheios', encomenda: 'encomenda', primeira: 'primeira', etiquetas: 'etiquetas' }
+const MOCKUP: Partial<Record<ProdutoId, string>> = { recheios: 'recheios', encomenda: 'encomenda', primeira: 'primeira', etiquetas: 'etiquetas', contafeita: 'contafeita' }
 export const mockup = (p: ProdutoId) => (MOCKUP[p] ? `img/mockups/${MOCKUP[p]}.webp` : null)
