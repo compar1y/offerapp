@@ -164,6 +164,9 @@ select{font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha
 .cartao-cena{position:relative;display:block;width:100%;padding:0;border:2px solid var(--linha);border-radius:18px;overflow:hidden;cursor:pointer;background:var(--cartao);font:inherit;color:#fff;text-align:left;box-shadow:0 4px 0 var(--linha)}
 .cartao-cena img{display:block;width:100%;aspect-ratio:16/8;object-fit:cover}
 .cartao-cena span{position:absolute;left:0;right:0;bottom:0;padding:28px 14px 12px;background:linear-gradient(transparent,rgba(30,18,12,.88));font-size:14px;font-weight:600}
+.cartao-cena>span{z-index:5}
+/* Etiquetas (quem comprou): as peças claras ficam atrás do texto; o fundo escuro começa no topo do texto para ele ser lido */
+.cartao-cena.etiquetas-entrada>span{padding-top:14px;background:linear-gradient(rgba(30,18,12,.6),rgba(30,18,12,.92) 45%)}
 .cartao-cena b{display:block;font-family:var(--display);font-size:21px;line-height:1.1}
 .cartao-cena.sos-cena{border-color:var(--fita);box-shadow:0 5px 0 var(--fita-sombra)}
 .cartao-cena.sos-cena span{background:linear-gradient(transparent,rgba(143,31,42,.95))}
@@ -236,6 +239,8 @@ body{font-size:17px}
 .grade-extras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .grade-extras .mini-capa{width:auto}
 .grade-extras .mini-capa img{width:100%;box-shadow:0 6px 16px rgba(46,30,20,.2)}
+/* capa quadrada (Etiquetas, Conta Feita): o card tem a proporção da capa, a imagem preenche tudo, sem faixa */
+.grade-extras .mini-capa img.capa-quadrada{aspect-ratio:1/1;object-fit:cover;background:none}
 .grade-extras .mini-capa > span:not(.btn-extra){font-size:15px}
 .btn-extra{display:block;text-align:center;background:var(--pinheiro);color:#fff;font-weight:800;font-size:15px;border-radius:12px;padding:10px 8px;box-shadow:0 4px 0 var(--pinheiro-sombra);animation:liberar 1.4s ease-in-out infinite}
 .selo-extras .estrela{color:#C9333F;font-size:16px;margin-right:2px;text-shadow:0 1px 0 rgba(255,255,255,.4)}
@@ -458,7 +463,7 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .popup-desconto .card{position:relative;gap:10px;padding-top:44px}
 .pd-x{position:absolute;top:4px;right:4px;width:44px;height:44px;border:0;border-radius:50%;background:transparent;font-size:15px;cursor:pointer;color:#9A8B7E;display:grid;place-items:center}
 .pd-ok{margin:0;padding:8px 10px;border-radius:10px;background:#E5F4EA;color:#1D5B3A;font-weight:700;font-size:15px}
-.pd-img{width:100%;max-height:200px;object-fit:cover;border-radius:12px}
+.pd-img{width:100%;max-height:200px;object-fit:cover;object-position:50% 0;border-radius:12px} /* a partir do topo: o título e o selo das capas não são cortados */
 .pd-selo-linha{margin:0;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}
 .pd-selo{flex:none;padding:3px 10px;border-radius:999px;background:#7A1F2B;color:#fff;font-weight:800;font-size:13px;letter-spacing:.02em;line-height:1.3}
 .pd-selo-motivo{font-size:13px;color:#7A6A5E;overflow:hidden;text-overflow:ellipsis}

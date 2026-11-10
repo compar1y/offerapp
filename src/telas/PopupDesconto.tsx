@@ -106,7 +106,7 @@ export function PopupDesconto({ comprado, oferta, fechar }: { comprado: UpsellPo
         <button className="pd-x" aria-label="Fechar" onClick={() => sair('x')}>✕</button>
         <p className="pd-ok">✅ Tudo certo: {NOME_CURTO[comprado]} já {comprado === 'contafeita' ? 'está liberado' : 'estão liberadas'} aqui embaixo.</p>
         <img className="pd-img" src={IMAGEM[oferta]} alt="" />
-        <p className="pd-selo-linha"><span className="pd-selo">{PCT_POPUP}% para você</span><span className="pd-selo-motivo">um presente só para você</span></p>
+        <p className="pd-selo-linha"><span className="pd-selo">{PCT_POPUP}% para você</span><span className="pd-selo-motivo">um presente da sua compra</span></p>
         <h3 id="pd-t">{c.titulo}</h3>
         <p className="pd-texto">{c.texto}</p>
         <ul className="pd-itens">{c.itens.map((i) => <li key={i}>{i}</li>)}</ul>

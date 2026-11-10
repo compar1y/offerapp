@@ -92,3 +92,16 @@ describe('tela Liberado!: onde o que ela comprou aparece no Início', () => {
     expect(painel).not.toMatch(/Meus materiais<\/button>/)
   })
 })
+
+describe('cards da Seleção especial e selo do popup', () => {
+  it('Etiquetas e Conta Feita usam a capa quadrada, sem as faixas borradas', async () => {
+    const fs = await import('node:fs')
+    const painel = fs.readFileSync('src/telas/Painel.tsx', 'utf8')
+    expect(painel).not.toMatch(/etiquetas-capa\.webp|contafeita-capa\.webp/)
+    expect(fs.readFileSync('src/estilo.css', 'utf8')).toMatch(/img\.capa-quadrada\{aspect-ratio:1\/1;object-fit:cover/)
+  })
+  it('motivo ao lado do selo do popup', async () => {
+    const fs = await import('node:fs')
+    expect(fs.readFileSync('src/telas/PopupDesconto.tsx', 'utf8')).toContain('<span className="pd-selo-motivo">um presente da sua compra</span>')
+  })
+})
