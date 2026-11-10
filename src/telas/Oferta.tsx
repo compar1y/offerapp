@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { PRODUTOS, vendaLigada, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
-import { comPresente, ganhaPresente, ofertaDisponivel, precoPresente, reais, tem, textoFaixa, textoPresente, useApp } from '../ctx'
+import { comPresente, ganhaPresente, ondeFica, ofertaDisponivel, precoPresente, reais, tem, textoFaixa, textoPresente, useApp } from '../ctx'
 import { AvisoPresente, BarraPresente, FaixaDesconto } from './PresenteDesconto'
 
 import { Capa } from './Materiais'
@@ -72,11 +72,11 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <div className="card pop" style={{ textAlign: 'center', gap: 14 }}>
         <div style={{ fontSize: 64 }}>🎉</div>
         <h1>Liberado!</h1>
-        <p><b>{prod.nome}</b> já está no Início, em “Minhas compras”.</p>
+        <p>{ondeFica(p)}</p>
         {presente && (
           <>
             <FaixaDesconto pct={presente.pct} texto={`Você ganhou ${textoFaixa(eu)}.`} />
-            <button className="btn comprar-pulsa" onClick={() => trocar({ t: 'painel' })}>🎁 Ver meu desconto</button>
+            <button className="btn comprar-pulsa" onClick={() => trocar({ t: 'painel' })}>🎁 Ver meu presente</button>
           </>
         )}
         <button className={presente ? 'btn leve' : 'btn'} onClick={() => trocar(p === 'etiquetas' ? { t: 'etiquetas' } : p === 'contafeita' ? { t: 'contafeita' } : { t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>

@@ -49,7 +49,7 @@ describe('presente de 30% com os checkouts do popup', () => {
     expect(precoPresente(e, 'videoaulas')).toMatchObject({ precoCentavos: 1390, checkoutUrl: 'https://pay.wiapy.com/lQ_YTlxm58Y' })
     expect(precoPresente(e, 'encomenda')).toBeNull()
     const { textoFaixa } = await import('../src/ctx')
-    expect(textoFaixa(eu(['kit', 'etiquetas']))).toBe('30% OFF em Aulas ou Conta Feita')
+    expect(textoFaixa(eu(['kit', 'etiquetas']))).toBe('30% de presente em Aulas ou Conta Feita')
   })
   it('nenhum texto do presente fala em prazo, horas ou que o desconto acaba', async () => {
     const { textoPresente, textoFaixa } = await import('../src/ctx')
@@ -63,12 +63,32 @@ describe('presente de 30% com os checkouts do popup', () => {
     const { ganhaPresente, textoPresente } = await import('../src/ctx')
     expect(ganhaPresente(eu(['kit']), 'recheios')).toBe(true)
     expect(ganhaPresente(eu(['kit']), 'etiquetas')).toBe(true)
-    expect(textoPresente(eu(['kit']), 'etiquetas')).toBe('Comprando este material, você ganha 30% OFF em mais um: nas Aulas em vídeo ou no Conta Feita.')
+    expect(textoPresente(eu(['kit']), 'etiquetas')).toBe('Sua primeira compra te deixa com 30% de presente em mais um: nas Aulas em vídeo ou no Conta Feita.')
     expect(textoPresente(eu(['kit'])))
-      .toBe('Comprando qualquer material daqui, você ganha 30% OFF em mais um (Aulas, Etiquetas ou Conta Feita).')
+      .toBe('Qualquer material daqui te deixa com 30% de presente em mais um (Aulas, Etiquetas ou Conta Feita).')
     // já tem os outros dois: comprar as Etiquetas não daria desconto em nada, então não há aviso
     expect(ganhaPresente(eu(['kit', 'videoaulas', 'contafeita']), 'etiquetas')).toBe(false)
     // já fez a primeira compra de extra: sem aviso
     expect(ganhaPresente(eu(['kit'], { ganhaPresente: false }), 'recheios')).toBe(false)
+  })
+})
+
+describe('tela Liberado!: onde o que ela comprou aparece no Início', () => {
+  it('Aulas, Etiquetas e Conta Feita: no topo do Início (têm cartão próprio)', async () => {
+    const { ondeFica } = await import('../src/ctx')
+    expect(ondeFica('videoaulas')).toBe('As Videoaulas já estão no Início, logo no topo.')
+    expect(ondeFica('etiquetas')).toBe('As Imagens e Etiquetas com o Seu Nome já estão no Início, logo no topo.')
+    expect(ondeFica('contafeita')).toBe('O Respostas com a Conta Feita já está no Início, logo no topo.')
+  })
+  it('os outros extras: em Minhas compras', async () => {
+    const { ondeFica } = await import('../src/ctx')
+    const { PRODUTOS } = await import('../shared/catalogo')
+    for (const p of ['recheios', 'encomenda', 'primeira'] as const) expect(ondeFica(p)).toBe(`${PRODUTOS[p].nome} já está no Início, em “Minhas compras”.`)
+  })
+  it('bate com o Painel: quem fica em Minhas compras é exatamente quem não tem cartão no topo', async () => {
+    const fs = await import('node:fs')
+    const painel = fs.readFileSync('src/telas/Painel.tsx', 'utf8')
+    expect(painel).toMatch(/COMPRAS_EXTRAS: ProdutoId\[\] = \['recheios', 'encomenda', 'primeira'\]/)
+    expect(painel).not.toMatch(/Meus materiais<\/button>/)
   })
 })

@@ -87,12 +87,21 @@ const NOME_PRESENTE: Partial<Record<ProdutoId, [string, string]>> = {
 }
 const ou = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} ou ${xs[xs.length - 1]}` : xs[0] ?? '')
 
+/** tela Liberado!: onde o que ela comprou aparece no Início. Aulas, Etiquetas e Conta Feita têm cartão próprio no topo;
+ *  os outros ficam em "Minhas compras" (COMPRAS_EXTRAS em Painel.tsx) */
+export function ondeFica(p: ProdutoId): string {
+  if (p === 'videoaulas') return 'As Videoaulas já estão no Início, logo no topo.'
+  if (p === 'etiquetas') return 'As Imagens e Etiquetas com o Seu Nome já estão no Início, logo no topo.'
+  if (p === 'contafeita') return 'O Respostas com a Conta Feita já está no Início, logo no topo.'
+  return `${PRODUTOS[p].nome} já está no Início, em “Minhas compras”.`
+}
+
 /** texto curto da faixa: onde o desconto vale (só nos que ela ainda pode comprar) */
-export const textoFaixa = (eu: Eu): string => `${DESCONTO.pct}% OFF em ${ou(comPresente(eu).map((q) => NOME_PRESENTE[q]![1]))}`
+export const textoFaixa = (eu: Eu): string => `${DESCONTO.pct}% de presente em ${ou(comPresente(eu).map((q) => NOME_PRESENTE[q]![1]))}`
 
 /** texto do aviso antes da compra. Na oferta: o que ela ganha comprando ESTE material. No Início: comprando qualquer um. */
 export function textoPresente(eu: Eu, p?: ProdutoId): string {
   const lista = comPresente(eu, p)
-  if (p) return `Comprando este material, você ganha ${DESCONTO.pct}% OFF em mais um: ${ou(lista.map((q) => NOME_PRESENTE[q]![0]))}.`
-  return `Comprando qualquer material daqui, você ganha ${DESCONTO.pct}% OFF em mais um (${ou(lista.map((q) => NOME_PRESENTE[q]![1]))}).`
+  if (p) return `Sua primeira compra te deixa com ${DESCONTO.pct}% de presente em mais um: ${ou(lista.map((q) => NOME_PRESENTE[q]![0]))}.`
+  return `Qualquer material daqui te deixa com ${DESCONTO.pct}% de presente em mais um (${ou(lista.map((q) => NOME_PRESENTE[q]![1]))}).`
 }

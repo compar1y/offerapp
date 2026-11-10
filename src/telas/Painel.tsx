@@ -203,7 +203,6 @@ export function Painel() {
         </div>
       )}
 
-      <button className="btn leve" onClick={() => { clique('materiais'); ir({ t: 'materiais' }) }}>📚 Meus materiais</button>
 
       <p className="sub" style={{ fontSize: 15, textAlign: 'center' }}>Precisa de ajuda? <Suporte /></p>
       <button className="link" onClick={sair}>Sair</button>

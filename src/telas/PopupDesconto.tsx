@@ -48,7 +48,7 @@ const IMAGEM: Record<UpsellPopup, string> = { videoaulas: '/img/cenas/videoaulas
 /** a copy do popup, por produto oferecido (sem escassez, sem cronômetro, sem número de ganho) */
 export const COPY_POPUP: Record<UpsellPopup, { titulo: string; texto: string; itens: string[]; botao: string }> = {
   etiquetas: {
-    titulo: 'Agora deixe cada panetone com o seu nome',
+    titulo: 'Deixe cada panetone com o seu nome',
     texto: 'Você digita o nome do seu negócio uma vez e o app monta tudo na hora, pronto para postar e imprimir.',
     itens: [
       '6 imagens de Natal para o WhatsApp com o seu nome e os seus sabores',
@@ -58,7 +58,7 @@ export const COPY_POPUP: Record<UpsellPopup, { titulo: string; texto: string; it
     botao: 'Quero com o meu nome',
   },
   contafeita: {
-    titulo: 'Agora responda cada cliente com a conta feita',
+    titulo: 'Responda cada cliente com a conta feita',
     texto: 'Você preenche a encomenda uma vez e o app faz as contas e monta as respostas, prontas para copiar no WhatsApp.',
     itens: [
       'Orçamento com o total, a entrega e o que ela paga agora',
@@ -68,7 +68,7 @@ export const COPY_POPUP: Record<UpsellPopup, { titulo: string; texto: string; it
     botao: 'Quero minhas respostas prontas',
   },
   videoaulas: {
-    titulo: 'Agora veja cada passo sendo feito',
+    titulo: 'Veja cada passo sendo feito',
     texto: 'Ler a receita é bom. Ver a massa de perto é o que tira a dúvida na hora.',
     itens: [
       'Sova, ponto da massa, modelagem e forno, de perto',
@@ -104,9 +104,9 @@ export function PopupDesconto({ comprado, oferta, fechar }: { comprado: UpsellPo
       <div className="card pop">
         {/* só o botão verde e o X: o X fecha e deixa ela no material que acabou de comprar (Levi, 10/11) */}
         <button className="pd-x" aria-label="Fechar" onClick={() => sair('x')}>✕</button>
-        <p className="pd-ok">✅ Compra confirmada: {NOME_CURTO[comprado]} já {comprado === 'contafeita' ? 'está liberado' : 'estão liberadas'} aqui embaixo.</p>
+        <p className="pd-ok">✅ Tudo certo: {NOME_CURTO[comprado]} já {comprado === 'contafeita' ? 'está liberado' : 'estão liberadas'} aqui embaixo.</p>
         <img className="pd-img" src={IMAGEM[oferta]} alt="" />
-        <p className="pd-selo-linha"><span className="pd-selo">{PCT_POPUP}% OFF</span><span className="pd-selo-motivo">por ter acabado de comprar</span></p>
+        <p className="pd-selo-linha"><span className="pd-selo">{PCT_POPUP}% para você</span><span className="pd-selo-motivo">um presente só para você</span></p>
         <h3 id="pd-t">{c.titulo}</h3>
         <p className="pd-texto">{c.texto}</p>
         <ul className="pd-itens">{c.itens.map((i) => <li key={i}>{i}</li>)}</ul>

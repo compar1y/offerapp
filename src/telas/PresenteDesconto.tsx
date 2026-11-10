@@ -7,11 +7,11 @@ import { DESCONTO } from '../../shared/desconto'
 export function FaixaDesconto({ pct, texto, de, por }: { pct: number; texto?: string; de?: string; por?: string }) {
   return (
     <div className="faixa-desconto" role="status">
-      <span className="fd-titulo">🎁 Presente da sua primeira compra</span>
+      <span className="fd-titulo">🎁 Seu presente da primeira compra</span>
       {por ? (
         <span className="fd-preco"><s>R${de}</s> por <b>R${por}</b></span>
       ) : (
-        <span className="fd-texto">{texto ?? `${pct}% OFF em mais um material`}</span>
+        <span className="fd-texto">{texto ?? `${pct}% de presente em mais um material`}</span>
       )}
     </div>
   )
@@ -22,7 +22,7 @@ export function AvisoPresente({ texto, compacto }: { texto: string; compacto?: b
   return (
     <div className={`aviso-presente${compacto ? ' compacto' : ''}`}>
       <span className="ap-ico" aria-hidden="true">🎁</span>
-      <span><b>Presente de primeira compra</b>{texto}</span>
+      <span><b>Seu presente da primeira compra</b>{texto}</span>
     </div>
   )
 }
@@ -31,7 +31,7 @@ export function AvisoPresente({ texto, compacto }: { texto: string; compacto?: b
 export function BarraPresente({ ativo }: { ativo?: boolean }) {
   return (
     <div className="barra-presente" role="status">
-      {ativo ? <>🎁 <b>{DESCONTO.pct}% OFF</b> aqui: seu presente</> : <>🎁 Comprou, ganhou <b>{DESCONTO.pct}% OFF</b> em mais um</>}
+      {ativo ? <>🎁 <b>{DESCONTO.pct}% de presente</b> aqui</> : <>🎁 Primeira compra: <b>{DESCONTO.pct}% de presente</b> em mais um</>}
     </div>
   )
 }
