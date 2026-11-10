@@ -43,7 +43,6 @@ export function conferirPopup(eu: Eu, ligado = POPUP_DESCONTO_LIGADO): { comprad
 }
 
 const NOME_CURTO: Record<UpsellPopup, string> = { videoaulas: 'as Videoaulas', etiquetas: 'as Imagens e Etiquetas', contafeita: 'o Respostas com a Conta Feita' }
-const ABRIR: Record<UpsellPopup, string> = { videoaulas: 'Ir para as aulas', etiquetas: 'Ir para as minhas etiquetas', contafeita: 'Ir para as minhas respostas' }
 const IMAGEM: Record<UpsellPopup, string> = { videoaulas: '/img/cenas/videoaulas.webp', etiquetas: '/img/mockups/etiquetas.webp', contafeita: '/img/mockups/contafeita.webp' }
 
 /** a copy do popup, por produto oferecido (sem escassez, sem cronômetro, sem número de ganho) */
@@ -101,12 +100,13 @@ export function PopupDesconto({ comprado, oferta, fechar }: { comprado: UpsellPo
   }
 
   return (
-    <div className="overlay popup-desconto" role="dialog" aria-modal="true" aria-labelledby="pd-t" onClick={(e) => { if (e.target === e.currentTarget) sair('fora') }}>
+    <div className="overlay popup-desconto" role="dialog" aria-modal="true" aria-labelledby="pd-t">
       <div className="card pop">
+        {/* só o botão verde e o X: o X fecha e deixa ela no material que acabou de comprar (Levi, 10/11) */}
         <button className="pd-x" aria-label="Fechar" onClick={() => sair('x')}>✕</button>
         <p className="pd-ok">✅ Compra confirmada: {NOME_CURTO[comprado]} já {comprado === 'contafeita' ? 'está liberado' : 'estão liberadas'} aqui embaixo.</p>
         <img className="pd-img" src={IMAGEM[oferta]} alt="" />
-        <span className="pd-selo">{PCT_POPUP}% de desconto por ter acabado de comprar</span>
+        <p className="pd-selo-linha"><span className="pd-selo">{PCT_POPUP}% OFF</span><span className="pd-selo-motivo">por ter acabado de comprar</span></p>
         <h3 id="pd-t">{c.titulo}</h3>
         <p className="pd-texto">{c.texto}</p>
         <ul className="pd-itens">{c.itens.map((i) => <li key={i}>{i}</li>)}</ul>
@@ -115,7 +115,6 @@ export function PopupDesconto({ comprado, oferta, fechar }: { comprado: UpsellPo
           <span>{c.botao}</span>
           <span className="pd-comprar-preco">por R${reais(desc.precoCentavos)}</span>
         </button>
-        <button className="btn leve pd-agora-nao" onClick={() => sair('agora-nao')}>Agora não, {ABRIR[comprado].charAt(0).toLowerCase() + ABRIR[comprado].slice(1)}</button>
         <p className="sub" style={{ fontSize: 13 }}>7 dias de garantia. O pagamento abre numa página segura e o app continua aqui.</p>
       </div>
     </div>
