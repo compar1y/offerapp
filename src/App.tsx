@@ -40,7 +40,8 @@ export function App() {
   const pendente = useRef<Estado | null>(null)
   const timer = useRef<number | undefined>(undefined)
   const toastT = useRef<number | undefined>(undefined)
-  const [popup, setPopup] = useState<{ comprado: UpsellPopup; oferta: UpsellPopup } | null>(null)
+  const [popup, setPopup] = useState<{ comprado: UpsellPopup; oferta: UpsellPopup; ate: string } | null>(null)
+  const fecharPopup = useCallback(() => setPopup(null), [])
 
   const toast = useCallback((m: string) => {
     setAviso(m)
@@ -178,7 +179,7 @@ export function App() {
     <CtxReact.Provider value={ctx}>
       {import.meta.env.VITE_DEMO === '1' && <BarraPrevia />}
       <Rota tela={tela} />
-      {popup && <PopupDesconto comprado={popup.comprado} oferta={popup.oferta} fechar={() => setPopup(null)} />}
+      {popup && <PopupDesconto comprado={popup.comprado} oferta={popup.oferta} ate={popup.ate} fechar={fecharPopup} />}
       {aviso && <div className="toast pop" role="status">{aviso}</div>}
     </CtxReact.Provider>
   )

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { PRODUTOS, vendaLigada, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
-import { comPresente, ganhaPresente, ondeFica, ofertaDisponivel, precoPresente, reais, tem, textoFaixa, textoPresente, useApp } from '../ctx'
-import { AvisoPresente, BarraPresente, FaixaDesconto } from './PresenteDesconto'
+import { comDescontoAgora, ganhaPresente, ondeFica, ofertaDisponivel, precoPresente, presenteValendo, reais, tem, textoFaixa, textoPresente, useApp } from '../ctx'
+import { AvisoPresente, BarraPresente, FaixaDesconto, useRelogio } from './PresenteDesconto'
 
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
@@ -21,6 +21,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   const comprado = tem(eu, p)
   const pendente = eu.acesso.pendentes.includes(p)
   const desc = precoPresente(eu, p)
+  useRelogio(desc?.ate ?? comDescontoAgora(eu).map((x) => precoPresente(eu, x)?.ate).find(Boolean)) // ao acabar o prazo, o preço normal volta na hora
 
   // venda desligada pela chave (ex.: CONTAFEITA_VENDA_LIGADA = false): quem não comprou não vê a oferta nem por um link guardado
   const fechada = !comprado && !vendaLigada(p)
@@ -67,7 +68,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   if (comprado) {
     const primeiro = prod.libera[0]
     // presente da primeira compra: aparece logo depois de liberar, se ainda tiver material extra para ela
-    const presente = comPresente(eu).map((x) => precoPresente(eu, x)).find(Boolean)
+    const presente = comDescontoAgora(eu).map((x) => precoPresente(eu, x)).find(Boolean)
     return (
       <div className="card pop" style={{ textAlign: 'center', gap: 14 }}>
         <div style={{ fontSize: 64 }}>🎉</div>
@@ -75,7 +76,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         <p>{ondeFica(p)}</p>
         {presente && (
           <>
-            <FaixaDesconto pct={presente.pct} texto={`Você ganhou ${textoFaixa(eu)}.`} />
+            <FaixaDesconto pct={presente.pct} ate={presente.ate} titulo={presenteValendo(eu) ? undefined : 'Seu presente da sua compra'} texto={`Você ganhou ${textoFaixa(eu)}.`} />
             <button className="btn comprar-pulsa" onClick={() => trocar({ t: 'painel' })}>🎁 Ver meu presente</button>
           </>
         )}
@@ -87,7 +88,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   return (
     <>
-      {desc ? <BarraPresente ativo /> : ganhaPresente(eu, p) && <BarraPresente />}
+      {desc ? <BarraPresente ate={desc.ate} /> : ganhaPresente(eu, p) && <BarraPresente />}
       <button className="voltar" onClick={agoraNao}>← Voltar</button>
       <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'Material extra, vendido à parte'}</p>
       <h1>{texto.gancho}</h1>
@@ -104,7 +105,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
         {p === 'etiquetas' && <img className="foto-oferta" src="/img/mockups/etiquetas-detalhe.webp" width={800} height={800} loading="lazy" alt="Etiqueta redonda “Panetones da Dona Cida” com fita vinho ao lado dos cartões “Feito com carinho para o seu Natal”" />}
-        {desc && <FaixaDesconto pct={desc.pct} de={reais(prod.precoCentavos)} por={reais(desc.precoCentavos)} />}
+        {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} titulo={presenteValendo(eu) ? undefined : 'Seu presente da sua compra'} de={reais(prod.precoCentavos)} por={reais(desc.precoCentavos)} />}
         {!desc && ganhaPresente(eu, p) && <AvisoPresente texto={textoPresente(eu, p)} />}
         {!desc && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span className="sub">por</span><span className="preco">R${reais(prod.precoCentavos)}</span></div>

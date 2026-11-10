@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 import { PRODUTOS, vendaLigada, type ProdutoId } from '../../shared/catalogo'
-import { CHECKOUT_DESCONTO_POPUP, PCT_POPUP, POPUP_DESCONTO_LIGADO, compraNova, proximoUpsell, type MemoriaPopup, type UpsellPopup } from '../../shared/popupDesconto'
+import { PCT_POPUP, POPUP_DESCONTO_LIGADO, compraNova, type MemoriaPopup, type UpsellPopup } from '../../shared/popupDesconto'
 import type { Eu } from '../api'
-import { reais, useApp, type Tela } from '../ctx'
+import { precoPresente, reais, useApp, type Tela } from '../ctx'
+import { agoraServidor } from '../relogio'
+import { useRelogio } from './PresenteDesconto'
 import { VIDEOAULAS } from './OfertaVideo'
 
 /** a tela de acesso do que ela acabou de comprar: o popup abre por cima dela e fechar deixa ela ali */
@@ -32,14 +34,16 @@ const aVenda = (p: UpsellPopup) => !!PRODUTOS[p].checkoutUrl && vendaLigada(p) &
 /**
  * Confere se uma compra de upsell acabou de ser confirmada. Com a chave desligada não faz nada (nem grava no aparelho).
  * A compra fica marcada na hora, tenha ou não um próximo para oferecer: o popup aparece no máximo uma vez por compra.
+ * Só abre se o SERVIDOR disser que essa compra tem menos de 3 h e mandar o link com desconto (acesso.popup + ofertasDesconto).
  */
-export function conferirPopup(eu: Eu, ligado = POPUP_DESCONTO_LIGADO): { comprado: UpsellPopup; oferta: UpsellPopup } | null {
+export function conferirPopup(eu: Eu, ligado = POPUP_DESCONTO_LIGADO, agora = agoraServidor()): { comprado: UpsellPopup; oferta: UpsellPopup; ate: string } | null {
   if (!ligado) return null
   const { comprado, memoria } = compraNova(eu.acesso.produtos as ProdutoId[], lerMemoria(eu.email))
   gravarMemoria(eu.email, memoria)
-  if (!comprado) return null
-  const oferta = proximoUpsell(comprado, eu.acesso.produtos as ProdutoId[], aVenda)
-  return oferta ? { comprado, oferta } : null
+  const s = eu.acesso.popup
+  if (!comprado || !s || s.comprado !== comprado || !(Date.parse(s.ate) > agora)) return null
+  if (!aVenda(s.oferta) || !precoPresente(eu, s.oferta, agora)) return null
+  return { comprado, oferta: s.oferta, ate: s.ate }
 }
 
 const NOME_CURTO: Record<UpsellPopup, string> = { videoaulas: 'as Videoaulas', etiquetas: 'as Imagens e Etiquetas', contafeita: 'o Respostas com a Conta Feita' }
@@ -79,17 +83,21 @@ export const COPY_POPUP: Record<UpsellPopup, { titulo: string; texto: string; it
   },
 }
 
-export function PopupDesconto({ comprado, oferta, fechar }: { comprado: UpsellPopup; oferta: UpsellPopup; fechar: () => void }) {
-  const { evento } = useApp()
+export function PopupDesconto({ comprado, oferta, ate, fechar }: { comprado: UpsellPopup; oferta: UpsellPopup; ate: string; fechar: () => void }) {
+  const { eu, evento } = useApp()
   const c = COPY_POPUP[oferta]
   const cheio = PRODUTOS[oferta].precoCentavos
-  const desc = CHECKOUT_DESCONTO_POPUP[oferta]
+  const resta = useRelogio(ate)
+  const desc = resta ? precoPresente(eu, oferta) : null
+  // acabou o prazo com o popup aberto: ele some e fica só o preço normal no app
+  useEffect(() => { if (!desc) fechar() }, [desc, fechar])
 
   useEffect(() => {
     evento('popup.desconto.visto', { comprado, oferta })
   }, [comprado, oferta, evento])
 
   function comprar() {
+    if (!desc) return
     evento('popup.desconto.clicado', { comprado, oferta })
     window.open(desc.checkoutUrl, '_blank', 'noopener')
     fechar()
@@ -99,6 +107,7 @@ export function PopupDesconto({ comprado, oferta, fechar }: { comprado: UpsellPo
     fechar()
   }
 
+  if (!desc) return null
   return (
     <div className="overlay popup-desconto" role="dialog" aria-modal="true" aria-labelledby="pd-t">
       <div className="card pop">
@@ -107,6 +116,7 @@ export function PopupDesconto({ comprado, oferta, fechar }: { comprado: UpsellPo
         <p className="pd-ok">✅ Tudo certo: {NOME_CURTO[comprado]} já {comprado === 'contafeita' ? 'está liberado' : 'estão liberadas'} aqui embaixo.</p>
         <img className="pd-img" src={IMAGEM[oferta]} alt="" />
         <p className="pd-selo-linha"><span className="pd-selo">{PCT_POPUP}% para você</span><span className="pd-selo-motivo">um presente da sua compra</span></p>
+        <p className="pd-relogio">🎁 Seu presente fica guardado por <b>{resta}</b></p>
         <h3 id="pd-t">{c.titulo}</h3>
         <p className="pd-texto">{c.texto}</p>
         <ul className="pd-itens">{c.itens.map((i) => <li key={i}>{i}</li>)}</ul>

@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react'
 import { PRODUTOS, vendaLigada, type MaterialId, type ProdutoId } from '../shared/catalogo'
-import { DESCONTO, EXTRAS_DESCONTO, PRECO_PRESENTE } from '../shared/desconto'
+import { DESCONTO, EXTRAS_DESCONTO, PRODUTOS_COM_DESCONTO } from '../shared/desconto'
+import { agoraServidor } from './relogio'
 import { podeVerAulas } from './aulas'
 import type { BauId, Estado } from '../shared/jogo'
 import type { Eu, Salvavel } from './api'
@@ -60,22 +61,24 @@ export function ofertaDisponivel(eu: Eu, p: ProdutoId): boolean {
 
 export const reais = (centavos: number) => (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: centavos % 100 ? 2 : 0, maximumFractionDigits: 2 })
 
-/** o checkout com desconto deste produto já existe na Wiapy? Sem ele, nada de preço riscado nem aviso de 30% OFF */
-export const temCheckoutDesconto = (p: ProdutoId): boolean => !!PRECO_PRESENTE[p]?.checkoutUrl
-
-/** presente da primeira compra: preço e checkout com desconto, se ainda estiver valendo para este produto
- *  e se o checkout com desconto existir (sem ele a cobrança sairia com o preço cheio) */
-export function precoPresente(eu: Eu, p: ProdutoId) {
-  const d = eu.acesso.desconto
-  const preco = PRECO_PRESENTE[p]
-  if (!d || !preco || !preco.checkoutUrl) return null
-  return { ...preco, pct: d.pct }
+/** desconto de 30% que vale AGORA para este produto: preço, link (que só o servidor manda) e o fim do prazo.
+ *  Some sozinho quando o prazo acaba, mesmo sem recarregar (relógio do servidor). */
+export function precoPresente(eu: Eu, p: ProdutoId, agora = agoraServidor()) {
+  const o = eu.acesso.ofertasDesconto?.[p as keyof NonNullable<Eu['acesso']['ofertasDesconto']>]
+  if (!o || !o.checkoutUrl || !(Date.parse(o.ate) > agora) || tem(eu, p)) return null
+  return o
 }
 
-/** materiais que ela ainda pode comprar com o presente de 30% (com checkout com desconto, à venda e que ela não tem), fora `menos` */
+/** o presente da primeira compra está valendo agora? (prazo de 3 h do servidor) */
+export const presenteValendo = (eu: Eu, agora = agoraServidor()): boolean => !!eu.acesso.desconto && Date.parse(eu.acesso.desconto.ate) > agora
+
+/** materiais em que ela pode ganhar o presente de 30% depois (à venda e que ela não tem), fora `menos` */
 export function comPresente(eu: Eu, menos?: ProdutoId): ProdutoId[] {
-  return (Object.keys(PRECO_PRESENTE) as ProdutoId[]).filter((q) => q !== menos && !!PRECO_PRESENTE[q]?.checkoutUrl && ofertaDisponivel(eu, q) && (q !== 'videoaulas' || !podeVerAulas(eu)))
+  return PRODUTOS_COM_DESCONTO.filter((q) => q !== menos && ofertaDisponivel(eu, q) && (q !== 'videoaulas' || !podeVerAulas(eu)))
 }
+
+/** materiais com o desconto valendo agora */
+export const comDescontoAgora = (eu: Eu, agora = agoraServidor()): ProdutoId[] => PRODUTOS_COM_DESCONTO.filter((q) => !!precoPresente(eu, q, agora) && (q !== 'videoaulas' || !podeVerAulas(eu)))
 
 /** aviso antes da compra: comprando `p` agora (a primeira compra de extra), ela ganha 30% em outro material que ainda pode comprar */
 export const ganhaPresente = (eu: Eu, p: ProdutoId) => !!eu.acesso.ganhaPresente && EXTRAS_DESCONTO.includes(p) && comPresente(eu, p).length > 0
@@ -97,11 +100,11 @@ export function ondeFica(p: ProdutoId): string {
 }
 
 /** texto curto da faixa: onde o desconto vale (só nos que ela ainda pode comprar) */
-export const textoFaixa = (eu: Eu): string => `${DESCONTO.pct}% de presente em ${ou(comPresente(eu).map((q) => NOME_PRESENTE[q]![1]))}`
+export const textoFaixa = (eu: Eu): string => `${DESCONTO.pct}% de presente em ${ou(comDescontoAgora(eu).map((q) => NOME_PRESENTE[q]![1]))}`
 
 /** texto do aviso antes da compra. Na oferta: o que ela ganha comprando ESTE material. No Início: comprando qualquer um. */
 export function textoPresente(eu: Eu, p?: ProdutoId): string {
   const lista = comPresente(eu, p)
-  if (p) return `Sua primeira compra te deixa com ${DESCONTO.pct}% de presente em mais um: ${ou(lista.map((q) => NOME_PRESENTE[q]![0]))}.`
-  return `Qualquer material daqui te deixa com ${DESCONTO.pct}% de presente em mais um (${ou(lista.map((q) => NOME_PRESENTE[q]![1]))}).`
+  if (p) return `Sua primeira compra te deixa com ${DESCONTO.pct}% de presente em mais um: ${ou(lista.map((q) => NOME_PRESENTE[q]![0]))}. Ele fica guardado por ${DESCONTO.horas} horas depois da compra.`
+  return `Qualquer material daqui te deixa com ${DESCONTO.pct}% de presente em mais um (${ou(lista.map((q) => NOME_PRESENTE[q]![1]))}), guardado por ${DESCONTO.horas} horas.`
 }

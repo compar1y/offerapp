@@ -3,8 +3,17 @@ import type { MaterialId, ProdutoId } from '../shared/catalogo'
 import type { PerfilId } from '../shared/conteudo'
 import type { Estado } from '../shared/jogo'
 import type { Desconto } from '../shared/desconto'
+import type { UpsellPopup } from '../shared/popupDesconto'
+import { ajustarRelogio } from './relogio'
 
-export interface Acesso { produtos: ProdutoId[]; pendentes: ProdutoId[]; materiais: MaterialId[]; desconto?: Desconto | null; ganhaPresente?: boolean }
+export interface OfertaDesconto { checkoutUrl: string; precoCentavos: number; pct: number; ate: string }
+export interface Acesso {
+  produtos: ProdutoId[]; pendentes: ProdutoId[]; materiais: MaterialId[]; desconto?: Desconto | null; ganhaPresente?: boolean
+  popup?: { comprado: UpsellPopup; oferta: UpsellPopup; ate: string } | null
+  /** links com desconto: o servidor só manda enquanto o prazo de 3 h vale */
+  ofertasDesconto?: Partial<Record<UpsellPopup, OfertaDesconto>>
+  agora?: string
+}
 export interface Eu {
   email: string
   perfil: PerfilId | null
@@ -39,7 +48,7 @@ export type Salvavel = Partial<Pick<Eu, 'perfil' | 'respostas' | 'avatar' | 'ape
 export const api = {
   entrar: (email: string) => pedir<{ ok: true }>('/api/entrar', { method: 'POST', body: JSON.stringify({ email }) }),
   sair: () => pedir<{ ok: true }>('/api/sair', { method: 'POST' }),
-  eu: () => pedir<Eu>('/api/eu'),
+  eu: () => pedir<Eu>('/api/eu').then((e) => { ajustarRelogio(e.acesso?.agora); return e }),
   salvar: (dados: Salvavel, keepalive = false) => pedir<{ ok: true }>('/api/eu', { method: 'POST', body: JSON.stringify(dados), keepalive }),
   presente: (produto: ProdutoId) => pedir<{ ok: true }>('/api/presente', { method: 'POST', body: JSON.stringify({ produto }) }),
   evento: (tipo: string, dados: Record<string, unknown> = {}) => {

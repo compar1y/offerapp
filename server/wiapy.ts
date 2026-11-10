@@ -4,8 +4,7 @@
 // Formato real (webhook_bruto, 08/11): checkout.id = id interno do checkout; products[].id = id de cada conteúdo entregue.
 // O app reconhece cada item pelo conteúdo (PRODUTOS[...].produtoIds) e só usa o checkout quando nenhum conteúdo casar.
 import { BUMP_RECHEIOS, PRODUTOS, type ProdutoId } from '../shared/catalogo.js'
-import { PRECO_PRESENTE } from '../shared/desconto.js'
-import { produtoDoCheckoutDesconto, produtoDoConteudoDesconto } from '../shared/popupDesconto.js'
+import { produtoDoCheckoutDesconto, produtoDoConteudoDesconto } from './descontoLinks.js'
 import { env } from './env.js'
 
 export type StatusCompra = 'pago' | 'pendente' | 'recusado' | 'estornado'
@@ -60,7 +59,7 @@ const idsExtras = (nome: string) =>
 export function produtoDoCheckout(checkoutId: string): ProdutoId | null {
   if (!checkoutId) return null
   for (const p of Object.values(PRODUTOS)) {
-    const ids = [...p.checkoutIds, ...(PRECO_PRESENTE[p.id]?.checkoutIds ?? []), ...idsExtras(`CHECKOUT_IDS_${p.id.toUpperCase()}`)]
+    const ids = [...p.checkoutIds, ...idsExtras(`CHECKOUT_IDS_${p.id.toUpperCase()}`)]
     if (ids.includes(checkoutId)) return p.id
   }
   // checkout com desconto do popup pós-compra: é o mesmo produto
@@ -95,7 +94,7 @@ export function lerPedido(corpo: unknown): Pedido {
   const porItem = Object.values(PRODUTOS)
     .filter((p) => p.produtoIds?.some((id) => prods.some((x) => x.id === id)))
     .map((p) => p.id)
-  // conteúdo com desconto do popup pós-compra (shared/popupDesconto.ts): conta como o mesmo produto
+  // conteúdo com desconto do popup pós-compra (server/descontoLinks.ts): conta como o mesmo produto
   for (const x of prods) {
     const p = produtoDoConteudoDesconto(x.id)
     if (p && !porItem.includes(p)) porItem.push(p)

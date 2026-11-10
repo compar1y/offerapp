@@ -1,13 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { descontoDe } from '../shared/desconto'
+import { descontoDe, popupDe } from '../shared/desconto'
+import { descontosAgora, LINKS_DESCONTO } from '../server/descontoLinks'
 
 const t = (iso: string) => Date.parse(iso)
-describe('presente da primeira compra', () => {
-  const kit = { produto: 'kit', status: 'pago', criado_em: '2026-11-09T10:00:00Z', pagamento_id: 'a' }
-  it('vale depois da primeira compra de um extra, SEM prazo (o link com desconto não expira)', () => {
+const kit = { produto: 'kit', status: 'pago', criado_em: '2026-11-09T10:00:00Z', pagamento_id: 'a' }
+
+describe('presente da primeira compra: prazo REAL de 3 h a partir da compra gravada pelo webhook', () => {
+  it('compra recente: vale, com o fim do prazo 3 h depois da compra (criado_em, não o reenvio do webhook)', () => {
     const c = [kit, { produto: 'encomenda', status: 'pago', criado_em: '2026-11-09T11:00:00Z', atualizado_em: '2026-11-09T11:05:00Z', pagamento_id: 'b' }]
-    expect(descontoDe(c, t('2026-11-09T12:00:00Z'))).toEqual({ pct: 30 })
-    expect(descontoDe(c, t('2026-11-12T14:01:00Z'))).toEqual({ pct: 30 })
+    expect(descontoDe(c, t('2026-11-09T12:00:00Z'))).toEqual({ pct: 30, ate: '2026-11-09T14:00:00.000Z' })
+    expect(descontoDe(c, t('2026-11-09T13:59:59Z'))).toEqual({ pct: 30, ate: '2026-11-09T14:00:00.000Z' })
+  })
+  it('compra com mais de 3 h: acabou', () => {
+    const c = [kit, { produto: 'encomenda', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }]
+    expect(descontoDe(c, t('2026-11-09T14:00:00Z'))).toBeNull()
+    expect(descontoDe(c, t('2026-11-12T09:00:00Z'))).toBeNull()
+  })
+  it('cliente sem hora de compra registrada: sem desconto (não dá para provar o prazo)', () => {
+    expect(descontoDe([kit, { produto: 'encomenda', status: 'pago', criado_em: null, pagamento_id: 'b' }], t('2026-11-09T12:00:00Z'))).toBeNull()
+    expect(descontoDe([kit, { produto: 'encomenda', status: 'pago', pagamento_id: 'b' }], t('2026-11-09T12:00:00Z'))).toBeNull()
+    expect(descontoDe([kit, { produto: 'encomenda', status: 'pago', criado_em: 'lixo', pagamento_id: 'b' }], t('2026-11-09T12:00:00Z'))).toBeNull()
   })
   it('bump junto com o kit e presente de moedas não contam', () => {
     const c = [kit, { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T10:00:00Z', pagamento_id: 'a' }, { produto: 'primeira', status: 'pago', criado_em: '2026-11-09T10:30:00Z', metodo: 'presente', pagamento_id: 'p' }]
@@ -17,59 +29,95 @@ describe('presente da primeira compra', () => {
     const c = [kit, { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }, { produto: 'etiquetas', status: 'pago', criado_em: '2026-11-09T11:30:00Z', pagamento_id: 'c' }]
     expect(descontoDe(c, t('2026-11-09T11:40:00Z'))).toBeNull()
   })
-  it('comprar depois um material SEM desconto (Encomenda) não gasta o presente', () => {
+  it('comprar depois um material SEM desconto (Encomenda) não gasta nem renova o presente', () => {
     const c = [kit, { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }, { produto: 'encomenda', status: 'pago', criado_em: '2026-11-09T11:30:00Z', pagamento_id: 'c' }]
-    expect(descontoDe(c, t('2026-11-09T11:40:00Z'))).toEqual({ pct: 30 })
-  })
-  it('a primeira compra de um upsell do popup também abre o presente', () => {
-    const c = [kit, { produto: 'etiquetas', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }]
-    expect(descontoDe(c, t('2026-11-09T11:10:00Z'))).toEqual({ pct: 30 })
+    expect(descontoDe(c, t('2026-11-09T11:40:00Z'))).toEqual({ pct: 30, ate: '2026-11-09T14:00:00.000Z' })
   })
   it('pendente não conta', () => {
     expect(descontoDe([{ produto: 'encomenda', status: 'pendente', criado_em: '2026-11-09T11:00:00Z' }], t('2026-11-09T11:10:00Z'))).toBeNull()
   })
 })
 
-describe('presente de 30% com os checkouts do popup', () => {
-  const eu = (produtos: string[], extra: object = {}) => ({ email: 'm@x.com', acesso: { produtos, pendentes: [], materiais: [], desconto: null, ganhaPresente: true, ...extra } }) as never
-  it('usa os 3 links de desconto do popup, com os mesmos preços', async () => {
-    const { PRECO_PRESENTE } = await import('../shared/desconto')
-    const { CHECKOUT_DESCONTO_POPUP } = await import('../shared/popupDesconto')
-    expect(Object.keys(PRECO_PRESENTE).sort()).toEqual(['contafeita', 'etiquetas', 'videoaulas'])
-    for (const p of ['videoaulas', 'etiquetas', 'contafeita'] as const) {
-      expect(PRECO_PRESENTE[p]!.checkoutUrl).toBe(CHECKOUT_DESCONTO_POPUP[p].checkoutUrl)
-      expect(PRECO_PRESENTE[p]!.precoCentavos).toBe(CHECKOUT_DESCONTO_POPUP[p].precoCentavos)
-    }
-    expect(PRECO_PRESENTE.etiquetas!.checkoutUrl).toBe('https://pay.wiapy.com/jeJTPWSMvEk')
+describe('popup pós-compra: 3 h a partir da compra do upsell', () => {
+  it('compra recente de upsell: popup com o próximo, até 3 h depois dessa compra', () => {
+    const c = [kit, { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T08:00:00Z', pagamento_id: 'r' }, { produto: 'etiquetas', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }]
+    expect(popupDe(c, t('2026-11-09T11:01:00Z'))).toEqual({ comprado: 'etiquetas', ate: '2026-11-09T14:00:00.000Z' })
   })
-  it('preço com desconto nos 3, com os links do popup, sem prazo', async () => {
-    const { precoPresente } = await import('../src/ctx')
-    const e = eu(['kit', 'recheios'], { desconto: { pct: 30 } })
-    expect(precoPresente(e, 'contafeita')).toEqual({ precoCentavos: 690, checkoutUrl: 'https://pay.wiapy.com/1ZIbLmZpsgq', checkoutIds: ['1ZIbLmZpsgq'], pct: 30 })
-    expect(precoPresente(e, 'videoaulas')).toMatchObject({ precoCentavos: 1390, checkoutUrl: 'https://pay.wiapy.com/lQ_YTlxm58Y' })
-    expect(precoPresente(e, 'encomenda')).toBeNull()
-    const { textoFaixa } = await import('../src/ctx')
-    expect(textoFaixa(eu(['kit', 'etiquetas']))).toBe('30% de presente em Aulas ou Conta Feita')
+  it('mais de 3 h: nada; sem hora registrada: nada', () => {
+    expect(popupDe([kit, { produto: 'etiquetas', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }], t('2026-11-09T14:00:01Z'))).toBeNull()
+    expect(popupDe([kit, { produto: 'etiquetas', status: 'pago', criado_em: null, pagamento_id: 'b' }], t('2026-11-09T11:01:00Z'))).toBeNull()
   })
-  it('nenhum texto do presente fala em prazo, horas ou que o desconto acaba', async () => {
-    const { textoPresente, textoFaixa } = await import('../src/ctx')
-    const textos = [textoPresente(eu(['kit']), 'etiquetas'), textoPresente(eu(['kit'])), textoFaixa(eu(['kit']))]
+})
+
+describe('servidor: os links com desconto só saem enquanto o prazo vale', () => {
+  const recheios = { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'r' }
+  it('compra recente: os 3 links (os que ela não tem), com preço e fim do prazo', () => {
+    const r = descontosAgora([kit, recheios], ['kit', 'recheios'], t('2026-11-09T12:00:00Z'))
+    expect(r.desconto).toEqual({ pct: 30, ate: '2026-11-09T14:00:00.000Z' })
+    expect(r.ofertasDesconto.etiquetas).toEqual({ checkoutUrl: 'https://pay.wiapy.com/jeJTPWSMvEk', precoCentavos: 890, pct: 30, ate: '2026-11-09T14:00:00.000Z' })
+    expect(r.ofertasDesconto.contafeita?.checkoutUrl).toBe('https://pay.wiapy.com/1ZIbLmZpsgq')
+    expect(r.ofertasDesconto.videoaulas?.precoCentavos).toBe(1390)
+  })
+  it('compra com mais de 3 h: nenhum link, nenhum popup', () => {
+    const r = descontosAgora([kit, recheios], ['kit', 'recheios'], t('2026-11-09T14:00:00Z'))
+    expect(r).toEqual({ desconto: null, popup: null, ofertasDesconto: {} })
+    expect(JSON.stringify(r)).not.toMatch(/wiapy/)
+  })
+  it('cliente sem hora de compra: nenhum link, nenhum popup', () => {
+    const r = descontosAgora([kit, { ...recheios, criado_em: null }, { produto: 'etiquetas', status: 'pago', criado_em: null, pagamento_id: 'e' }], ['kit', 'recheios', 'etiquetas'], t('2026-11-09T12:00:00Z'))
+    expect(r).toEqual({ desconto: null, popup: null, ofertasDesconto: {} })
+  })
+  it('popup de upsell: 3 h contadas a partir da compra do upsell, mesmo depois do presente acabar', () => {
+    // presente da primeira compra (recheios às 08h) já acabou às 11h; a compra das Etiquetas às 12h abre o popup até 15h
+    const c = [kit, { ...recheios, criado_em: '2026-11-09T08:00:00Z' }, { produto: 'etiquetas', status: 'pago', criado_em: '2026-11-09T12:00:00Z', pagamento_id: 'e' }]
+    const r = descontosAgora(c, ['kit', 'recheios', 'etiquetas'], t('2026-11-09T12:30:00Z'))
+    expect(r.desconto).toBeNull()
+    expect(r.popup).toEqual({ comprado: 'etiquetas', oferta: 'contafeita', ate: '2026-11-09T15:00:00.000Z' })
+    expect(Object.keys(r.ofertasDesconto)).toEqual(['contafeita'])
+    expect(descontosAgora(c, ['kit', 'recheios', 'etiquetas'], t('2026-11-09T15:00:00Z')).ofertasDesconto).toEqual({})
+  })
+})
+
+describe('os links com desconto não vão para o app', () => {
+  it('nenhum arquivo do navegador (src/, shared/, index.html, public/) tem os links ou os códigos deles', async () => {
     const fs = await import('node:fs')
-    // o que aparece na tela (sem os comentários do código)
-    textos.push(fs.readFileSync('src/telas/PresenteDesconto.tsx', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, ''))
-    for (const x of textos) expect(x).not.toMatch(/hora|acaba|termina|expira|prazo|só hoje|só agora|últim/i)
+    const path = await import('node:path')
+    const codigos = Object.values(LINKS_DESCONTO).flatMap((l) => [l.checkoutUrl.split('/').pop()!, ...l.checkoutIds])
+    const arquivos = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? arquivos(path.join(d, e.name)) : /\.(ts|tsx|js|html|json|css)$/.test(e.name) ? [path.join(d, e.name)] : [])
+    for (const f of [...arquivos('src'), ...arquivos('shared'), 'index.html']) {
+      const txt = fs.readFileSync(f, 'utf8')
+      for (const c of codigos) expect(txt.includes(c), `${c} em ${f}`).toBe(false)
+    }
   })
-  it('o aviso antes da compra volta e só promete o que ela ainda pode comprar com desconto', async () => {
+})
+
+describe('textos do presente no app', () => {
+  const eu = (produtos: string[], extra: object = {}) => ({ email: 'm@x.com', acesso: { produtos, pendentes: [], materiais: [], desconto: null, ganhaPresente: true, ...extra } }) as never
+  const daqui = (h: number) => new Date(Date.now() + h * 3600e3).toISOString()
+  it('preço e link com desconto só com o link que o servidor mandou e enquanto o prazo vale', async () => {
+    const { precoPresente, textoFaixa } = await import('../src/ctx')
+    const o = { checkoutUrl: 'https://link-do-servidor/C', precoCentavos: 690, pct: 30, ate: daqui(2) }
+    const e = eu(['kit', 'recheios'], { desconto: { pct: 30, ate: daqui(2) }, ofertasDesconto: { contafeita: o } })
+    expect(precoPresente(e, 'contafeita')).toEqual(o)
+    expect(precoPresente(e, 'etiquetas')).toBeNull()
+    expect(precoPresente(e, 'contafeita', Date.parse(o.ate) + 1000)).toBeNull() // passou do prazo: some sem recarregar
+    expect(textoFaixa(e)).toBe('30% de presente em Conta Feita')
+  })
+  it('o aviso antes da compra só promete o que ela ainda pode comprar com desconto, e diz que fica guardado por 3 horas', async () => {
     const { ganhaPresente, textoPresente } = await import('../src/ctx')
     expect(ganhaPresente(eu(['kit']), 'recheios')).toBe(true)
     expect(ganhaPresente(eu(['kit']), 'etiquetas')).toBe(true)
-    expect(textoPresente(eu(['kit']), 'etiquetas')).toBe('Sua primeira compra te deixa com 30% de presente em mais um: nas Aulas em vídeo ou no Conta Feita.')
+    expect(textoPresente(eu(['kit']), 'etiquetas')).toBe('Sua primeira compra te deixa com 30% de presente em mais um: nas Aulas em vídeo ou no Conta Feita. Ele fica guardado por 3 horas depois da compra.')
     expect(textoPresente(eu(['kit'])))
-      .toBe('Qualquer material daqui te deixa com 30% de presente em mais um (Aulas, Etiquetas ou Conta Feita).')
-    // já tem os outros dois: comprar as Etiquetas não daria desconto em nada, então não há aviso
+      .toBe('Qualquer material daqui te deixa com 30% de presente em mais um (Aulas, Etiquetas ou Conta Feita), guardado por 3 horas.')
     expect(ganhaPresente(eu(['kit', 'videoaulas', 'contafeita']), 'etiquetas')).toBe(false)
-    // já fez a primeira compra de extra: sem aviso
     expect(ganhaPresente(eu(['kit'], { ganhaPresente: false }), 'recheios')).toBe(false)
+  })
+  it('tom de presente: "fica guardado por", sem "vale até você usar" e sem pressão', async () => {
+    const fs = await import('node:fs')
+    const tela = ['src/telas/PresenteDesconto.tsx', 'src/telas/PopupDesconto.tsx'].map((f) => fs.readFileSync(f, 'utf8')).join('\n')
+    expect(tela).toContain('Seu presente fica guardado por')
+    expect(tela).not.toMatch(/até você usar|corra|últim|só hoje|só agora|acaba em/i)
   })
 })
 
