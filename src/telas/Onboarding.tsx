@@ -1,41 +1,43 @@
 import { cena, fotoPerfil } from '../imagens'
 import { useState } from 'react'
-import { AVATARES, PERFIS, PERGUNTAS, perfilDe, porqueDoPerfil } from '../../shared/conteudo'
+import { PERFIS, PERGUNTAS, perfilDe, porqueDoPerfil } from '../../shared/conteudo'
+import { AVATAR_PADRAO } from '../onboarding'
 import { useApp } from '../ctx'
 
-// Onboarding obrigatório, sem perguntas (src/onboarding.ts): boas-vindas → nome → confeiteira → Início.
+// Onboarding obrigatório, sem perguntas e sem escolher confeiteira (src/onboarding.ts): boas-vindas → nome → Início.
 export function Boas() {
   const { ir, evento } = useApp()
   return (
     <div className="card pop" style={{ gap: 14, textAlign: 'center', paddingTop: 0, overflow: 'hidden' }}>
       <img className="foto-topo" src={cena('boas-vindas')} alt="" />
-      <p className="eyebrow">Passo 1 de 3</p>
+      <p className="eyebrow">Passo 1 de 2</p>
       <h1>Seu acesso está liberado!</h1>
       <p>
         Tudo o que você comprou já está aberto: as 100 receitas, os 8 bônus e o seu presente, o <b>SOS Massa</b>.
       </p>
-      <p className="sub">Antes de entrar, só o seu nome e a sua confeiteira. É rapidinho.</p>
+      <p className="sub">Antes de entrar, só o seu nome. É rapidinho.</p>
       <button className="btn" onClick={() => { evento('onboarding.passo', { passo: 'boas' }); ir({ t: 'nome' }) }}>Começar</button>
     </div>
   )
 }
 
 export function Nome() {
-  const { eu, ir, salvarPerfil, evento } = useApp()
+  const { eu, trocar, salvarPerfil, evento } = useApp()
   const [apelido, setApelido] = useState(eu.apelido ?? '')
   const seguir = () => {
-    salvarPerfil({ apelido: apelido.trim() || 'Confeiteira' })
+    // a confeiteira não é mais escolhida: vai a padrão
+    salvarPerfil({ apelido: apelido.trim() || 'Confeiteira', avatar: eu.avatar ?? AVATAR_PADRAO })
     evento('onboarding.passo', { passo: 'nome' })
-    ir({ t: 'avatar' })
+    trocar({ t: 'painel' })
   }
   return (
     <div className="card pop onb" style={{ gap: 14 }}>
-      <p className="eyebrow">Passo 2 de 3</p>
+      <p className="eyebrow">Passo 2 de 2</p>
       <h2><label htmlFor="apelido">Como você quer ser chamada?</label></h2>
       <p className="sub">É assim que o app vai falar com você.</p>
       <input id="apelido" type="text" maxLength={24} autoComplete="given-name" placeholder="Ex.: Cida" value={apelido}
         onChange={(e) => setApelido(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') seguir() }} />
-      <button className="btn" onClick={seguir}>Continuar</button>
+      <button className="btn" onClick={seguir}>Entrar na minha cozinha</button>
     </div>
   )
 }
@@ -86,34 +88,7 @@ export function Resultado() {
         <div className="tarefa"><b>Seu caminho</b><span>{p.frase}</span></div>
         <div className="tarefa"><b>Sua primeira missão</b><span>{p.missao}</span></div>
       </div>
-      <button className="btn" onClick={() => ir(eu.avatar == null ? { t: 'avatar' } : { t: 'painel' })}>Montar meu caminho</button>
+      <button className="btn" onClick={() => ir({ t: 'painel' })}>Montar meu caminho</button>
     </>
-  )
-}
-
-export function Avatar() {
-  const { eu, trocar, salvarPerfil, evento } = useApp()
-  const [av, setAv] = useState<number | null>(eu.avatar)
-  return (
-    <div className="card pop onb" style={{ gap: 14 }}>
-      <p className="eyebrow">Passo 3 de 3</p>
-      <h2>{(eu.apelido ?? '').trim() && eu.apelido !== 'Confeiteira' ? `${eu.apelido}, escolha a sua confeiteira` : 'Escolha a sua confeiteira'}</h2>
-      <div className="avatares">
-        {AVATARES.map((a, k) => (
-          <button key={k} className={`av ${av === k ? 'sel' : ''}`} onClick={() => setAv(k)} aria-label={`Confeiteira ${k + 1}`} aria-pressed={av === k}>{a}</button>
-        ))}
-      </div>
-      <button
-        className="btn"
-        disabled={av === null}
-        onClick={() => {
-          salvarPerfil({ avatar: av, apelido: (eu.apelido ?? '').trim() || 'Confeiteira' })
-          evento('onboarding.passo', { passo: 'avatar' })
-          trocar({ t: 'painel' })
-        }}
-      >
-        Entrar na minha cozinha
-      </button>
-    </div>
   )
 }

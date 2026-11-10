@@ -504,3 +504,8 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .btn.pd-comprar{height:auto;min-height:0;display:flex;flex-direction:column;align-items:center;gap:2px;white-space:normal;overflow:visible;line-height:1.2;padding:12px 14px;font-size:18px}
 .pd-comprar-preco{font-size:20px}
 .popup-desconto .card > *{flex-shrink:0}
+
+/* WhatsApp de suporte (src/telas/Entrar.tsx Suporte): botão verde claro, fácil de achar e de tocar */
+.btn-suporte{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 18px;border-radius:14px;background:#E7F7EC;color:#146C3A;border:2px solid #25D366;font-weight:800;font-size:16px;text-decoration:none;text-align:center;line-height:1.2}
+.btn-suporte:hover{background:#D5F2DF}
+.ajuda-bloco{display:flex;flex-direction:column;gap:8px}

@@ -1,16 +1,16 @@
-// Onboarding obrigatório SEM perguntas (Levi, 10/11): boas-vindas → nome → confeiteira → Início.
+// Onboarding obrigatório SEM perguntas e SEM escolher confeiteira (Levi, 10/11): boas-vindas → nome → Início.
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { Eu } from '../src/api'
 import { CtxReact, type Ctx, type Tela } from '../src/ctx'
-import { emOnboarding, PASSOS_ONBOARDING, temPerfil, telaInicial } from '../src/onboarding'
-import { Avatar, Boas, Nome } from '../src/telas/Onboarding'
+import { AVATAR_PADRAO, emOnboarding, PASSOS_ONBOARDING, temPerfil, telaInicial } from '../src/onboarding'
+import { Boas, Nome } from '../src/telas/Onboarding'
 import { mostrarNavbar, Navbar } from '../src/telas/Navbar'
 
-const semPerfil = { apelido: '', avatar: null, perfil: null }
-const comPerfil = { apelido: 'Cida', avatar: 2, perfil: null }
+const semPerfil = { apelido: '', perfil: null }
+const comPerfil = { apelido: 'Cida', perfil: null }
 
 const euDe = (p: Partial<Eu>): Eu =>
   ({
@@ -26,10 +26,11 @@ function render(comp: (p: never) => unknown, eu = euDe(semPerfil), tela: Tela = 
 }
 
 describe('quem passa pelo onboarding', () => {
-  it('sem perfil (sem nome nem confeiteira): cai nas boas-vindas', () => {
+  it('sem perfil (sem nome): cai nas boas-vindas', () => {
     expect(temPerfil(semPerfil)).toBe(false)
     expect(telaInicial(semPerfil)).toEqual({ t: 'boas' })
-    expect(telaInicial({ apelido: null as unknown as string, avatar: null, perfil: null })).toEqual({ t: 'boas' })
+    expect(telaInicial({ apelido: null as unknown as string, perfil: null })).toEqual({ t: 'boas' })
+    expect(telaInicial({ apelido: '   ', perfil: null })).toEqual({ t: 'boas' })
   })
   it('sem perfil, mesmo com o Início guardado na aba (perfil zerado): não pula o onboarding', () => {
     expect(telaInicial(semPerfil, { t: 'painel' })).toEqual({ t: 'boas' })
@@ -37,10 +38,9 @@ describe('quem passa pelo onboarding', () => {
   })
   it('recarregando no meio: continua no passo em que estava', () => {
     expect(telaInicial(semPerfil, { t: 'nome' })).toEqual({ t: 'nome' })
-    expect(telaInicial({ apelido: 'Cida', avatar: null, perfil: null }, { t: 'avatar' })).toEqual({ t: 'avatar' })
   })
-  it('só o nome, sem confeiteira: ainda não tem perfil', () => {
-    expect(temPerfil({ apelido: 'Cida', avatar: null, perfil: null })).toBe(false)
+  it('com o nome e sem confeiteira escolhida: já tem perfil (a confeiteira não é mais pedida)', () => {
+    expect(temPerfil({ apelido: 'Cida', perfil: null })).toBe(true)
   })
   it('com perfil: direto no Início (ou na tela em que estava, nunca no onboarding)', () => {
     expect(temPerfil(comPerfil)).toBe(true)
@@ -48,40 +48,42 @@ describe('quem passa pelo onboarding', () => {
     expect(telaInicial(comPerfil, { t: 'boas' })).toEqual({ t: 'painel' })
     expect(telaInicial(comPerfil, { t: 'receitas' })).toEqual({ t: 'receitas' })
     // quem respondeu as perguntas antigas também já tem perfil
-    expect(temPerfil({ apelido: '', avatar: null, perfil: 'iniciante' })).toBe(true)
+    expect(temPerfil({ apelido: '', perfil: 'iniciante' })).toBe(true)
   })
 })
 
-describe('o caminho: boas-vindas → nome → confeiteira → Início, sem perguntas', () => {
+describe('o caminho: boas-vindas → nome → Início, sem perguntas e sem confeiteira', () => {
   const src = readFileSync('src/telas/Onboarding.tsx', 'utf8')
   const corpo = (nome: string) => src.slice(src.indexOf(`export function ${nome}()`), src.indexOf('\nexport function', src.indexOf(`export function ${nome}()`) + 10) >>> 0 || undefined)
-  it('os 3 passos, nesta ordem', () => {
-    expect([...PASSOS_ONBOARDING]).toEqual(['boas', 'nome', 'avatar'])
+  it('os 2 passos, nesta ordem', () => {
+    expect([...PASSOS_ONBOARDING]).toEqual(['boas', 'nome'])
   })
   it('boas-vindas leva ao nome, sem falar de perguntas', () => {
     expect(corpo('Boas')).toContain("ir({ t: 'nome' })")
     const h = render(Boas)
     expect(h).toContain('Seu acesso está liberado!')
-    expect(h).toContain('Passo 1 de 3')
+    expect(h).toContain('Passo 1 de 2')
+    expect(h.toLowerCase()).not.toContain('confeiteira')
     expect(h.toLowerCase()).not.toContain('pergunta')
   })
-  it('nome: campo do apelido e Continuar → confeiteira', () => {
-    expect(corpo('Nome')).toContain("ir({ t: 'avatar' })")
+  it('nome: campo do apelido, Passo 2 de 2 e "Entrar na minha cozinha" → Início, gravando a confeiteira padrão', () => {
+    expect(corpo('Nome')).toContain("trocar({ t: 'painel' })")
+    expect(corpo('Nome')).toContain('avatar: eu.avatar ?? AVATAR_PADRAO')
+    expect(AVATAR_PADRAO).toBe(0)
     const h = render(Nome)
     expect(h).toContain('id="apelido"')
     expect(h).toContain('Como você quer ser chamada?')
-    expect(h).toContain('Passo 2 de 3')
+    expect(h).toContain('Passo 2 de 2')
+    expect(h).toContain('>Entrar na minha cozinha</button>')
+    expect(h).not.toContain('Continuar')
   })
-  it('confeiteira: 6 opções e Entrar → Início', () => {
-    expect(corpo('Avatar')).toContain("trocar({ t: 'painel' })")
-    const h = render(Avatar, euDe({ apelido: 'Cida' }))
-    expect(h.match(/class="av /g)?.length).toBe(6)
-    expect(h).toContain('Cida, escolha a sua confeiteira')
-    expect(h).toContain('Passo 3 de 3')
-    expect(h).not.toContain('id="apelido"')
+  it('nenhuma tela pede para escolher confeiteira/avatar', () => {
+    expect(src).not.toMatch(/export function Avatar|escolha a sua confeiteira|AVATARES/)
+    expect(readFileSync('src/App.tsx', 'utf8')).not.toMatch(/<Avatar|'avatar'/)
+    expect(readFileSync('src/ctx.ts', 'utf8')).not.toMatch(/t: 'avatar'/)
   })
   it('nenhum passo leva a Pergunta ou Resultado', () => {
-    for (const n of ['Boas', 'Nome', 'Avatar']) expect(corpo(n)).not.toMatch(/'pergunta'|'resultado'/)
+    for (const n of ['Boas', 'Nome']) expect(corpo(n)).not.toMatch(/'pergunta'|'resultado'/)
   })
   it('o App usa a tela inicial do onboarding e mostra a tela do nome', () => {
     const app = readFileSync('src/App.tsx', 'utf8')
@@ -91,7 +93,7 @@ describe('o caminho: boas-vindas → nome → confeiteira → Início, sem pergu
 })
 
 describe('durante o onboarding: sem popup, sem aviso de instalar, sem barra', () => {
-  it('barra do rodapé escondida nos 3 passos', () => {
+  it('barra do rodapé escondida nos 2 passos', () => {
     for (const t of PASSOS_ONBOARDING) {
       expect(emOnboarding({ t } as Tela)).toBe(true)
       expect(mostrarNavbar({ t } as Tela, false)).toBe(false)
