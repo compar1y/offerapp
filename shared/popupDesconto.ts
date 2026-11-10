@@ -4,10 +4,9 @@
 import { PRODUTOS, type ProdutoId } from './catalogo.js'
 
 /**
- * CHAVE ÚNICA DO POPUP. false: nada aparece e nada é gravado no aparelho.
- * Só ligar depois que o Caixa criar na Wiapy os checkouts com o preço com desconto (CHECKOUT_DESCONTO_POPUP).
+ * CHAVE ÚNICA DO POPUP. true (ligada em 10/11). false: nada aparece e nada é gravado no aparelho.
  */
-export const POPUP_DESCONTO_LIGADO: boolean = false
+export const POPUP_DESCONTO_LIGADO: boolean = true
 
 export type UpsellPopup = 'videoaulas' | 'etiquetas' | 'contafeita'
 export const UPSELLS_POPUP: UpsellPopup[] = ['videoaulas', 'etiquetas', 'contafeita']
@@ -47,9 +46,11 @@ export interface CheckoutDesconto { precoCentavos: number; checkoutUrl: string; 
  * Produto sem checkoutUrl aqui nunca é oferecido no popup (a cobrança sairia com o preço cheio).
  */
 export const CHECKOUT_DESCONTO_POPUP: Record<UpsellPopup, CheckoutDesconto> = {
-  videoaulas: { precoCentavos: precoComDesconto(PRODUTOS.videoaulas.precoCentavos), checkoutUrl: '', checkoutIds: [], produtoIds: [] },
-  etiquetas: { precoCentavos: precoComDesconto(PRODUTOS.etiquetas.precoCentavos), checkoutUrl: '', checkoutIds: [], produtoIds: [] },
-  contafeita: { precoCentavos: precoComDesconto(PRODUTOS.contafeita.precoCentavos), checkoutUrl: '', checkoutIds: [], produtoIds: [] },
+  // "Ofertas especiais" criadas DENTRO dos checkouts normais (Levi, 10/11): o checkoutId e o conteúdo são os mesmos do preço cheio,
+  // só o link muda. O código do link fica em checkoutIds por segurança, caso a Wiapy mande ele no lugar do id do checkout.
+  videoaulas: { precoCentavos: precoComDesconto(PRODUTOS.videoaulas.precoCentavos), checkoutUrl: 'https://pay.wiapy.com/lQ_YTlxm58Y', checkoutIds: ['lQ_YTlxm58Y'], produtoIds: [] },
+  etiquetas: { precoCentavos: precoComDesconto(PRODUTOS.etiquetas.precoCentavos), checkoutUrl: 'https://pay.wiapy.com/jeJTPWSMvEk', checkoutIds: ['jeJTPWSMvEk'], produtoIds: [] },
+  contafeita: { precoCentavos: precoComDesconto(PRODUTOS.contafeita.precoCentavos), checkoutUrl: 'https://pay.wiapy.com/1ZIbLmZpsgq', checkoutIds: ['1ZIbLmZpsgq'], produtoIds: [] },
 }
 
 /** o que o popup oferece depois de ela comprar `comprado`: o primeiro da ordem que ela não tem, à venda e com checkout com desconto */

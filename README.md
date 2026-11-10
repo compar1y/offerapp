@@ -95,12 +95,12 @@ Ferramenta dentro do app (`src/telas/ContaFeita.tsx`, contas e textos em `src/co
 - Precisa estar rodado `supabase/migracao-2026-11-10-contafeita.sql` no SQL Editor do Supabase (inclui `contafeita` na `compras_produto_check`).
 - Comprar `contafeita` não libera PDF nem aulas.
 
-## Popup de desconto pós-compra (desligado)
+## Popup de desconto pós-compra (ligado em 10/11)
 
 Ao confirmar a compra das Videoaulas, das Etiquetas ou do Conta Feita, o app abre a tela de acesso do que ela comprou e mostra por cima a oferta do próximo upsell que ela não tem, com 30% (preço arredondado para baixo até terminar em ,90). Fica tudo em `shared/popupDesconto.ts`:
 
-- **Chave:** `POPUP_DESCONTO_LIGADO` (hoje `false`). Desligada, nada aparece e nada é gravado no aparelho.
-- **Checkouts com desconto:** `CHECKOUT_DESCONTO_POPUP` (vazios). O Caixa cria na Wiapy: Videoaulas R$13,90, Etiquetas R$8,90, Conta Feita R$6,90. O webhook já reconhece esses ids como o mesmo produto. Produto sem link aqui nunca é oferecido.
+- **Chave:** `POPUP_DESCONTO_LIGADO` (hoje `true`). Desligada, nada aparece e nada é gravado no aparelho.
+- **Checkouts com desconto:** `CHECKOUT_DESCONTO_POPUP`: "Ofertas especiais" dentro dos checkouts normais (mesmo checkoutId e conteúdo, só o link muda): Videoaulas R$13,90, Etiquetas R$8,90, Conta Feita R$6,90. A compra chega como a do checkout normal e libera o mesmo produto; o valor pago só é registrado (`valor_centavos`). Produto sem link aqui nunca é oferecido.
 - Ordem do próximo (`PROXIMO`): Videoaulas → Etiquetas → Conta Feita; Etiquetas → Conta Feita → Videoaulas; Conta Feita → Etiquetas → Videoaulas.
 - Uma vez por compra, guardado em `localStorage` (`fornada-popup-desconto:v1:<email>`). Quem já tinha comprado antes de a chave ser ligada não recebe popup de compra antiga.
 
