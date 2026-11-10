@@ -1,9 +1,10 @@
 // Presente da primeira compra: depois da primeira compra de um material extra feita pelo app,
-// ela ganha 30% no próximo material por 3 horas, contadas a partir da hora da compra (registrada pelo servidor).
+// ela ganha 30% em mais um material (Aulas, Etiquetas ou Conta Feita). SEM PRAZO: o link com desconto da Wiapy não expira,
+// então o app não promete nem conta tempo (nada de escassez falsa, Levi 10/11). O presente só acaba quando ela usa.
 import type { ProdutoId } from './catalogo.js'
 import { CHECKOUT_DESCONTO_POPUP, UPSELLS_POPUP } from './popupDesconto.js'
 
-export const DESCONTO = { pct: 30, horas: 3 }
+export const DESCONTO = { pct: 30 }
 
 /**
  * Onde o presente pode ser usado: só nos materiais que têm checkout com desconto na Wiapy, os MESMOS do popup pós-compra
@@ -14,10 +15,10 @@ export const PRECO_PRESENTE: Partial<Record<ProdutoId, { precoCentavos: number; 
   UPSELLS_POPUP.map((p) => [p, { precoCentavos: CHECKOUT_DESCONTO_POPUP[p].precoCentavos, checkoutUrl: CHECKOUT_DESCONTO_POPUP[p].checkoutUrl, checkoutIds: CHECKOUT_DESCONTO_POPUP[p].checkoutIds }]),
 )
 
-/** compras que dão o presente (a primeira delas abre o prazo de 3 horas): todo material extra vendido no app */
+/** compras que dão o presente (vale a primeira delas): todo material extra vendido no app */
 export const EXTRAS_DESCONTO: ProdutoId[] = ['recheios', 'encomenda', 'primeira', 'videoaulas', 'etiquetas', 'contafeita']
 
-export interface Desconto { pct: number; ate: string }
+export interface Desconto { pct: number }
 
 interface Linha { produto: string; status: string; criado_em: string; atualizado_em?: string | null; metodo?: string | null; pagamento_id?: string | null }
 
@@ -46,7 +47,6 @@ export function descontoDe(compras: Linha[], agora = Date.now()): Desconto | nul
   // já usou: depois da primeira compra, comprou (em outro pagamento) um material que recebe o desconto
   const pag = primeira.pagamento_id ?? primeira.pagoEm
   if (extras.some((c) => (c.pagamento_id ?? c.pagoEm) !== pag && !!PRECO_PRESENTE[c.produto as ProdutoId])) return null
-  const ate = primeira.pagoEm + DESCONTO.horas * 3600e3
-  if (!(ate > agora)) return null
-  return { pct: DESCONTO.pct, ate: new Date(ate).toISOString() }
+  if (!(primeira.pagoEm <= agora)) return null
+  return { pct: DESCONTO.pct }
 }

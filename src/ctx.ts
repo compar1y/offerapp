@@ -65,11 +65,11 @@ export const temCheckoutDesconto = (p: ProdutoId): boolean => !!PRECO_PRESENTE[p
 
 /** presente da primeira compra: preço e checkout com desconto, se ainda estiver valendo para este produto
  *  e se o checkout com desconto existir (sem ele a cobrança sairia com o preço cheio) */
-export function precoPresente(eu: Eu, p: ProdutoId, agora = Date.now()) {
+export function precoPresente(eu: Eu, p: ProdutoId) {
   const d = eu.acesso.desconto
   const preco = PRECO_PRESENTE[p]
-  if (!d || !preco || !preco.checkoutUrl || !(Date.parse(d.ate) > agora)) return null
-  return { ...preco, pct: d.pct, ate: d.ate }
+  if (!d || !preco || !preco.checkoutUrl) return null
+  return { ...preco, pct: d.pct }
 }
 
 /** materiais que ela ainda pode comprar com o presente de 30% (com checkout com desconto, à venda e que ela não tem), fora `menos` */
@@ -87,12 +87,12 @@ const NOME_PRESENTE: Partial<Record<ProdutoId, [string, string]>> = {
 }
 const ou = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} ou ${xs[xs.length - 1]}` : xs[0] ?? '')
 
-/** texto curto da faixa com relógio: onde o desconto vale (só nos que ela ainda pode comprar) */
+/** texto curto da faixa: onde o desconto vale (só nos que ela ainda pode comprar) */
 export const textoFaixa = (eu: Eu): string => `${DESCONTO.pct}% OFF em ${ou(comPresente(eu).map((q) => NOME_PRESENTE[q]![1]))}`
 
 /** texto do aviso antes da compra. Na oferta: o que ela ganha comprando ESTE material. No Início: comprando qualquer um. */
 export function textoPresente(eu: Eu, p?: ProdutoId): string {
   const lista = comPresente(eu, p)
-  if (p) return `Comprando este material, você ganha ${DESCONTO.pct}% OFF ${ou(lista.map((q) => NOME_PRESENTE[q]![0]))}, válido por ${DESCONTO.horas} horas depois da compra.`
-  return `Comprando qualquer material daqui, você ganha ${DESCONTO.pct}% OFF em mais um (${ou(lista.map((q) => NOME_PRESENTE[q]![1]))}), por ${DESCONTO.horas} horas.`
+  if (p) return `Comprando este material, você ganha ${DESCONTO.pct}% OFF em mais um: ${ou(lista.map((q) => NOME_PRESENTE[q]![0]))}.`
+  return `Comprando qualquer material daqui, você ganha ${DESCONTO.pct}% OFF em mais um (${ou(lista.map((q) => NOME_PRESENTE[q]![1]))}).`
 }

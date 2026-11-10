@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PRODUTOS, vendaLigada, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
 import { comPresente, ganhaPresente, ofertaDisponivel, precoPresente, reais, tem, textoFaixa, textoPresente, useApp } from '../ctx'
-import { AvisoPresente, BarraPresente, FaixaDesconto, useRelogio } from './PresenteDesconto'
+import { AvisoPresente, BarraPresente, FaixaDesconto } from './PresenteDesconto'
 
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
@@ -20,7 +20,6 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   const texto = p === 'kit' || p === 'videoaulas' ? null : OFERTAS[p]
   const comprado = tem(eu, p)
   const pendente = eu.acesso.pendentes.includes(p)
-  useRelogio(eu.acesso.desconto?.ate) // re-renderiza a cada segundo enquanto o desconto vale; ao acabar, o preço normal volta
   const desc = precoPresente(eu, p)
 
   // venda desligada pela chave (ex.: CONTAFEITA_VENDA_LIGADA = false): quem não comprou não vê a oferta nem por um link guardado
@@ -76,7 +75,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         <p><b>{prod.nome}</b> já está no Início, em “Minhas compras”.</p>
         {presente && (
           <>
-            <FaixaDesconto pct={presente.pct} ate={presente.ate} texto={`Você ganhou ${textoFaixa(eu)}.`} />
+            <FaixaDesconto pct={presente.pct} texto={`Você ganhou ${textoFaixa(eu)}.`} />
             <button className="btn comprar-pulsa" onClick={() => trocar({ t: 'painel' })}>🎁 Ver meu desconto</button>
           </>
         )}
@@ -88,7 +87,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
 
   return (
     <>
-      {desc ? <BarraPresente ate={desc.ate} /> : ganhaPresente(eu, p) && <BarraPresente />}
+      {desc ? <BarraPresente ativo /> : ganhaPresente(eu, p) && <BarraPresente />}
       <button className="voltar" onClick={agoraNao}>← Voltar</button>
       <p className="eyebrow">{origem === 'downsell' ? 'Quer começar menor?' : origem.startsWith('etapa') ? `Você terminou a Etapa ${origem.slice(6)}` : 'Material extra, vendido à parte'}</p>
       <h1>{texto.gancho}</h1>
@@ -105,7 +104,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         <h3>{prod.nome}</h3>
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
         {p === 'etiquetas' && <img className="foto-oferta" src="/img/mockups/etiquetas-detalhe.webp" width={800} height={800} loading="lazy" alt="Etiqueta redonda “Panetones da Dona Cida” com fita vinho ao lado dos cartões “Feito com carinho para o seu Natal”" />}
-        {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} de={reais(prod.precoCentavos)} por={reais(desc.precoCentavos)} />}
+        {desc && <FaixaDesconto pct={desc.pct} de={reais(prod.precoCentavos)} por={reais(desc.precoCentavos)} />}
         {!desc && ganhaPresente(eu, p) && <AvisoPresente texto={textoPresente(eu, p)} />}
         {!desc && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span className="sub">por</span><span className="preco">R${reais(prod.precoCentavos)}</span></div>
