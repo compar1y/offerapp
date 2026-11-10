@@ -90,10 +90,11 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     nome: 'Fábrica de Panetones Caseiros + 8 bônus',
     precoCentavos: 3790,
     libera: ['ebook', 'fichas-socorro', 'b01', 'b02', 'b03', 'b04', 'b05-guia', 'b05-imprimivel', 'b06', 'b07', 'b08'],
-    checkoutUrl: 'https://pay.wiapy.com/r2PHgYwK6CVi',
-    checkoutIds: ['r2PHgYwK6CVi', '6accaf7eb11ba1ecaf89b37e'],
-    // conteúdos do kit na Wiapy (E-book), vistos no pedido real
-    produtoIds: ['6accab07c8bdfc2949d11bc6', '6accb04f9b597b6a2bd6a0f1'],
+    // checkout NOVO do app (10/11, página de vendas): o8Euxe-W2nPN / 6af307cb…; os antigos continuam reconhecidos
+    checkoutUrl: 'https://pay.wiapy.com/o8Euxe-W2nPN',
+    checkoutIds: ['r2PHgYwK6CVi', '6accaf7eb11ba1ecaf89b37e', 'o8Euxe-W2nPN', '6af307cb04a3ce9b11a7ea9c'],
+    // conteúdos do kit na Wiapy: E-book (pedido real) e o produto Externo 'Minha Fornada de Natal – Kit Fábrica de Panetones Caseiros' (6af2fd6b…)
+    produtoIds: ['6accab07c8bdfc2949d11bc6', '6accb04f9b597b6a2bd6a0f1', '6af2fd6b371815cbec19ef04'],
   },
   recheios: {
     id: 'recheios',
