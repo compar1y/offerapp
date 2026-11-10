@@ -9,6 +9,7 @@ import type { Eu, Salvavel } from './api'
 export type Tela =
   | { t: 'painel' }
   | { t: 'boas' }
+  | { t: 'nome' }
   | { t: 'pergunta' }
   | { t: 'resultado' }
   | { t: 'avatar' }

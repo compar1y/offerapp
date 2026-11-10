@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import type { Eu } from '../api'
 import { useApp, type Tela } from '../ctx'
+import { TELAS_ONBOARDING } from '../onboarding'
 import { ID_SELECAO, ofertasSelecao } from './Painel'
 
 // Barra fixa no rodapé (Levi, 10/11): um jeito claro de voltar ao Início de qualquer tela interna,
@@ -8,8 +9,8 @@ import { ID_SELECAO, ofertasSelecao } from './Painel'
 
 export type AbaId = 'inicio' | 'receitas' | 'sos' | 'selecao'
 
-/** telas do onboarding (perguntas do perfil) e o player de aula em tela cheia (tem o próprio botão de fechar): sem barra */
-const SEM_BARRA = new Set<Tela['t']>(['boas', 'pergunta', 'resultado', 'avatar', 'aula'])
+/** telas do onboarding (src/onboarding.ts) e o player de aula em tela cheia (tem o próprio botão de fechar): sem barra */
+const SEM_BARRA = new Set<Tela['t']>([...TELAS_ONBOARDING, 'aula'])
 
 /** a barra aparece? Nunca no onboarding, no player de aula nem com um popup de oferta aberto (o login nem chega a montar a barra) */
 export const mostrarNavbar = (tela: Tela, popupAberto: boolean) => !popupAberto && !SEM_BARRA.has(tela.t)
