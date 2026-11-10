@@ -1,4 +1,4 @@
-// Popup de desconto pós-compra: chave desligada não muda nada, preços com desconto, ordem do "próximo", uma vez por compra e webhook.
+// Popup de desconto pós-compra: chave ligada com os links reais, desligada não muda nada, preços com desconto, ordem do "próximo", uma vez por compra e webhook.
 import { afterEach, describe, expect, it } from 'vitest'
 import { PRODUTOS, type ProdutoId } from '../shared/catalogo'
 import {
@@ -30,23 +30,28 @@ function armazenamento() {
 afterEach(() => { delete (globalThis as { localStorage?: unknown }).localStorage })
 
 describe('chave POPUP_DESCONTO_LIGADO', () => {
-  it('está desligada e os checkouts com desconto estão vazios', () => {
-    expect(POPUP_DESCONTO_LIGADO).toBe(false)
-    for (const p of ['videoaulas', 'etiquetas', 'contafeita'] as UpsellPopup[]) {
-      expect(CHECKOUT_DESCONTO_POPUP[p]).toMatchObject({ checkoutUrl: '', checkoutIds: [], produtoIds: [] })
-    }
+  it('está LIGADA, com os 3 links de desconto da Wiapy (ofertas especiais dentro dos checkouts normais)', () => {
+    expect(POPUP_DESCONTO_LIGADO).toBe(true)
+    expect(CHECKOUT_DESCONTO_POPUP.videoaulas.checkoutUrl).toBe('https://pay.wiapy.com/lQ_YTlxm58Y')
+    expect(CHECKOUT_DESCONTO_POPUP.etiquetas.checkoutUrl).toBe('https://pay.wiapy.com/jeJTPWSMvEk')
+    expect(CHECKOUT_DESCONTO_POPUP.contafeita.checkoutUrl).toBe('https://pay.wiapy.com/1ZIbLmZpsgq')
+  })
+  it('os links de preço normal continuam os mesmos nas ofertas normais', () => {
+    expect(PRODUTOS.videoaulas.checkoutUrl).toBe('https://pay.wiapy.com/6af1e13a04a3ce9b11749472')
+    expect(PRODUTOS.etiquetas.checkoutUrl).toBe('https://pay.wiapy.com/6af20863371815cbecf6456a')
+    expect(PRODUTOS.contafeita.checkoutUrl).toBe('https://pay.wiapy.com/6af2a90804a3ce9b119ec3a8')
   })
   it('desligada: nada aparece e nada é gravado no aparelho, nem logo depois de uma compra', () => {
     const m = armazenamento()
-    expect(conferirPopup(eu(['kit']))).toBeNull()
-    expect(conferirPopup(eu(['kit', 'etiquetas']))).toBeNull()
+    expect(conferirPopup(eu(['kit']), false)).toBeNull()
     expect(conferirPopup(eu(['kit', 'etiquetas']), false)).toBeNull()
     expect(m.size).toBe(0)
   })
-  it('ligada mas sem checkout com desconto: a compra é marcada e nenhum popup aparece', () => {
+  it('ligada: compra nova abre o popup com o próximo; quem já tinha antes não recebe popup de compra antiga', () => {
     armazenamento()
-    expect(conferirPopup(eu(['kit']), true)).toBeNull() // primeira vez: guarda a base
-    expect(conferirPopup(eu(['kit', 'videoaulas']), true)).toBeNull()
+    expect(conferirPopup(eu(['kit', 'etiquetas']))).toBeNull() // primeira vez: só guarda a base
+    expect(conferirPopup(eu(['kit', 'etiquetas', 'videoaulas']))).toEqual({ comprado: 'videoaulas', oferta: 'contafeita' })
+    expect(conferirPopup(eu(['kit', 'etiquetas', 'videoaulas']))).toBeNull()
   })
 })
 
@@ -83,7 +88,7 @@ describe('o próximo upsell', () => {
     expect(proximoUpsell('contafeita', ['kit', 'contafeita'], todos, l)).toBe('etiquetas')
     expect(proximoUpsell('contafeita', ['kit', 'contafeita'], (p) => p !== 'etiquetas', l)).toBe('videoaulas')
     expect(proximoUpsell('contafeita', ['kit', 'contafeita'], todos, { ...l, etiquetas: { ...l.etiquetas, checkoutUrl: '' } })).toBe('videoaulas')
-    expect(proximoUpsell('contafeita', ['kit', 'contafeita'], todos)).toBeNull() // checkouts reais ainda vazios
+    expect(proximoUpsell('contafeita', ['kit', 'contafeita'], todos)).toBe('etiquetas') // com os links reais
   })
   it('já tem todos: nada', () => {
     const tudo: ProdutoId[] = ['kit', 'videoaulas', 'etiquetas', 'contafeita']
@@ -137,7 +142,7 @@ describe('webhook pronto para os checkouts com desconto', () => {
       expect(lerPedido(pago('desc-checkout-etq', 'qualquer') as never).produtos).toEqual(['etiquetas'])
       expect(lerPedido(pago('qualquer', 'desc-conteudo-etq') as never).produtos).toEqual(['etiquetas'])
     } finally {
-      e.checkoutIds.length = 0; e.produtoIds.length = 0
+      e.checkoutIds.splice(e.checkoutIds.indexOf('desc-checkout-etq'), 1); e.produtoIds.splice(e.produtoIds.indexOf('desc-conteudo-etq'), 1)
     }
   })
 
@@ -165,7 +170,7 @@ describe('webhook pronto para os checkouts com desconto', () => {
         expect(lerPedido(pedidoDesc(p, CONTEUDOS[p], EXEMPLO_CHECKOUT[p]) as never).produtos).toEqual([p]) // os dois juntos: um produto só
       }
     } finally {
-      for (const p of UPSELLS as UpsellPopup[]) CHECKOUT_DESCONTO_POPUP[p].checkoutIds.length = 0
+      for (const p of UPSELLS as UpsellPopup[]) CHECKOUT_DESCONTO_POPUP[p].checkoutIds.splice(CHECKOUT_DESCONTO_POPUP[p].checkoutIds.indexOf(EXEMPLO_CHECKOUT[p]), 1)
     }
   })
   it('a compra com desconto libera o produto certo, e só ele', () => {
@@ -174,5 +179,24 @@ describe('webhook pronto para os checkouts com desconto', () => {
     expect(tem(eu(['kit', 'etiquetas']), 'contafeita')).toBe(false)
     expect(tem(eu(['kit', 'contafeita']), 'contafeita')).toBe(true)
     expect(podeVerAulasCom(['kit', 'etiquetas', 'contafeita'], 'venda')).toBe(false)
+  })
+
+  // ofertas especiais: o checkoutId e o conteúdo são os MESMOS do preço normal, só o valor pago muda
+  it('compra pela oferta especial (mesmo checkoutId e conteúdo, valor com desconto) libera o produto certo e registra o valor pago', () => {
+    const casos: [UpsellPopup, string, string, number][] = [
+      ['videoaulas', '6af1e13a04a3ce9b11749472', '6af1e083371815cbecec6d54', 1390],
+      ['etiquetas', '6af20863371815cbecf6456a', '6af207d3371815cbecf61968', 890],
+      ['contafeita', '6af2a90804a3ce9b119ec3a8', '6af2a8a304a3ce9b119ebf8d', 690],
+    ]
+    for (const [p, checkout, conteudo, v] of casos) {
+      const ped = { customer: { email: 'c@x.com' }, checkout: { id: checkout, amount: v }, payment: { id: 'pg', status: 'paid', amount: v, payment_method: 'pix' }, products: [{ id: conteudo, title: PRODUTOS[p].nome }] }
+      const r = lerPedido(ped as never)
+      expect(r.produtos).toEqual([p])
+      expect(r.valorCentavos).toBe(v)
+      expect(r.status).toBe('pago')
+      // só pelo checkoutId (sem o conteúdo) e pelo código do link
+      expect(lerPedido({ ...ped, products: [] } as never).produtos).toEqual([p])
+      expect(produtoDoCheckout(CHECKOUT_DESCONTO_POPUP[p].checkoutUrl.split('/').pop()!)).toBe(p)
+    }
   })
 })
