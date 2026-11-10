@@ -10,17 +10,17 @@ import { podeVerAulas } from '../aulas'
  */
 export const VIDEOAULAS = {
   mostrar: true,
-  titulo: 'Videoaulas: veja cada passo sendo feito',
+  titulo: '25 videoaulas: veja cada passo de perto',
   nome: 'Videoaulas da Fábrica',
   precoCentavos: 1990,
   // o mesmo link de shared/catalogo.ts (PRODUTOS.videoaulas)
   checkoutUrl: PRODUTOS.videoaulas.checkoutUrl as string,
-  gancho: 'Ler a receita é bom. Ver a massa sendo feita, de perto, é o que tira a dúvida na hora.',
+  gancho: 'A receita no papel deixa dúvida na sova e no forno. Ver a massa sendo feita, de perto, tira essa dúvida na hora.',
   itens: [
-    'Vídeos curtos de cada etapa: sova, ponto da massa, modelagem e forno',
-    'O ponto certo da massa mostrado de perto, para você comparar com a sua',
-    'Os erros mais comuns e como corrigir na hora',
-    'Assista no celular, quantas vezes quiser',
+    '25 aulas curtas: panetone tradicional, chocotone, recheios, versões especiais e panetone salgado',
+    'O ponto da massa, a sova e o forno mostrados de perto, para você comparar com a sua e seguir com segurança',
+    'Tem versões sem glúten, sem leite e sem ovo, e também receitas no liquidificador ou na tigela',
+    'Assista no celular, na sua cozinha, quantas vezes quiser, na hora de fazer e vender',
   ],
   ancora: 'Menos que um panetone vendido. Pagamento único.',
   botao: 'Quero assistir às aulas',
