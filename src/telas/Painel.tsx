@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { ETAPAS } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
-import { ganhaPresente, ofertaDisponivel, precoPresente, tem, useApp } from '../ctx'
+import { ganhaPresente, ofertaDisponivel, precoPresente, tem, textoFaixa, textoPresente, useApp } from '../ctx'
 import { AvisoPresente, FaixaDesconto, useRelogio } from './PresenteDesconto'
 import { Suporte } from './Entrar'
 import { VIDEOAULAS } from './OfertaVideo'
@@ -50,7 +50,9 @@ export function Painel() {
   const seus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro' && !compras.includes(m))
   const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
   useRelogio(eu.acesso.desconto?.ate)
-  const presente = extras.map((p) => precoPresente(eu, p)).find(Boolean) ?? null
+  const aVendaAqui: ProdutoId[] = [...extras, ...(VIDEOAULAS.mostrar && !podeVerAulas(eu) ? ['videoaulas' as ProdutoId] : [])]
+  const presente = aVendaAqui.map((p) => precoPresente(eu, p)).find(Boolean) ?? null
+  const avisoPresente = !presente && aVendaAqui.some((p) => ganhaPresente(eu, p))
   const clique = (botao: string) => evento('inicio.clique', { botao })
   const aulas = podeVerAulas(eu)
   // quem já pode ver as aulas não vê a oferta delas
@@ -170,19 +172,20 @@ export function Painel() {
           <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Seleção especial</span>
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas. <span className="dinheiro-pulsa" aria-hidden="true">💰</span></p>
+          {/* presente da primeira compra: vale nas Aulas, nas Etiquetas e no Conta Feita (os checkouts com desconto do popup) */}
+          {presente ? <FaixaDesconto pct={presente.pct} ate={presente.ate} texto={textoFaixa(eu)} /> : avisoPresente && <AvisoPresente compacto texto={textoPresente(eu)} />}
+          {(presente || avisoPresente) && <span className="seta-pulsa" aria-hidden="true">⬇</span>}
           {mostrarOfertaVideo && (
             <div className="video-upsell">
               <button className="video-tela" aria-label="Assistir às videoaulas" onClick={abrirVideoaulas}>
                 <img src={cena('videoaulas')} alt="" loading="lazy" />
                 <span className="play" aria-hidden="true">▶</span>
+                {precoPresente(eu, 'videoaulas') && <span className="selo-off">-{precoPresente(eu, 'videoaulas')!.pct}%</span>}
                 <span className="video-titulo">{VIDEOAULAS.titulo}</span>
               </button>
               <button className="btn-extra btn-video" onClick={abrirVideoaulas}>▶ Quero assistir às aulas</button>
             </div>
           )}
-          {/* o presente de 30% vale só para os materiais em PDF (não para as Aulas): o aviso fica junto deles */}
-          {extras.length > 0 && (presente ? <FaixaDesconto pct={presente.pct} ate={presente.ate} /> : extras.some((p) => ganhaPresente(eu, p)) && <AvisoPresente compacto />)}
-          {extras.length > 0 && (presente || extras.some((p) => ganhaPresente(eu, p))) && <span className="seta-pulsa" aria-hidden="true">⬇</span>}
           <div className={`grade-extras${extras.length === 1 ? ' uma' : ''}`}>
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>

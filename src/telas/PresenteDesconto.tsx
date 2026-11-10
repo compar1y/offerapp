@@ -36,11 +36,11 @@ export function FaixaDesconto({ pct, ate, texto, de, por }: { pct: number; ate: 
 }
 
 /** aviso antes da compra (ela ainda não fez a primeira compra de extra) */
-export function AvisoPresente({ compacto }: { compacto?: boolean }) {
+export function AvisoPresente({ texto, compacto }: { texto: string; compacto?: boolean }) {
   return (
     <div className={`aviso-presente${compacto ? ' compacto' : ''}`}>
       <span className="ap-ico" aria-hidden="true">🎁</span>
-      <span><b>Presente de primeira compra</b>{compacto ? `Comprando qualquer material em PDF daqui, você ganha ${DESCONTO.pct}% OFF no próximo, por ${DESCONTO.horas} horas.` : `Comprando este material, você ganha ${DESCONTO.pct}% OFF no próximo material, válido por ${DESCONTO.horas} horas.`}</span>
+      <span><b>Presente de primeira compra</b>{texto}</span>
     </div>
   )
 }
