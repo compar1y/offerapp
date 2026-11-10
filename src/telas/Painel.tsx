@@ -177,7 +177,7 @@ export function Painel() {
                 <span className="play" aria-hidden="true">▶</span>
                 <span className="video-titulo">{VIDEOAULAS.titulo}</span>
               </button>
-              <button className="btn-extra btn-video" onClick={abrirVideoaulas}>▶ Assistir às aulas</button>
+              <button className="btn-extra btn-video" onClick={abrirVideoaulas}>▶ Quero assistir às aulas</button>
             </div>
           )}
           {/* o presente de 30% vale só para os materiais em PDF (não para as Aulas): o aviso fica junto deles */}
@@ -189,10 +189,12 @@ export function Painel() {
                 <img src={p === 'etiquetas' ? '/img/mockups/etiquetas-capa.webp' : p === 'contafeita' ? '/img/mockups/contafeita-capa.webp' : capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
                 {precoPresente(eu, p) && <span className="selo-off">-{precoPresente(eu, p)!.pct}%</span>}
                 <span>{PRODUTOS[p].nome}</span>
-                {p === 'etiquetas' && <span className="mini-capa-sub">✍️ Personalizado na hora com os seus dados</span>}
-                {p === 'contafeita' && <span className="mini-capa-sub">Preencha a encomenda da cliente uma vez e o app faz as contas.</span>}
-                {p === 'contafeita' && <span className="mini-capa-sub2">Orçamento e mensagens do seu kit preenchidos, prontos para copiar.</span>}
-                <span className="btn-extra">{p === 'etiquetas' ? '🏷️ Quero com o meu nome' : p === 'contafeita' ? '💬 Quero minhas respostas prontas' : '📖 Ver material'}</span>
+                {p === 'etiquetas' && <span className="mini-capa-sub">✍️ Digite o nome e sai pronto, com a sua marca</span>}
+                {p === 'recheios' && <span className="mini-capa-sub">Faz a pessoa pedir outro. Dá pra cobrar o sabor a mais.</span>}
+                {p === 'encomenda' && <span className="mini-capa-sub">A primeira encomenda, a cliente que volta e a que traz outra.</span>}
+                {p === 'contafeita' && <span className="mini-capa-sub">Preencha uma vez e receba tudo pronto, com a conta feita.</span>}
+                {p === 'contafeita' && <span className="mini-capa-sub2">Orçamento e mensagens do kit, prontos para copiar e cobrar certo.</span>}
+                <span className="btn-extra">{p === 'etiquetas' ? '🏷️ Quero com o meu nome' : p === 'contafeita' ? '💬 Quero minhas respostas prontas' : p === 'recheios' ? '📖 Quero os 10 recheios' : p === 'encomenda' ? '📖 Quero minhas clientes' : '📖 Ver material'}</span>
               </button>
             ))}
           </div>
