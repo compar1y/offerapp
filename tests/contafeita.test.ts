@@ -1,6 +1,6 @@
-// Respostas com a Conta Feita: produto escondido sem checkout, nada liberado além da ferramenta, contas em centavos e as regras do final.md.
-import { describe, expect, it } from 'vitest'
-import { CONTAFEITA_WIAPY, PRODUTOS, materiaisLiberados } from '../shared/catalogo'
+// Respostas com a Conta Feita: venda ligada pela chave CONTAFEITA_VENDA_LIGADA, nada liberado além da ferramenta, contas em centavos e as regras do final.md.
+import { describe, expect, it, vi } from 'vitest'
+import { CONTAFEITA_VENDA_LIGADA, CONTAFEITA_WIAPY, PRODUTOS, materiaisLiberados, vendaLigada } from '../shared/catalogo'
 import { ARQUIVOS, podeBaixar, podeVerAulasCom } from '../shared/acesso'
 import { OFERTAS } from '../shared/conteudo'
 import { lerPedido, produtoDoCheckout } from '../server/wiapy'
@@ -21,18 +21,48 @@ describe('produto Respostas com a Conta Feita', () => {
     expect(podeVerAulasCom(['contafeita'], 'venda')).toBe(false)
     expect(OFERTAS.contafeita.botao).toBe('Quero minhas respostas prontas')
   })
-  it('enquanto os IDs da Wiapy estão vazios, o card e a venda ficam escondidos', () => {
-    expect(CONTAFEITA_WIAPY).toEqual({ checkoutUrl: '', checkoutIds: [], produtoIds: [] })
-    expect(ofertaDisponivel(eu(['kit']), 'contafeita')).toBe(false)
+  it('IDs da Wiapy preenchidos e a chave CONTAFEITA_VENDA_LIGADA ligada', () => {
+    expect(CONTAFEITA_WIAPY).toEqual({
+      checkoutUrl: 'https://pay.wiapy.com/6af2a90804a3ce9b119ec3a8',
+      checkoutIds: ['6af2a90804a3ce9b119ec3a8'],
+      produtoIds: ['6af2a8a304a3ce9b119ebf8d'],
+    })
+    expect(PRODUTOS.contafeita.checkoutUrl).toBe('https://pay.wiapy.com/6af2a90804a3ce9b119ec3a8')
+    expect(CONTAFEITA_VENDA_LIGADA).toBe(true)
+  })
+  it('chave ligada: o card e a oferta aparecem para quem não comprou e somem para quem comprou', () => {
+    expect(vendaLigada('contafeita', true)).toBe(true)
+    expect(ofertaDisponivel(eu(['kit']), 'contafeita')).toBe(true)
+    expect(ofertaDisponivel(eu(['kit', 'contafeita']), 'contafeita')).toBe(false)
+  })
+  it('chave desligada: nada da venda aparece para quem não comprou, e quem comprou continua com a ferramenta', async () => {
+    expect(vendaLigada('contafeita', false)).toBe(false)
+    expect(vendaLigada('etiquetas', false)).toBe(true)
+    vi.resetModules()
+    vi.doMock('../shared/catalogo', async (orig) => {
+      const m = await orig<typeof import('../shared/catalogo')>()
+      return { ...m, CONTAFEITA_VENDA_LIGADA: false, vendaLigada: (p: string, l = false) => m.vendaLigada(p as never, l) }
+    })
+    const ctx = await import('../src/ctx')
+    expect(ctx.ofertaDisponivel(eu(['kit']), 'contafeita')).toBe(false)
+    expect(ctx.ofertaDisponivel(eu([]), 'contafeita')).toBe(false)
+    expect(ctx.ofertaDisponivel(eu(['kit']), 'etiquetas')).toBe(true)
+    expect(ctx.tem(eu(['kit', 'contafeita']), 'contafeita')).toBe(true)
+    vi.doUnmock('../shared/catalogo')
+    vi.resetModules()
   })
   it('a ferramenta só abre para quem tem "contafeita"', () => {
     expect(tem(eu(['kit', 'recheios', 'encomenda', 'primeira', 'videoaulas', 'etiquetas']), 'contafeita')).toBe(false)
     expect(tem(eu(['contafeita']), 'contafeita')).toBe(true)
   })
-  it('webhook preparado: sem IDs, nenhum pedido vira "contafeita"', () => {
+  it('webhook: o conteúdo e o checkout da Wiapy viram "contafeita"; ids estranhos não', () => {
+    expect(produtoDoCheckout('6af2a90804a3ce9b119ec3a8')).toBe('contafeita')
     expect(produtoDoCheckout('')).toBeNull()
-    const pedido = { customer: { email: 'c@x.com' }, checkout: { id: 'qualquer', amount: 990 }, payment: { id: 'p', status: 'paid', amount: 990, payment_method: 'pix' }, products: [{ id: 'qualquer', title: 'Respostas' }] }
-    expect(lerPedido(pedido as never).produtos).not.toContain('contafeita')
+    const pago = (checkout: string, produto: string) => ({ customer: { email: 'c@x.com' }, checkout: { id: checkout, amount: 990 }, payment: { id: 'p', status: 'paid', amount: 990, payment_method: 'pix' }, products: [{ id: produto, title: 'Respostas com a Conta Feita' }] })
+    expect(lerPedido(pago('6af2a90804a3ce9b119ec3a8', '6af2a8a304a3ce9b119ebf8d') as never).produtos).toEqual(['contafeita'])
+    expect(lerPedido(pago('outro', '6af2a8a304a3ce9b119ebf8d') as never).produtos).toEqual(['contafeita'])
+    expect(lerPedido(pago('6af2a90804a3ce9b119ec3a8', 'desconhecido') as never).produtos).toEqual(['contafeita'])
+    expect(lerPedido(pago('qualquer', 'qualquer') as never).produtos).not.toContain('contafeita')
   })
   it('copy: transparente sobre os textos do kit, sem número de ganho nem escassez', () => {
     const o = OFERTAS.contafeita

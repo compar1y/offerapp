@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { PRODUTOS, type ProdutoId } from '../../shared/catalogo'
+import { PRODUTOS, vendaLigada, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
 import { ganhaPresente, ofertaDisponivel, precoPresente, reais, tem, useApp } from '../ctx'
 import { AvisoPresente, BarraPresente, FaixaDesconto, useRelogio } from './PresenteDesconto'
@@ -24,11 +24,14 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   useRelogio(eu.acesso.desconto?.ate) // re-renderiza a cada segundo enquanto o desconto vale; ao acabar, o preço normal volta
   const desc = precoPresente(eu, p)
 
+  // venda desligada pela chave (ex.: CONTAFEITA_VENDA_LIGADA = false): quem não comprou não vê a oferta nem por um link guardado
+  const fechada = !comprado && !vendaLigada(p)
   useEffect(() => {
+    if (fechada) { trocar({ t: 'painel' }); return }
     evento('oferta.vista', { produto: p, onde: origem })
-  }, [p, origem, evento])
+  }, [p, origem, evento, fechada, trocar])
 
-  if (!texto) return null
+  if (!texto || fechada) return null
   // ofertas com downsell ganham o botão vermelho de recusa logo abaixo do botão de compra
   const mostrarRecusa = origem === 'downsell' || (p === 'encomenda' && ofertaDisponivel(eu, 'primeira') && !estado.ofertasVistas.includes('downsell-primeira'))
 

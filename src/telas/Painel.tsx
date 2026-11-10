@@ -35,7 +35,7 @@ export function proximaLicao(comecaEm: number, feitas: string[]) {
 }
 
 /** extras vendidos à parte, sempre com preço e a palavra "extra" (aula 21 dicas, dica 6) */
-// 'contafeita' fica escondido sozinho enquanto o checkout da Wiapy estiver vazio (ofertaDisponivel)
+// 'contafeita' só aparece com CONTAFEITA_VENDA_LIGADA = true em shared/catalogo.ts (ofertaDisponivel)
 export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'etiquetas', 'contafeita']
 /** produtos comprados à parte (mostrados em "Minhas compras") */
 const COMPRAS_EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'primeira']
