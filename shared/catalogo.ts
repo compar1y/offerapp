@@ -1,7 +1,7 @@
 // Produtos, materiais e o que cada compra libera. Fonte única para o app (src/) e o servidor (api/, server/).
 // Regra do Levi: tudo o que a cliente comprou fica ABERTO desde o primeiro minuto. Nada comprado é travado por progresso.
 
-export type ProdutoId = 'kit' | 'recheios' | 'encomenda' | 'primeira' | 'videoaulas' | 'etiquetas'
+export type ProdutoId = 'kit' | 'recheios' | 'encomenda' | 'primeira' | 'videoaulas' | 'etiquetas' | 'contafeita'
 
 export type MaterialId =
   | 'ebook'
@@ -48,6 +48,17 @@ export const ETIQUETAS_WIAPY: { checkoutUrl: string; checkoutIds: string[]; prod
   checkoutUrl: 'https://pay.wiapy.com/6af20863371815cbecf6456a',
   checkoutIds: ['6af20863371815cbecf6456a'],
   produtoIds: ['6af207d3371815cbecf61968'],
+}
+
+/**
+ * Respostas com a Conta Feita (R$9,90): códigos da Wiapy. AINDA VAZIOS: o Caixa está criando o produto e o checkout (10/11).
+ * Com o checkoutUrl vazio, ofertaDisponivel() esconde o card e a tela de venda, e o webhook não reconhece nada como 'contafeita'.
+ * Quando os IDs chegarem: checkoutUrl = link de pagamento, checkoutIds = código do link (e id interno), produtoIds = id do conteúdo.
+ */
+export const CONTAFEITA_WIAPY: { checkoutUrl: string; checkoutIds: string[]; produtoIds: string[] } = {
+  checkoutUrl: '',
+  checkoutIds: [],
+  produtoIds: [],
 }
 
 export interface Produto {
@@ -124,6 +135,16 @@ export const PRODUTOS: Record<ProdutoId, Produto> = {
     checkoutUrl: ETIQUETAS_WIAPY.checkoutUrl,
     checkoutIds: ETIQUETAS_WIAPY.checkoutIds,
     produtoIds: ETIQUETAS_WIAPY.produtoIds,
+  },
+  contafeita: {
+    id: 'contafeita',
+    nome: 'Respostas com a Conta Feita',
+    precoCentavos: 990,
+    // ferramenta dentro do app (src/telas/ContaFeita.tsx): não libera PDF nem aulas
+    libera: [],
+    checkoutUrl: CONTAFEITA_WIAPY.checkoutUrl,
+    checkoutIds: CONTAFEITA_WIAPY.checkoutIds,
+    produtoIds: CONTAFEITA_WIAPY.produtoIds,
   },
 }
 

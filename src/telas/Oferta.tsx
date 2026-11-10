@@ -8,6 +8,7 @@ import { EXTRAS } from './Painel'
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
 import { DigiteSaiPronto, VitrineEtiquetas } from './Etiquetas'
+import { PreenchePronto } from './ContaFeita'
 
 /** página curta antes do checkout (TSL interna). O pagamento abre em outra aba; ao voltar, o app confere se liberou. */
 export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
@@ -77,7 +78,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
             <button className="btn comprar-pulsa" onClick={() => trocar({ t: 'painel' })}>🎁 Ver meu desconto</button>
           </>
         )}
-        <button className={presente ? 'btn leve' : 'btn'} onClick={() => trocar(p === 'etiquetas' ? { t: 'etiquetas' } : { t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>
+        <button className={presente ? 'btn leve' : 'btn'} onClick={() => trocar(p === 'etiquetas' ? { t: 'etiquetas' } : p === 'contafeita' ? { t: 'contafeita' } : { t: 'ler', m: primeiro, p: 1 })}>Abrir agora</button>
         <button className="link" onClick={() => trocar({ t: 'painel' })}>Voltar ao Início</button>
       </div>
     )
@@ -93,7 +94,9 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
       <div className="card oferta">
         {p === 'etiquetas'
           ? <img className="foto-oferta" src="/img/mockups/etiquetas-destaque.webp" width={800} height={1000} loading="lazy" alt="Confeiteira de avental vinho amarrando no panetone a etiqueta redonda “Panetones da Dona Cida”" />
-          : mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
+          : p === 'contafeita'
+            ? <PreenchePronto />
+            : mockup(p) ? <img className="mockup" src={mockup(p)!} alt="" /> : <Capa m={prod.libera[0]} />}
         {/* as peças de verdade, com o nome de exemplo, logo abaixo da capa */}
         {p === 'etiquetas' && <DigiteSaiPronto />}
         {p === 'etiquetas' && <VitrineEtiquetas />}

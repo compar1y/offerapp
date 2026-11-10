@@ -87,6 +87,14 @@
 - Entrega (`src/telas/Etiquetas.tsx`, só para quem tem `etiquetas`): ela digita nome e WhatsApp e o app desenha no celular (`src/etiquetas.ts`) 6 imagens (3 Status 9:16, 3 quadradas) e um PDF A4 de 6 páginas com linhas de corte. Salvar: `src/salvar.ts` (download direto; no iPhone com o app instalado, Compartilhar).
 - Capa do card e da oferta: `public/img/mockups/etiquetas.webp`; na oferta, as peças de exemplo aparecem logo abaixo.
 
+## Respostas com a Conta Feita (R$ 9,90)
+
+Ferramenta dentro do app (`src/telas/ContaFeita.tsx`, contas e textos em `src/contafeita.ts`): ela preenche uma encomenda (até 3 itens, entrega ou retirada, "uma parte agora", "tudo antes" ou "tudo na entrega", quanto já recebeu) e copia 5 respostas prontas, que são as mensagens 07, 18, 19, 20 e 23/24 do bônus 04, preenchidas e com a conta feita. Nada vai para o servidor: a encomenda, o nome e a chave PIX ficam no `localStorage` do celular.
+
+- **Escondido** enquanto `CONTAFEITA_WIAPY` (em `shared/catalogo.ts`) estiver vazio. Para ligar: preencher `checkoutUrl`, `checkoutIds` e `produtoIds` com os códigos da Wiapy.
+- Antes de ligar, rodar `supabase/migracao-2026-11-10-contafeita.sql` no SQL Editor do Supabase (inclui `contafeita` na `compras_produto_check`).
+- Comprar `contafeita` não libera PDF nem aulas.
+
 ## Colocar no ar (só com a ordem do dono)
 
 1. Criar o projeto no Supabase e rodar `supabase/schema.sql` no SQL Editor.

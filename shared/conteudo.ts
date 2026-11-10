@@ -173,6 +173,20 @@ export const OFERTAS: Record<Exclude<ProdutoId, 'kit' | 'videoaulas'>, TextoOfer
     botao: 'Quero com o meu nome',
     garantia: '7 dias de garantia. Peças de apresentação, não são rótulo oficial (sem validade nem ingredientes).',
   },
+  contafeita: {
+    gancho: 'Preencha a encomenda da cliente uma vez e receba tudo pronto: o orçamento e as mensagens, com a conta feita.',
+    // transparência (final.md): os textos são os do bônus 04 do kit; o que ela ganha a mais é o preenchimento e a conta
+    sub: 'No bônus de mensagens do kit, você tem os modelos para adaptar e faz a conta na mão. Aqui você preenche o pedido uma vez e as respostas saem prontas para copiar, com os valores somados, sem errar valor com a cliente.',
+    itens: [
+      'Você preenche uma vez: a cliente, os itens com o preço por unidade, entrega ou retirada e como vai receber',
+      'O app faz a conta: total, o valor que você pede agora e o que falta, sempre em reais com centavos',
+      '5 respostas prontas para copiar e colar no WhatsApp: orçamento, pedido de pagamento, confirmação, lembrete do que falta pagar e lembrete da entrega ou retirada',
+      'Os textos são os das mensagens do seu kit (bônus 04), já preenchidos com os dados da encomenda',
+      'Nada é enviado sozinho e nada sai do seu celular: você confere e cola',
+    ],
+    botao: 'Quero minhas respostas prontas',
+    garantia: '7 dias de garantia. A ferramenta não faz cobrança e não acessa banco: ela monta as mensagens e as contas para você copiar.',
+  },
   primeira: {
     gancho: 'Comece só pela primeira encomenda: da lista de contatos até o primeiro pedido pago.',
     itens: ['4 capítulos, 4 dias, 1 objetivo', 'A lista de 30 nomes e a degustação certa', 'A pré-venda com sinal e a fala cara a cara', 'O Caderninho de Clientes para imprimir'],

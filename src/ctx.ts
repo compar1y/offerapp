@@ -22,6 +22,7 @@ export type Tela =
   | { t: 'loja' }
   | { t: 'lojinha' }
   | { t: 'etiquetas' }
+  | { t: 'contafeita' }
   | { t: 'materiais' }
   | { t: 'conquistas' }
   | { t: 'aulas' }
