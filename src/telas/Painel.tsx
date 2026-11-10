@@ -1,4 +1,5 @@
 import { capa, cena } from '../imagens'
+import type { Eu } from '../api'
 import { RECEITAS } from '../../shared/receitas'
 import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS, type ProdutoId } from '../../shared/catalogo'
@@ -40,6 +41,16 @@ export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'etiquetas', 'conta
 /** produtos comprados à parte (mostrados em "Minhas compras") */
 const COMPRAS_EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'primeira']
 
+/** o que aparece na Seleção especial do Início: os extras à venda que ela ainda não comprou (+ Videoaulas).
+ *  É a mesma lista que a bolinha da barra de baixo conta. */
+export function ofertasSelecao(eu: Eu): ProdutoId[] {
+  const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
+  return [...extras, ...(VIDEOAULAS.mostrar && !podeVerAulas(eu) ? ['videoaulas' as ProdutoId] : [])]
+}
+
+/** id da seção, para a barra de baixo rolar até ela */
+export const ID_SELECAO = 'selecao-especial'
+
 /** Início = área de membros: o que ela comprou primeiro, extras com preço embaixo. Uma tela só. */
 export function Painel() {
   const { eu, estado, ir, evento, recarregar, sair } = useApp()
@@ -48,8 +59,8 @@ export function Painel() {
   // compras feitas depois do kit (bump dos Recheios, Encomenda, Primeira Encomenda) ficam em "Minhas compras", logo abaixo das receitas
   const compras = [...new Set(COMPRAS_EXTRAS.filter((p) => tem(eu, p)).flatMap((p) => PRODUTOS[p].libera))].filter((m) => eu.acesso.materiais.includes(m))
   const seus = eu.acesso.materiais.filter((m) => m !== 'ebook' && m !== 'fichas-socorro' && !compras.includes(m))
-  const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
-  const aVendaAqui: ProdutoId[] = [...extras, ...(VIDEOAULAS.mostrar && !podeVerAulas(eu) ? ['videoaulas' as ProdutoId] : [])]
+  const aVendaAqui = ofertasSelecao(eu)
+  const extras = aVendaAqui.filter((p) => p !== 'videoaulas')
   const presente = aVendaAqui.map((p) => precoPresente(eu, p)).find(Boolean) ?? null
   useRelogio(presente?.ate) // quando o prazo acaba, a faixa e os preços com desconto somem sozinhos
   const avisoPresente = !presente && aVendaAqui.some((p) => ganhaPresente(eu, p))
@@ -168,7 +179,7 @@ export function Painel() {
 
       {/* 4. extras: seção separada, mesma cara dos outros; o toque leva à página de compra (pedido do Levi) */}
       {(extras.length > 0 || mostrarOfertaVideo) && (
-        <div className="card extras-card">
+        <div className="card extras-card" id={ID_SELECAO}>
           <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Seleção especial</span>
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas. <span className="dinheiro-pulsa" aria-hidden="true">💰</span></p>

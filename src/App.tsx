@@ -18,6 +18,7 @@ import { AulaTela, Aulas } from './telas/Aulas'
 import { EtiquetasTela } from './telas/Etiquetas'
 import { ContaFeitaTela } from './telas/ContaFeita'
 import { PopupDesconto, TELA_ACESSO, conferirPopup } from './telas/PopupDesconto'
+import { Navbar } from './telas/Navbar'
 import type { UpsellPopup } from '../shared/popupDesconto'
 
 type Fase = { f: 'carregando' } | { f: 'entrar'; aviso?: string } | { f: 'bloqueada'; msg: string } | { f: 'dentro' }
@@ -179,6 +180,7 @@ export function App() {
     <CtxReact.Provider value={ctx}>
       {import.meta.env.VITE_DEMO === '1' && <BarraPrevia />}
       <Rota tela={tela} />
+      <Navbar tela={tela} popupAberto={!!popup} />
       {popup && <PopupDesconto comprado={popup.comprado} oferta={popup.oferta} ate={popup.ate} fechar={fecharPopup} />}
       {aviso && <div className="toast pop" role="status">{aviso}</div>}
     </CtxReact.Provider>

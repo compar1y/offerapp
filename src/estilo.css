@@ -120,19 +120,22 @@ input[type=email],input[type=text]{width:100%;font:inherit;font-size:18px;paddin
 .tabela td.n{text-align:right}
 textarea{width:100%;font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha);background:var(--cartao);color:var(--chocolate);min-height:120px}
 select{font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha);background:var(--cartao);color:var(--chocolate);width:100%}
-/* menu de topo: fixo ao rolar; 6 abas iguais com ícone em cima (cabem na coluna de 440px e num celular de 320px) */
-/* barra de navegação embaixo, em pílula flutuante (como a de um celular): dá para ver as bordas arredondadas */
-.menu{position:fixed;z-index:30;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(420px,calc(100vw - 20px));padding:6px;border-radius:999px;background:var(--chocolate);color:var(--farinha);box-shadow:0 10px 28px rgba(46,30,20,.32),0 2px 0 rgba(255,255,255,.08) inset;border:2px solid var(--casca)}
-:root[data-theme="dark"] .menu{background:#120D0A;color:#FBEFE3}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .menu{background:#120D0A;color:#FBEFE3}}
-.menu .abas{display:flex;gap:2px}
-.menu button{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:inherit;opacity:.7;font:inherit;font-weight:800;font-size:12.5px;line-height:1.1;padding:7px 9px;border-radius:999px;cursor:pointer;white-space:nowrap;min-width:0;flex:1 1 auto}
-.menu button span{font-size:22px;line-height:1.1}
-.menu button:hover{opacity:.95}
-.menu button.on{opacity:1;background:var(--casca);color:var(--chocolate)}
-@media (max-width:389px){.menu button{font-size:11.5px;padding:7px 6px}}
-@media (max-width:350px){.menu button{font-size:10.5px;padding:7px 4px}.menu button span{font-size:19px}}
+/* barra fixa no rodapé (src/telas/Navbar.tsx): marrom com borda dourada, item ativo em pílula dourada, respeita a safe-area */
+.navbar{position:fixed;z-index:30;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:4px;background:#2E1E14;color:#FBEFE3;border-top:2px solid #E2A23B;box-shadow:0 -6px 20px rgba(46,30,20,.28);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.nb-item{flex:1 1 0;max-width:110px;min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:0;border-radius:16px;color:inherit;font:inherit;font-weight:800;font-size:12.5px;line-height:1.1;padding:5px 4px;cursor:pointer;opacity:.78;-webkit-tap-highlight-color:transparent}
+.nb-item:hover{opacity:1}
+.nb-item.on{opacity:1;background:#E2A23B;color:#2E1E14}
+.nb-ico{position:relative;font-size:22px;line-height:1.1}
+.nb-selecao .nb-ico{color:#F3C566;font-size:24px}
+.nb-selecao.on .nb-ico{color:#2E1E14}
+.nb-bolinha{position:absolute;top:-5px;right:-13px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#D32F2F;color:#fff;border:2px solid #2E1E14;font-family:var(--texto);font-size:12px;font-weight:800;line-height:16px;text-align:center}
+.nb-nome{white-space:nowrap}
+@media (max-width:340px){.nb-item{font-size:11px}.nb-ico{font-size:20px}}
 #app{padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}
+/* com a barra: espaço embaixo para nada (botão de compra, rodapé) ficar por baixo dela; o aviso sobe acima da barra */
+body.com-navbar #app{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+body.com-navbar .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+body.com-navbar #selecao-especial{scroll-margin-top:30px}
 .marca{margin:0 0 -10px;text-align:center;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--fita)}
 /* leitor em rolagem contínua: páginas uma embaixo da outra; no computador a coluna alarga para a página ficar legível */
 .leitor-topo{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;background:var(--farinha);padding:6px 0;margin-block:-6px}
