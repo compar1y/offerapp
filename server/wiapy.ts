@@ -5,6 +5,7 @@
 // O app reconhece cada item pelo conteúdo (PRODUTOS[...].produtoIds) e só usa o checkout quando nenhum conteúdo casar.
 import { BUMP_RECHEIOS, PRODUTOS, type ProdutoId } from '../shared/catalogo.js'
 import { PRECO_PRESENTE } from '../shared/desconto.js'
+import { produtoDoCheckoutDesconto, produtoDoConteudoDesconto } from '../shared/popupDesconto.js'
 import { env } from './env.js'
 
 export type StatusCompra = 'pago' | 'pendente' | 'recusado' | 'estornado'
@@ -62,7 +63,8 @@ export function produtoDoCheckout(checkoutId: string): ProdutoId | null {
     const ids = [...p.checkoutIds, ...(PRECO_PRESENTE[p.id]?.checkoutIds ?? []), ...idsExtras(`CHECKOUT_IDS_${p.id.toUpperCase()}`)]
     if (ids.includes(checkoutId)) return p.id
   }
-  return null
+  // checkout com desconto do popup pós-compra: é o mesmo produto
+  return produtoDoCheckoutDesconto(checkoutId)
 }
 
 export function lerPedido(corpo: unknown): Pedido {
@@ -93,6 +95,11 @@ export function lerPedido(corpo: unknown): Pedido {
   const porItem = Object.values(PRODUTOS)
     .filter((p) => p.produtoIds?.some((id) => prods.some((x) => x.id === id)))
     .map((p) => p.id)
+  // conteúdo com desconto do popup pós-compra (shared/popupDesconto.ts): conta como o mesmo produto
+  for (const x of prods) {
+    const p = produtoDoConteudoDesconto(x.id)
+    if (p && !porItem.includes(p)) porItem.push(p)
+  }
   const produtos: ProdutoId[] = porItem.length ? porItem : ([produtoDoCheckout(checkoutId)].filter(Boolean) as ProdutoId[])
   const valor = centavos(pagamento.amount) ?? centavos(checkout.amount)
 
