@@ -72,7 +72,7 @@ export const COPY_POPUP: Record<UpsellPopup, { titulo: string; texto: string; it
     texto: 'Ler a receita é bom. Ver a massa de perto é o que tira a dúvida na hora.',
     itens: [
       'Sova, ponto da massa, modelagem e forno, de perto',
-      'Os erros mais comuns e como corrigir na hora',
+      'Tem versões sem glúten, sem leite e sem ovo, e também receitas no liquidificador ou na tigela',
       'Assista no celular, quantas vezes quiser',
     ],
     botao: 'Quero assistir às aulas',
