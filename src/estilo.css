@@ -285,12 +285,10 @@ body{font-size:17px}
 .grade-compras .mini-capa > span:not(.btn-abrir){font-size:15px}
 .btn-abrir{display:block;text-align:center;background:var(--pinheiro);color:#fff;font-weight:800;font-size:15px;border-radius:12px;padding:9px 8px;box-shadow:0 4px 0 var(--pinheiro-sombra)}
 
-/* presente da primeira compra: faixa com relógio */
+/* presente da primeira compra: faixa (sem relógio) */
 .faixa-desconto{display:grid;gap:2px;text-align:center;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,#C9333F,#8E1218);color:#fff;border:2px solid #F3D27A;box-shadow:0 4px 14px rgba(201,51,63,.35)}
 .faixa-desconto .fd-titulo{font-size:13px;font-weight:700;letter-spacing:.02em;color:#F3D27A;text-transform:uppercase}
 .faixa-desconto .fd-texto{font-size:18px;font-weight:800;line-height:1.2}
-.faixa-desconto .fd-relogio{font-size:15px}
-.faixa-desconto .fd-relogio b{font-variant-numeric:tabular-nums;font-size:20px;background:rgba(0,0,0,.25);padding:1px 8px;border-radius:8px;margin-left:4px}
 .mini-capa{position:relative}
 .selo-off{position:absolute;top:6px;right:6px;background:#C9333F;color:#fff;font-weight:800;font-size:14px;padding:3px 8px;border-radius:999px;border:2px solid #F3D27A;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .preco-de{color:#9A8B7E;font-size:18px}
@@ -303,7 +301,6 @@ body{font-size:17px}
 @media (prefers-reduced-motion:reduce){.seta-pulsa{animation:none}}
 .barra-presente{position:sticky;top:8px;z-index:20;margin:0 auto;width:100%;box-sizing:border-box;text-align:center;padding:9px 12px;border-radius:999px;background:linear-gradient(135deg,#C9333F,#8E1218);color:#fff;font-size:15px;border:2px solid #F3D27A;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .barra-presente b{color:#F3D27A}
-.barra-presente .br-relogio{font-variant-numeric:tabular-nums;color:#fff;background:rgba(0,0,0,.25);padding:1px 7px;border-radius:7px}
 .faixa-desconto .fd-preco{font-size:17px;line-height:1.2}
 .faixa-desconto .fd-preco s{opacity:.75}
 .faixa-desconto .fd-preco b{font-family:var(--display);font-size:34px;color:#fff;margin-left:2px}

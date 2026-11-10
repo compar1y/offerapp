@@ -1,36 +1,18 @@
-import { useEffect, useState } from 'react'
 import { DESCONTO } from '../../shared/desconto'
 
-/** contagem regressiva até `ate` (ISO). Devolve null quando acabou. */
-export function useRelogio(ate: string | undefined | null): string | null {
-  const [agora, setAgora] = useState(Date.now())
-  useEffect(() => {
-    if (!ate) return
-    const id = setInterval(() => setAgora(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [ate])
-  if (!ate) return null
-  const falta = Math.floor((Date.parse(ate) - agora) / 1000)
-  if (falta <= 0) return null
-  const h = Math.floor(falta / 3600)
-  const m = Math.floor((falta % 3600) / 60)
-  const s = falta % 60
-  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
+// Presente da primeira compra, SEM relógio e sem prazo: o link com desconto da Wiapy não expira,
+// então nada aqui diz que o desconto acaba (Levi, 10/11: sem escassez falsa).
 
-/** faixa do presente da primeira compra, com o relógio */
-export function FaixaDesconto({ pct, ate, texto, de, por }: { pct: number; ate: string; texto?: string; de?: string; por?: string }) {
-  const resta = useRelogio(ate)
-  if (!resta) return null
+/** faixa do presente já ganho: onde ele vale ou, na oferta, o preço com desconto */
+export function FaixaDesconto({ pct, texto, de, por }: { pct: number; texto?: string; de?: string; por?: string }) {
   return (
     <div className="faixa-desconto" role="status">
       <span className="fd-titulo">🎁 Presente da sua primeira compra</span>
       {por ? (
         <span className="fd-preco"><s>R${de}</s> por <b>R${por}</b></span>
       ) : (
-        <span className="fd-texto">{texto ?? `${pct}% OFF no próximo material`}</span>
+        <span className="fd-texto">{texto ?? `${pct}% OFF em mais um material`}</span>
       )}
-      <span className="fd-relogio">Acaba em <b>{resta}</b></span>
     </div>
   )
 }
@@ -45,13 +27,11 @@ export function AvisoPresente({ texto, compacto }: { texto: string; compacto?: b
   )
 }
 
-/** barrinha fixa no topo da página de oferta, versão curta do aviso / do relógio */
-export function BarraPresente({ ate }: { ate?: string | null }) {
-  const resta = useRelogio(ate)
-  if (ate && !resta) return null
+/** barrinha fixa no topo da página de oferta: o desconto já vale aqui, ou comprando ela ganha */
+export function BarraPresente({ ativo }: { ativo?: boolean }) {
   return (
     <div className="barra-presente" role="status">
-      {resta ? <>🎁 <b>{DESCONTO.pct}% OFF</b> aqui · acaba em <b className="br-relogio">{resta}</b></> : <>🎁 Comprou, ganhou <b>{DESCONTO.pct}% OFF</b> no próximo</>}
+      {ativo ? <>🎁 <b>{DESCONTO.pct}% OFF</b> aqui: seu presente</> : <>🎁 Comprou, ganhou <b>{DESCONTO.pct}% OFF</b> em mais um</>}
     </div>
   )
 }
