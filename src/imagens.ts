@@ -6,7 +6,7 @@ import type { MaterialId, ProdutoId } from '../shared/catalogo'
 export const fotoReceita = (n: number) => `img/receitas/${String(n).padStart(3, '0')}.webp`
 export const fotoSos = (ficha: number) => `img/sos/${String(ficha).padStart(2, '0')}.webp`
 export const capa = (m: MaterialId) => `img/capas/${m}.webp`
-export const cena = (c: 'sos' | 'receitas' | 'presentes' | 'boas-vindas') => `img/cenas/${c}.webp`
+export const cena = (c: 'sos' | 'receitas' | 'presentes' | 'boas-vindas' | 'videoaulas' | 'aulas-em-video') => `img/cenas/${c}.webp`
 export const fotoEtapa = (n: number) => `img/modulos/${n}.webp`
 export const fotoBau = (b: string) => `img/baus/${b}.webp`
 

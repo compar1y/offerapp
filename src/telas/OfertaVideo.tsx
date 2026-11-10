@@ -65,7 +65,7 @@ export function OfertaVideo() {
       <h1>{VIDEOAULAS.gancho}</h1>
       <div className="card oferta">
         <div className="video-tela" aria-hidden="true">
-          <img src={cena('receitas')} alt="" />
+          <img src={cena('videoaulas')} alt="" />
           <span className="play">▶</span>
         </div>
         <h3>{VIDEOAULAS.nome}</h3>
