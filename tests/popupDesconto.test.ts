@@ -5,10 +5,13 @@ import {
   CHECKOUT_DESCONTO_POPUP, POPUP_DESCONTO_LIGADO, PROXIMO, compraNova, precoComDesconto, proximoUpsell, type UpsellPopup,
 } from '../shared/popupDesconto'
 import { lerPedido, produtoDoCheckout } from '../server/wiapy'
+import { podeVerAulasCom } from '../shared/acesso'
+import { tem } from '../src/ctx'
 import { COPY_POPUP, conferirPopup } from '../src/telas/PopupDesconto'
 
 const eu = (produtos: string[]) => ({ email: 'm@x.com', acesso: { produtos, pendentes: [], materiais: [] } }) as never
 const todos = () => true
+const UPSELLS = ['videoaulas', 'etiquetas', 'contafeita']
 const comLinks = () => ({
   videoaulas: { ...CHECKOUT_DESCONTO_POPUP.videoaulas, checkoutUrl: 'https://pay.wiapy.com/V' },
   etiquetas: { ...CHECKOUT_DESCONTO_POPUP.etiquetas, checkoutUrl: 'https://pay.wiapy.com/E' },
@@ -136,5 +139,40 @@ describe('webhook pronto para os checkouts com desconto', () => {
     } finally {
       e.checkoutIds.length = 0; e.produtoIds.length = 0
     }
+  })
+
+  // os checkouts com desconto vão ser criados em cima dos MESMOS conteúdos que já existem (Levi, 10/11)
+  const CONTEUDOS: Record<UpsellPopup, string> = { videoaulas: '6af1e083371815cbecec6d54', etiquetas: '6af207d3371815cbecf61968', contafeita: '6af2a8a304a3ce9b119ebf8d' }
+  const EXEMPLO_CHECKOUT: Record<UpsellPopup, string> = { videoaulas: 'exemplo-desc-aulas-1390', etiquetas: 'exemplo-desc-etq-890', contafeita: 'exemplo-desc-conta-690' }
+  const valor: Record<UpsellPopup, number> = { videoaulas: 1390, etiquetas: 890, contafeita: 690 }
+  const pedidoDesc = (p: UpsellPopup, conteudo: string, checkout: string) => ({ customer: { email: 'c@x.com' }, checkout: { id: checkout, amount: valor[p] }, payment: { id: 'pg-' + p, status: 'paid', amount: valor[p], payment_method: 'pix' }, products: [{ id: conteudo, title: PRODUTOS[p].nome }] })
+  it('os conteúdos reais são os do catálogo', () => {
+    for (const p of UPSELLS as UpsellPopup[]) expect(PRODUTOS[p].produtoIds).toContain(CONTEUDOS[p])
+  })
+  it('mesmo conteúdo + checkout com desconto (ainda não cadastrado): já vira o produto certo, pelo id do conteúdo', () => {
+    for (const p of UPSELLS as UpsellPopup[]) {
+      const r = lerPedido(pedidoDesc(p, CONTEUDOS[p], EXEMPLO_CHECKOUT[p]) as never)
+      expect(r.produtos).toEqual([p])
+      expect(r.valorCentavos).toBe(valor[p])
+    }
+  })
+  it('checkout com desconto cadastrado: vira o produto certo pelo checkoutId, mesmo sem o conteúdo no pedido', () => {
+    for (const p of UPSELLS as UpsellPopup[]) CHECKOUT_DESCONTO_POPUP[p].checkoutIds.push(EXEMPLO_CHECKOUT[p])
+    try {
+      for (const p of UPSELLS as UpsellPopup[]) {
+        expect(produtoDoCheckout(EXEMPLO_CHECKOUT[p])).toBe(p)
+        expect(lerPedido(pedidoDesc(p, 'conteudo-que-nao-veio', EXEMPLO_CHECKOUT[p]) as never).produtos).toEqual([p])
+        expect(lerPedido(pedidoDesc(p, CONTEUDOS[p], EXEMPLO_CHECKOUT[p]) as never).produtos).toEqual([p]) // os dois juntos: um produto só
+      }
+    } finally {
+      for (const p of UPSELLS as UpsellPopup[]) CHECKOUT_DESCONTO_POPUP[p].checkoutIds.length = 0
+    }
+  })
+  it('a compra com desconto libera o produto certo, e só ele', () => {
+    expect(podeVerAulasCom(['kit', 'videoaulas'], 'venda')).toBe(true)
+    expect(tem(eu(['kit', 'etiquetas']), 'etiquetas')).toBe(true)
+    expect(tem(eu(['kit', 'etiquetas']), 'contafeita')).toBe(false)
+    expect(tem(eu(['kit', 'contafeita']), 'contafeita')).toBe(true)
+    expect(podeVerAulasCom(['kit', 'etiquetas', 'contafeita'], 'venda')).toBe(false)
   })
 })
