@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { MATERIAIS, PRODUTOS, type ProdutoId } from '../../shared/catalogo'
 import { ETAPAS } from '../../shared/conteudo'
 import { hojeBR, type BauId } from '../../shared/jogo'
-import { ganhaPresente, ofertaDisponivel, precoPresente, tem, textoFaixa, textoPresente, useApp } from '../ctx'
-import { AvisoPresente, FaixaDesconto } from './PresenteDesconto'
+import { ganhaPresente, ofertaDisponivel, precoPresente, presenteValendo, tem, textoFaixa, textoPresente, useApp } from '../ctx'
+import { AvisoPresente, FaixaDesconto, useRelogio } from './PresenteDesconto'
 import { Suporte } from './Entrar'
 import { VIDEOAULAS } from './OfertaVideo'
 import { AULAS } from '../../shared/aulas'
@@ -51,6 +51,7 @@ export function Painel() {
   const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
   const aVendaAqui: ProdutoId[] = [...extras, ...(VIDEOAULAS.mostrar && !podeVerAulas(eu) ? ['videoaulas' as ProdutoId] : [])]
   const presente = aVendaAqui.map((p) => precoPresente(eu, p)).find(Boolean) ?? null
+  useRelogio(presente?.ate) // quando o prazo acaba, a faixa e os preços com desconto somem sozinhos
   const avisoPresente = !presente && aVendaAqui.some((p) => ganhaPresente(eu, p))
   const clique = (botao: string) => evento('inicio.clique', { botao })
   const aulas = podeVerAulas(eu)
@@ -171,8 +172,8 @@ export function Painel() {
           <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Seleção especial</span>
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas. <span className="dinheiro-pulsa" aria-hidden="true">💰</span></p>
-          {/* presente da primeira compra: vale nas Aulas, nas Etiquetas e no Conta Feita (os checkouts com desconto do popup) */}
-          {presente ? <FaixaDesconto pct={presente.pct} texto={textoFaixa(eu)} /> : avisoPresente && <AvisoPresente compacto texto={textoPresente(eu)} />}
+          {/* presente de 30% por 3 h (primeira compra ou popup): vale nas Aulas, nas Etiquetas e no Conta Feita */}
+          {presente ? <FaixaDesconto pct={presente.pct} ate={presente.ate} titulo={presenteValendo(eu) ? undefined : 'Seu presente da sua compra'} texto={textoFaixa(eu)} /> : avisoPresente && <AvisoPresente compacto texto={textoPresente(eu)} />}
           {(presente || avisoPresente) && <span className="seta-pulsa" aria-hidden="true">⬇</span>}
           {mostrarOfertaVideo && (
             <div className="video-upsell">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { cena } from '../imagens'
-import { ganhaPresente, precoPresente, reais, textoPresente, useApp } from '../ctx'
-import { AvisoPresente, BarraPresente, FaixaDesconto } from './PresenteDesconto'
+import { ganhaPresente, precoPresente, presenteValendo, reais, textoPresente, useApp } from '../ctx'
+import { AvisoPresente, BarraPresente, FaixaDesconto, useRelogio } from './PresenteDesconto'
 import { PRODUTOS } from '../../shared/catalogo'
 import { podeVerAulas } from '../aulas'
 
@@ -35,6 +35,7 @@ export function OfertaVideo() {
   const [conferindo, setConferindo] = useState(false)
   const pendente = eu.acesso.pendentes.includes('videoaulas')
   const desc = precoPresente(eu, 'videoaulas')
+  useRelogio(desc?.ate) // ao acabar o prazo, o preço normal volta na hora
   // quem já tem as aulas não vê a venda: vai direto para a lista
   useEffect(() => { if (libera) trocar({ t: 'aulas' }) }, [libera, trocar])
   useEffect(() => { if (!libera) evento('oferta.vista', { produto: 'videoaulas', onde: 'pagina' }) }, [evento, libera])
@@ -62,7 +63,7 @@ export function OfertaVideo() {
   }
   return (
     <>
-      {desc ? <BarraPresente ativo /> : ganhaPresente(eu, 'videoaulas') && <BarraPresente />}
+      {desc ? <BarraPresente ate={desc.ate} /> : ganhaPresente(eu, 'videoaulas') && <BarraPresente />}
       <button className="voltar" onClick={sair}>← Voltar</button>
       <p className="eyebrow">Material extra, vendido à parte</p>
       <h1>{VIDEOAULAS.gancho}</h1>
@@ -73,7 +74,7 @@ export function OfertaVideo() {
         </div>
         <h3>{VIDEOAULAS.nome}</h3>
         <ul className="passos">{VIDEOAULAS.itens.map((i) => <li key={i}>{i}</li>)}</ul>
-        {desc && <FaixaDesconto pct={desc.pct} de={reais(VIDEOAULAS.precoCentavos)} por={reais(desc.precoCentavos)} />}
+        {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} titulo={presenteValendo(eu) ? undefined : 'Seu presente da sua compra'} de={reais(VIDEOAULAS.precoCentavos)} por={reais(desc.precoCentavos)} />}
         {!desc && ganhaPresente(eu, 'videoaulas') && <AvisoPresente texto={textoPresente(eu, 'videoaulas')} />}
         {!desc && <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span className="sub">por</span><span className="preco">R${reais(VIDEOAULAS.precoCentavos)}</span></div>}
         <p className="sub" style={{ fontSize: 15 }}>{VIDEOAULAS.ancora}</p>
