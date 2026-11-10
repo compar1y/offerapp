@@ -17,6 +17,8 @@ import { Conquistas, Materiais } from './telas/Materiais'
 import { AulaTela, Aulas } from './telas/Aulas'
 import { EtiquetasTela } from './telas/Etiquetas'
 import { ContaFeitaTela } from './telas/ContaFeita'
+import { PopupDesconto, TELA_ACESSO, conferirPopup } from './telas/PopupDesconto'
+import type { UpsellPopup } from '../shared/popupDesconto'
 
 type Fase = { f: 'carregando' } | { f: 'entrar'; aviso?: string } | { f: 'bloqueada'; msg: string } | { f: 'dentro' }
 
@@ -38,6 +40,7 @@ export function App() {
   const pendente = useRef<Estado | null>(null)
   const timer = useRef<number | undefined>(undefined)
   const toastT = useRef<number | undefined>(undefined)
+  const [popup, setPopup] = useState<{ comprado: UpsellPopup; oferta: UpsellPopup } | null>(null)
 
   const toast = useCallback((m: string) => {
     setAviso(m)
@@ -95,6 +98,19 @@ export function App() {
       document.removeEventListener('visibilitychange', sumiu)
     }
   }, [carregar, gravar])
+
+  // popup de desconto pós-compra (shared/popupDesconto.ts): ao confirmar a compra de um upsell, leva à tela de acesso
+  // do que ela comprou e abre a oferta do próximo por cima. Fechar deixa ela no material. Chave desligada: nada acontece.
+  useEffect(() => {
+    if (!eu) return
+    const r = conferirPopup(eu)
+    if (!r) return
+    const t = TELA_ACESSO[r.comprado]
+    history.replaceState({ ...t, n: profundidade() }, '')
+    setTela(t)
+    window.scrollTo(0, 0)
+    setPopup(r)
+  }, [eu])
 
   const ctx = useMemo<Ctx | null>(() => {
     if (!eu || !estado) return null
@@ -162,6 +178,7 @@ export function App() {
     <CtxReact.Provider value={ctx}>
       {import.meta.env.VITE_DEMO === '1' && <BarraPrevia />}
       <Rota tela={tela} />
+      {popup && <PopupDesconto comprado={popup.comprado} oferta={popup.oferta} fechar={() => setPopup(null)} />}
       {aviso && <div className="toast pop" role="status">{aviso}</div>}
     </CtxReact.Provider>
   )
