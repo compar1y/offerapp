@@ -1,7 +1,7 @@
 // Aulas em vídeo: lista por módulos (tela 'aulas') e player vertical em tela cheia (tela 'aula').
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AULAS, AULA_BY_FILE, MODULOS, durLabel, ehAula } from '../../shared/aulas'
-import { MOEDAS, assistirAula } from '../../shared/jogo'
+import { assistirAula } from '../../shared/jogo'
 import { AULAS_ON, aulaVideoUrl, gravarTempo, lerTempos, podeVerAulas } from '../aulas'
 import { useApp } from '../ctx'
 
@@ -34,7 +34,6 @@ export function Aulas() {
       <h1>Aulas em vídeo</h1>
       <p className="sub">{AULAS.length} aulas curtas, com o celular em pé. Você já assistiu {vistas.length} de {AULAS.length}.</p>
       <div className="barra"><i style={{ width: `${(vistas.length / AULAS.length) * 100}%` }} /></div>
-      <p className="sub" style={{ fontSize: 13 }}>Cada aula assistida pela primeira vez vale 🪙 {MOEDAS.aula} e conta na Fornada do Dia.</p>
       {!AULAS_ON && <div className="aviso"><b>🎬 Vídeos a caminho</b><span>Os vídeos estão sendo preparados e aparecem aqui em breve. A lista já mostra o que vem em cada aula.</span></div>}
       {AULAS_ON && retomar && (
         <button className="btn" onClick={() => ir({ t: 'aula', a: retomar.arquivo })}>Continuar de onde parei: {retomar.titulo}</button>
@@ -127,7 +126,7 @@ function Player({ file }: { file: string }) {
   }, [evento, file])
 
   function marcar(como: 'fim' | 'botao') {
-    if (!vista) toast(`+${MOEDAS.aula} 🪙 Aula assistida`)
+    if (!vista) toast('Aula assistida ✓')
     mudar((e) => assistirAula(e, file))
     if (!vista) evento('aula.assistida', { aula: file, como })
   }
@@ -197,7 +196,6 @@ function Player({ file }: { file: string }) {
           <small>{aula.modulo.titulo} · aula {posNoModulo} de {aula.modulo.aulas.length}</small>
           <strong>{aula.titulo}</strong>
         </div>
-        <span className="player-moedas" title="Moedas Douradas" aria-label={`${estado.moedas} Moedas Douradas`}>🪙 {estado.moedas}</span>
       </div>
 
       <div className="player-palco">
@@ -279,7 +277,7 @@ function Player({ file }: { file: string }) {
           {vista ? (
             <span className="player-vista" role="status">✓ Assistida</span>
           ) : (
-            <button className="player-ja" onClick={() => marcar('botao')}>Já assisti <small>+{MOEDAS.aula} 🪙</small></button>
+            <button className="player-ja" onClick={() => marcar('botao')}>Já assisti ✓</button>
           )}
           <button className={`player-nav${acabou && prox ? ' proxima' : ''}`} onClick={() => ir(prox)} disabled={!prox} aria-label={prox ? `Próxima aula: ${prox.titulo}` : 'Esta é a última aula'}>Próxima ›</button>
         </div>
