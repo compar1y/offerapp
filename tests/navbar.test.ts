@@ -45,7 +45,7 @@ describe('barra do rodapé: onde aparece', () => {
     const fs = await import('node:fs')
     const app = fs.readFileSync('src/App.tsx', 'utf8')
     const entrar = app.indexOf("if (fase.f === 'entrar') return <Entrar")
-    const barra = app.indexOf('<Navbar tela={tela} popupAberto={!!popup} />')
+    const barra = app.indexOf('<Navbar tela={tela} popupAberto=')
     expect(entrar).toBeGreaterThan(0)
     expect(barra).toBeGreaterThan(entrar)
     expect(fs.readFileSync('src/telas/Entrar.tsx', 'utf8')).not.toMatch(/Navbar/)

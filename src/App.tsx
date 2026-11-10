@@ -3,7 +3,8 @@ import { abrirApp, estadoNovo, hojeBR, type Estado } from '../shared/jogo'
 import { api, ErroApi, type Eu, type Salvavel } from './api'
 import { CtxReact, type Ctx, type Tela } from './ctx'
 import { Entrar } from './telas/Entrar'
-import { Avatar, Boas, Pergunta, Resultado } from './telas/Onboarding'
+import { Avatar, Boas, Nome, Pergunta, Resultado } from './telas/Onboarding'
+import { emOnboarding, temPerfil, telaInicial } from './onboarding'
 import { Painel } from './telas/Painel'
 import { Jornada, LicaoTela } from './telas/Jornada'
 import { Leitor } from './telas/Leitor'
@@ -29,8 +30,6 @@ const profundidade = (): number => {
   return typeof n === 'number' && n > 0 ? n : 0
 }
 
-// entra direto no Início: as perguntas do perfil ficam opcionais, num cartão do Início
-const telaInicial = (_eu: Eu): Tela => ({ t: 'painel' })
 
 export function App() {
   const [fase, setFase] = useState<Fase>({ f: 'carregando' })
@@ -43,6 +42,8 @@ export function App() {
   const toastT = useRef<number | undefined>(undefined)
   const [popup, setPopup] = useState<{ comprado: UpsellPopup; oferta: UpsellPopup; ate: string } | null>(null)
   const fecharPopup = useCallback(() => setPopup(null), [])
+  const euRef = useRef<Eu | null>(null)
+  euRef.current = eu
 
   const toast = useCallback((m: string) => {
     setAviso(m)
@@ -71,7 +72,7 @@ export function App() {
         pendente.current = e
         gravar()
         const salva = history.state as (Tela & { n?: number }) | null
-        const t = salva?.t ? salva : telaInicial(d)
+        const t = telaInicial(d, salva?.t ? salva : null)
         history.replaceState({ ...t, n: profundidade() }, '')
         setTela(t)
       }
@@ -86,7 +87,12 @@ export function App() {
   useEffect(() => {
     carregar(true)
     const pop = (ev: PopStateEvent) => {
-      if (ev.state) setTela(ev.state as Tela)
+      const t = ev.state as Tela | null
+      // depois de montar o perfil, voltar não cai de novo no onboarding: vai para o Início
+      if (t && emOnboarding(t) && euRef.current && temPerfil(euRef.current)) {
+        history.replaceState({ t: 'painel', n: profundidade() }, '')
+        setTela({ t: 'painel' })
+      } else if (t) setTela(t)
       window.scrollTo(0, 0)
     }
     const sumiu = () => {
@@ -103,8 +109,10 @@ export function App() {
 
   // popup de desconto pós-compra (shared/popupDesconto.ts): ao confirmar a compra de um upsell, leva à tela de acesso
   // do que ela comprou e abre a oferta do próximo por cima. Fechar deixa ela no material. Chave desligada: nada acontece.
+  // durante o onboarding, nada de popup: ele confere de novo quando ela chega ao Início (o prazo segue contando no servidor)
+  const noOnboarding = emOnboarding(tela)
   useEffect(() => {
-    if (!eu) return
+    if (!eu || noOnboarding) return
     const r = conferirPopup(eu)
     if (!r) return
     const t = TELA_ACESSO[r.comprado]
@@ -112,7 +120,7 @@ export function App() {
     setTela(t)
     window.scrollTo(0, 0)
     setPopup(r)
-  }, [eu])
+  }, [eu, noOnboarding])
 
   const ctx = useMemo<Ctx | null>(() => {
     if (!eu || !estado) return null
@@ -180,8 +188,8 @@ export function App() {
     <CtxReact.Provider value={ctx}>
       {import.meta.env.VITE_DEMO === '1' && <BarraPrevia />}
       <Rota tela={tela} />
-      <Navbar tela={tela} popupAberto={!!popup} />
-      {popup && <PopupDesconto comprado={popup.comprado} oferta={popup.oferta} ate={popup.ate} fechar={fecharPopup} />}
+      <Navbar tela={tela} popupAberto={!!popup && !noOnboarding} />
+      {popup && !noOnboarding && <PopupDesconto comprado={popup.comprado} oferta={popup.oferta} ate={popup.ate} fechar={fecharPopup} />}
       {aviso && <div className="toast pop" role="status">{aviso}</div>}
     </CtxReact.Provider>
   )
@@ -190,6 +198,7 @@ export function App() {
 function Rota({ tela }: { tela: Tela }) {
   switch (tela.t) {
     case 'boas': return <Boas />
+    case 'nome': return <Nome />
     case 'pergunta': return <Pergunta />
     case 'resultado': return <Resultado />
     case 'avatar': return <Avatar />
