@@ -40,7 +40,9 @@ export interface CheckoutDesconto { precoCentavos: number; checkoutUrl: string; 
 
 /**
  * Checkouts COM DESCONTO na Wiapy (o Caixa ainda vai criar, cada um no precoCentavos abaixo). AINDA VAZIOS.
- * checkoutUrl: o link de pagamento · checkoutIds: o código do link · produtoIds: o id do conteúdo, se for um conteúdo novo.
+ * checkoutUrl: o link de pagamento · checkoutIds: o código do link · produtoIds: só se o checkout usar um conteúdo NOVO.
+ * O Levi vai criar os checkouts em cima dos MESMOS conteúdos (Aulas 6af1e083…, Etiquetas 6af207d3…, Conta Feita 6af2a8a3…),
+ * que o webhook já reconhece pelo catálogo: basta preencher checkoutUrl e checkoutIds.
  * O webhook (server/wiapy.ts) reconhece estes ids como o MESMO produto (ex.: o checkout com desconto das Etiquetas vira 'etiquetas').
  * Produto sem checkoutUrl aqui nunca é oferecido no popup (a cobrança sairia com o preço cheio).
  */

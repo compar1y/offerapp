@@ -469,3 +469,8 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .pd-preco{margin:0}
 .pd-preco s{color:#9A8B7E}
 .pd-preco .preco{font-size:28px}
+/* botão do popup: texto e preço em linhas próprias, altura automática, nada cortado em 360px */
+.btn.pd-comprar{height:auto;min-height:0;display:flex;flex-direction:column;align-items:center;gap:2px;white-space:normal;overflow:visible;line-height:1.2;padding:12px 14px;font-size:18px}
+.pd-comprar-preco{font-size:20px}
+.btn.pd-agora-nao{height:auto;white-space:normal;line-height:1.3;font-size:15px}
+.popup-desconto .card > *{flex-shrink:0}

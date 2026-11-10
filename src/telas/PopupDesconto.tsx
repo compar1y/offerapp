@@ -111,8 +111,11 @@ export function PopupDesconto({ comprado, oferta, fechar }: { comprado: UpsellPo
         <p className="pd-texto">{c.texto}</p>
         <ul className="pd-itens">{c.itens.map((i) => <li key={i}>{i}</li>)}</ul>
         <p className="pd-preco"><b>{PRODUTOS[oferta].nome}</b><br />de <s>R${reais(cheio)}</s> por <span className="preco">R${reais(desc.precoCentavos)}</span></p>
-        <button className="btn comprar-pulsa" onClick={comprar}>{c.botao} · R${reais(desc.precoCentavos)}</button>
-        <button className="btn leve" onClick={() => sair('agora-nao')}>Agora não, {ABRIR[comprado].charAt(0).toLowerCase() + ABRIR[comprado].slice(1)}</button>
+        <button className="btn comprar-pulsa pd-comprar" onClick={comprar}>
+          <span>{c.botao}</span>
+          <span className="pd-comprar-preco">por R${reais(desc.precoCentavos)}</span>
+        </button>
+        <button className="btn leve pd-agora-nao" onClick={() => sair('agora-nao')}>Agora não, {ABRIR[comprado].charAt(0).toLowerCase() + ABRIR[comprado].slice(1)}</button>
         <p className="sub" style={{ fontSize: 13 }}>7 dias de garantia. O pagamento abre numa página segura e o app continua aqui.</p>
       </div>
     </div>
