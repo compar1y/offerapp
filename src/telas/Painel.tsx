@@ -101,7 +101,7 @@ export function Painel() {
       {aulas && (
         <div className="video-upsell aulas-entrada">
           <button className="video-tela" aria-label="Abrir as aulas em vídeo" onClick={() => { clique('aulas'); ir({ t: 'aulas' }) }}>
-            <img src={cena('receitas')} alt="" loading="lazy" />
+            <img src={cena('aulas-em-video')} alt="" loading="lazy" style={{ objectPosition: '80% 50%' }} />
             <span className="play" aria-hidden="true">▶</span>
             <span className="video-titulo">Aulas em vídeo · {(estado.aulas ?? []).length} de {AULAS.length} assistidas</span>
           </button>
@@ -173,7 +173,7 @@ export function Painel() {
           {mostrarOfertaVideo && (
             <div className="video-upsell">
               <button className="video-tela" aria-label="Assistir às videoaulas" onClick={abrirVideoaulas}>
-                <img src={cena('receitas')} alt="" loading="lazy" />
+                <img src={cena('videoaulas')} alt="" loading="lazy" />
                 <span className="play" aria-hidden="true">▶</span>
                 <span className="video-titulo">{VIDEOAULAS.titulo}</span>
               </button>
