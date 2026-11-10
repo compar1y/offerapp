@@ -4,7 +4,7 @@ import { db } from '../../server/db.js'
 import { env, exigir } from '../../server/env.js'
 import { falha, json } from '../../server/http.js'
 import { iguais } from '../../server/sessao.js'
-import { lerJsonTolerante, lerPedido, semDadosPessoais } from '../../server/wiapy.js'
+import { lerJsonTolerante, lerPedido, pagoEmDe, semColunaPagoEm, semDadosPessoais } from '../../server/wiapy.js'
 import { emailLigado, enviarEmailAcesso } from '../../server/email.js'
 
 export async function POST(req: Request): Promise<Response> {
@@ -31,11 +31,22 @@ export async function POST(req: Request): Promise<Response> {
       return json({ ok: true, ignorado: 'checkout desconhecido' })
     }
     const pagamentoId = p.pagamentoId || `${p.checkoutId}:${p.email}`
-    // e-mail de acesso só na primeira vez que este pagamento vira "pago" (a Wiapy reenvia o mesmo aviso)
+    const recebidoEm = new Date()
+    // linhas que já existem deste pagamento: e-mail só na primeira vez que vira "pago" (a Wiapy reenvia o mesmo aviso)
+    // e pago_em já gravado não muda (o prazo de 3 h não reabre num reenvio)
     let jaEstavaPago = false
-    if (p.status === 'pago' && emailLigado()) {
-      const { data } = await db().from('compras').select('status').eq('pagamento_id', pagamentoId).eq('status', 'pago').limit(1)
-      jaEstavaPago = !!data?.length
+    const pagoEmGravado = new Map<string, string>()
+    let temColunaPagoEm = true
+    if (p.status === 'pago') {
+      let r: { data: unknown[] | null; error: { code?: string; message?: string } | null } = await db().from('compras').select('produto,status,pago_em').eq('pagamento_id', pagamentoId)
+      if (r.error && semColunaPagoEm(r.error)) {
+        temColunaPagoEm = false
+        r = await db().from('compras').select('produto,status').eq('pagamento_id', pagamentoId)
+      }
+      if (r.error) throw r.error
+      const existentes = (r.data ?? []) as { produto: string; status: string; pago_em?: string | null }[]
+      jaEstavaPago = existentes.some((c) => c.status === 'pago')
+      for (const c of existentes) if (c.pago_em) pagoEmGravado.set(c.produto, c.pago_em)
     }
     const linhas = p.produtos.map((produto) => ({
       email: p.email,
@@ -45,9 +56,16 @@ export async function POST(req: Request): Promise<Response> {
       checkout_id: p.checkoutId,
       valor_centavos: p.valorCentavos,
       metodo: p.metodo,
-      atualizado_em: new Date().toISOString(),
+      atualizado_em: recebidoEm.toISOString(),
+      // só no aviso de PAGO: PIX gerado/pendente não grava nada aqui, então não inicia o prazo
+      ...(p.status === 'pago' && temColunaPagoEm ? { pago_em: pagoEmDe(p, pagoEmGravado.get(produto), recebidoEm) } : {}),
     }))
-    const { error } = await db().from('compras').upsert(linhas, { onConflict: 'pagamento_id,produto' })
+    let { error } = await db().from('compras').upsert(linhas, { onConflict: 'pagamento_id,produto' })
+    if (error && semColunaPagoEm(error)) {
+      // migração do pago_em ainda não rodada: grava a compra mesmo assim (sem pago_em = sem desconto, o lado seguro)
+      const semPagoEm = linhas.map(({ pago_em: _x, ...resto }: Record<string, unknown>) => resto)
+      ;({ error } = await db().from('compras').upsert(semPagoEm, { onConflict: 'pagamento_id,produto' }))
+    }
     if (error) throw error
     if (p.status === 'pago' && emailLigado() && !jaEstavaPago) {
       const r = await enviarEmailAcesso(p.email, p.produtos)

@@ -5,6 +5,8 @@ import { presentePendente, type Desconto } from '../shared/desconto.js'
 import { descontosAgora, type OfertaDesconto, type PopupServidor } from './descontoLinks.js'
 import type { UpsellPopup } from '../shared/popupDesconto.js'
 import { db } from './db.js'
+import type { Linha as LinhaCompra } from '../shared/desconto.js'
+import { semColunaPagoEm } from './wiapy.js'
 
 export interface Acesso {
   produtos: ProdutoId[]; pendentes: ProdutoId[]; materiais: MaterialId[]; ganhaPresente: boolean
@@ -19,7 +21,9 @@ export interface Acesso {
 }
 
 export async function acessoDe(email: string): Promise<Acesso> {
-  const { data, error } = await db().from('compras').select('produto,status,criado_em,atualizado_em,metodo,pagamento_id').eq('email', email)
+  let { data, error }: { data: LinhaCompra[] | null; error: { code?: string; message?: string } | null } = await db().from('compras').select('produto,status,criado_em,atualizado_em,pago_em,metodo,pagamento_id').eq('email', email)
+  // migração do pago_em ainda não rodada: lê sem ela (sem pago_em = sem desconto, o lado seguro)
+  if (error && semColunaPagoEm(error)) ({ data, error } = await db().from('compras').select('produto,status,criado_em,atualizado_em,metodo,pagamento_id').eq('email', email))
   if (error) throw error
   const { produtos, pendentes } = produtosDe(data ?? [])
   const agora = Date.now()
