@@ -11,6 +11,7 @@ import { VIDEOAULAS } from './OfertaVideo'
 import { AULAS } from '../../shared/aulas'
 import { podeVerAulas } from '../aulas'
 import { VitrineEtiquetas } from './Etiquetas'
+import { CapaContaFeita } from './ContaFeita'
 
 export const BAUS: { id: BauId; nome: string; ico: string; como: string }[] = [
   { id: 'prata', nome: 'Prata', ico: '🎁', como: '3 missões do dia' },
@@ -35,7 +36,8 @@ export function proximaLicao(comecaEm: number, feitas: string[]) {
 }
 
 /** extras vendidos à parte, sempre com preço e a palavra "extra" (aula 21 dicas, dica 6) */
-export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'etiquetas']
+// 'contafeita' fica escondido sozinho enquanto o checkout da Wiapy estiver vazio (ofertaDisponivel)
+export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'etiquetas', 'contafeita']
 /** produtos comprados à parte (mostrados em "Minhas compras") */
 const COMPRAS_EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'primeira']
 
@@ -116,6 +118,14 @@ export function Painel() {
         </button>
       )}
 
+      {/* 1a3. Respostas com a Conta Feita: a ferramenta de encomenda */}
+      {tem(eu, 'contafeita') && (
+        <button className="card contafeita-entrada" onClick={() => { clique('contafeita'); ir({ t: 'contafeita' }) }}>
+          <b>💬 Respostas com a Conta Feita</b>
+          <span>Preencha a encomenda da cliente e copie as respostas prontas, com a conta feita.</span>
+        </button>
+      )}
+
       {/* 1b. o que ela comprou além do kit */}
       {compras.length > 0 && (
         <div className="card compras-card">
@@ -177,11 +187,15 @@ export function Painel() {
           <div className={`grade-extras${extras.length === 1 ? ' uma' : ''}`}>
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
-                <img src={p === 'etiquetas' ? '/img/mockups/etiquetas-capa.webp' : capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
+                {p === 'contafeita'
+                  ? <CapaContaFeita />
+                  : <img src={p === 'etiquetas' ? '/img/mockups/etiquetas-capa.webp' : capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />}
                 {precoPresente(eu, p) && <span className="selo-off">-{precoPresente(eu, p)!.pct}%</span>}
                 <span>{PRODUTOS[p].nome}</span>
                 {p === 'etiquetas' && <span className="mini-capa-sub">✍️ Personalizado na hora com os seus dados</span>}
-                <span className="btn-extra">{p === 'etiquetas' ? '🏷️ Quero com o meu nome' : '📖 Ver material'}</span>
+                {p === 'contafeita' && <span className="mini-capa-sub">Preencha a encomenda da cliente uma vez e o app faz as contas.</span>}
+                {p === 'contafeita' && <span className="mini-capa-sub2">Orçamento e mensagens do seu kit preenchidos, prontos para copiar.</span>}
+                <span className="btn-extra">{p === 'etiquetas' ? '🏷️ Quero com o meu nome' : p === 'contafeita' ? '💬 Quero minhas respostas prontas' : '📖 Ver material'}</span>
               </button>
             ))}
           </div>
