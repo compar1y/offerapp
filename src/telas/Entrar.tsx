@@ -1,13 +1,13 @@
 import { cena } from '../imagens'
 import { useState } from 'react'
-import { WHATSAPP_SUPORTE } from '../../shared/catalogo'
+import { LINK_SUPORTE } from '../../shared/catalogo'
 import { api, ErroApi } from '../api'
 
-export function Suporte({ texto = 'Fale com o suporte' }: { texto?: string }) {
-  if (!WHATSAPP_SUPORTE) return <span>{texto}.</span>
+/** botão do WhatsApp de suporte (+55 11 94192-6165), com a mensagem pronta (shared/catalogo.ts LINK_SUPORTE) */
+export function Suporte({ texto = 'Falar com o suporte no WhatsApp' }: { texto?: string }) {
   return (
-    <a href={`https://wa.me/${WHATSAPP_SUPORTE}`} target="_blank" rel="noreferrer">
-      {texto} no WhatsApp
+    <a className="btn-suporte" href={LINK_SUPORTE} target="_blank" rel="noreferrer">
+      <span aria-hidden="true">💬</span> {texto}
     </a>
   )
 }
@@ -42,7 +42,8 @@ export function Entrar({ aoEntrar }: { aoEntrar(): void }) {
       <input id="email" type="email" inputMode="email" autoComplete="email" placeholder="maria@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} />
       {erro && <p role="alert" style={{ color: 'var(--fita)', fontWeight: 700 }}>{erro}</p>}
       <button className="btn" disabled={indo}>{indo ? 'Entrando…' : 'Entrar'}</button>
-      <p className="sub" style={{ fontSize: 13 }}>Não achou seu acesso? <Suporte /></p>
+      <p className="sub ajuda" style={{ fontSize: 13 }}>Não achou seu acesso?</p>
+      <Suporte />
     </form>
   )
 }

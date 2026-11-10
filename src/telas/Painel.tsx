@@ -219,7 +219,10 @@ export function Painel() {
       )}
 
 
-      <p className="sub" style={{ fontSize: 15, textAlign: 'center' }}>Precisa de ajuda? <Suporte /></p>
+      <div className="ajuda-bloco">
+        <p className="sub" style={{ fontSize: 15, textAlign: 'center', margin: 0 }}>Precisa de ajuda?</p>
+        <Suporte />
+      </div>
       <button className="link" onClick={sair}>Sair</button>
       <Instalar />
     </>

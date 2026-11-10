@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { abrirApp, estadoNovo, hojeBR, type Estado } from '../shared/jogo'
 import { api, ErroApi, type Eu, type Salvavel } from './api'
 import { CtxReact, type Ctx, type Tela } from './ctx'
-import { Entrar } from './telas/Entrar'
-import { Avatar, Boas, Nome, Pergunta, Resultado } from './telas/Onboarding'
+import { Entrar, Suporte } from './telas/Entrar'
+import { Boas, Nome, Pergunta, Resultado } from './telas/Onboarding'
 import { emOnboarding, temPerfil, telaInicial } from './onboarding'
 import { Painel } from './telas/Painel'
 import { Jornada, LicaoTela } from './telas/Jornada'
@@ -180,6 +180,7 @@ export function App() {
         <h2>Não deu para abrir agora</h2>
         <p>{fase.msg}</p>
         <button className="btn" onClick={() => location.reload()}>Tentar de novo</button>
+        <Suporte />
       </div>
     )
   if (!ctx) return null
@@ -201,7 +202,6 @@ function Rota({ tela }: { tela: Tela }) {
     case 'nome': return <Nome />
     case 'pergunta': return <Pergunta />
     case 'resultado': return <Resultado />
-    case 'avatar': return <Avatar />
     case 'jornada': return <Jornada />
     case 'licao': return <LicaoTela id={tela.id} />
     case 'ler': return <Leitor key={tela.m} m={tela.m} p={tela.p} />

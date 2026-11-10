@@ -12,7 +12,6 @@ export type Tela =
   | { t: 'nome' }
   | { t: 'pergunta' }
   | { t: 'resultado' }
-  | { t: 'avatar' }
   | { t: 'jornada' }
   | { t: 'licao'; id: string }
   | { t: 'ler'; m: MaterialId; p: number }

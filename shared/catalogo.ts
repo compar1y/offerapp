@@ -177,4 +177,7 @@ export const ehMaterial = (x: string): x is MaterialId => Object.prototype.hasOw
 export const ehProduto = (x: string): x is ProdutoId => Object.prototype.hasOwnProperty.call(PRODUTOS, x)
 
 /** WhatsApp de suporte: o Levi manda o número depois. Vazio = o app mostra só o texto "fale com o suporte". */
-export const WHATSAPP_SUPORTE = ''
+export const WHATSAPP_SUPORTE = '5511941926165' // +55 11 94192-6165 (oficial, Levi 10/11)
+export const MENSAGEM_SUPORTE = 'Oi! Comprei o Kit Fábrica de Panetones e preciso de ajuda.'
+/** link do WhatsApp de suporte com a mensagem pronta: o mesmo em todo lugar do app */
+export const LINK_SUPORTE = `https://wa.me/${WHATSAPP_SUPORTE}?text=${encodeURIComponent(MENSAGEM_SUPORTE)}`

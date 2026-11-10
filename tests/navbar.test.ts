@@ -30,7 +30,7 @@ describe('barra do rodapé: onde aparece', () => {
     }
   })
   it('some no onboarding', () => {
-    for (const t of ['boas', 'pergunta', 'resultado', 'avatar'] as const) {
+    for (const t of ['boas', 'nome', 'pergunta', 'resultado'] as const) {
       expect(mostrarNavbar({ t }, false)).toBe(false)
       expect(html({ t })).toBe('')
     }
