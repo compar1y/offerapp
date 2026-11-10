@@ -28,6 +28,7 @@ export function abaAtiva(tela: Tela): AbaId | null {
   }
 }
 
+/** Seleção com ofertas (n > 0): classe 'brilha' = estrela e bolinha pulsando com halo dourado (estilo.css; para em 0 e com reduced-motion) */
 /** número da bolinha: ofertas da Seleção especial que ela ainda não comprou (0 = sem bolinha) */
 export const contagemSelecao = (eu: Eu) => ofertasSelecao(eu).length
 
@@ -75,10 +76,10 @@ export function Navbar({ tela, popupAberto }: { tela: Tela; popupAberto: boolean
         const on = i.id === ativa
         const rotulo = i.id === 'selecao' && n > 0 ? `Seleção especial, ${n} ${n === 1 ? 'disponível' : 'disponíveis'}` : i.id === 'selecao' ? 'Seleção especial' : i.nome
         return (
-          <button key={i.id} className={`nb-item${on ? ' on' : ''}${i.id === 'selecao' ? ' nb-selecao' : ''}`} aria-current={on ? 'page' : undefined} aria-label={rotulo} onClick={() => tocar(i.id)}>
+          <button key={i.id} className={`nb-item${on ? ' on' : ''}${i.id === 'selecao' ? ` nb-selecao${n > 0 ? ' brilha' : ''}` : ''}`} aria-current={on ? 'page' : undefined} aria-label={rotulo} onClick={() => tocar(i.id)}>
             <span className="nb-ico" aria-hidden="true">
-              {i.ico}
-              {i.id === 'selecao' && n > 0 && <b className="nb-bolinha">{n}</b>}
+              {i.id === 'selecao' ? <span className="nb-estrela">{i.ico}</span> : i.ico}
+              {i.id === 'selecao' && n > 0 && <b className="nb-bolinha"><span>{n}</span></b>}
             </span>
             <span className="nb-nome" aria-hidden="true">{i.nome}</span>
           </button>

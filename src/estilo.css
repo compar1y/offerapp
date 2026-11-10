@@ -126,9 +126,28 @@ select{font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha
 .nb-item:hover{opacity:1}
 .nb-item.on{opacity:1;background:#E2A23B;color:#2E1E14}
 .nb-ico{position:relative;font-size:22px;line-height:1.1}
-.nb-selecao .nb-ico{color:#F3C566;font-size:24px}
+/* Seleção especial em destaque (Levi, 10/11): maior e mais clara; com ofertas ('brilha') a estrela pulsa com halo dourado */
+.nb-selecao{opacity:1;color:#FFE3A3;font-size:13.5px}
+.nb-selecao .nb-ico{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;color:#FFD56B;font-size:29px;line-height:1}
+.nb-estrela{position:relative;display:block;line-height:1;text-shadow:0 0 6px rgba(255,205,90,.55)}
+.nb-selecao.on{color:#2E1E14}
 .nb-selecao.on .nb-ico{color:#2E1E14}
-.nb-bolinha{position:absolute;top:-5px;right:-13px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#D32F2F;color:#fff;border:2px solid #2E1E14;font-family:var(--texto);font-size:12px;font-weight:800;line-height:16px;text-align:center}
+.nb-selecao.on .nb-estrela{text-shadow:none}
+/* halo dourado atrás da estrela */
+.nb-selecao.brilha .nb-ico::before{content:"";position:absolute;inset:-7px;border-radius:50%;background:radial-gradient(circle,rgba(255,214,107,.55) 0%,rgba(255,214,107,.18) 45%,rgba(255,214,107,0) 70%);animation:nb-halo 1.8s ease-in-out infinite;pointer-events:none}
+.nb-selecao.brilha .nb-ico{animation:nb-pulso 1.8s ease-in-out infinite;transform-origin:50% 55%}
+.nb-selecao.brilha .nb-estrela{animation:nb-luz 1.8s ease-in-out infinite}
+@keyframes nb-pulso{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+@keyframes nb-halo{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+@keyframes nb-luz{0%,100%{text-shadow:0 0 4px rgba(255,205,90,.45)}50%{text-shadow:0 0 10px rgba(255,220,120,.95),0 0 18px rgba(255,190,60,.6)}}
+@media (prefers-reduced-motion:reduce){.nb-selecao.brilha .nb-ico,.nb-selecao.brilha .nb-ico::before,.nb-selecao.brilha .nb-estrela{animation:none}}
+/* bolinha 3D brilhante (joia/bala): gradiente radial, reflexo no topo, sombra embaixo, borda fina clara.
+   Número no centro exato: flex + line-height 1; o translateY(.06em) compensa os algarismos da fonte, que ficam altos na caixa da linha (conferido em pixel com 5 e 12) */
+.nb-bolinha{position:absolute;top:-8px;left:calc(100% - 9px);z-index:1;display:flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:999px;
+  background:radial-gradient(circle at 34% 28%,#FF9A8F 0%,#F0453A 32%,#C8161D 66%,#8A0710 100%);border:1px solid #FFC2BB;
+  box-shadow:0 2px 3px rgba(0,0,0,.55),inset 0 -2px 3px rgba(80,0,0,.45);color:#fff;font-family:var(--texto);font-size:12px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;overflow:hidden}
+.nb-bolinha::before{content:"";position:absolute;left:18%;right:18%;top:1px;height:42%;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,255,255,0));pointer-events:none}
+.nb-bolinha>span{position:relative;display:block;line-height:1;transform:translateY(.06em);text-shadow:0 1px 1.5px rgba(70,0,0,.6)}
 .nb-nome{white-space:nowrap}
 @media (max-width:340px){.nb-item{font-size:11px}.nb-ico{font-size:20px}}
 #app{padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}

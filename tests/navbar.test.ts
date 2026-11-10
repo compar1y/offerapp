@@ -1,6 +1,7 @@
 // Barra fixa no rodapé (src/telas/Navbar.tsx): onde aparece, item aceso e a bolinha da Seleção especial.
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { Eu } from '../src/api'
 import { CtxReact, type Ctx, type Tela } from '../src/ctx'
@@ -79,7 +80,7 @@ describe('barra do rodapé: item aceso', () => {
 })
 
 describe('barra do rodapé: bolinha da Seleção especial', () => {
-  const bolinha = (h: string) => /<b class="nb-bolinha">(\d+)<\/b>/.exec(h)?.[1] ?? null
+  const bolinha = (h: string) => /<b class="nb-bolinha"><span>(\d+)<\/span><\/b>/.exec(h)?.[1] ?? null
   it('conta as ofertas da Seleção especial que ela ainda não comprou', () => {
     const so = euCom(['kit'])
     const n = contagemSelecao(so)
@@ -119,5 +120,42 @@ describe('barra do rodapé: não cobre nada', () => {
     const css = fs.readFileSync('src/estilo.css', 'utf8')
     expect(css).toMatch(/body\.com-navbar #app\{padding-bottom:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)\}/)
     expect(css).toMatch(/\.navbar\{[^}]*padding:[^}]*calc\(6px \+ env\(safe-area-inset-bottom,0px\)\)/)
+  })
+})
+
+describe('Seleção em destaque: brilho e bolinha 3D', () => {
+  const css = readFileSync('src/estilo.css', 'utf8')
+  const classe = (h: string) => /class="(nb-item[^"]*nb-selecao[^"]*)"/.exec(h)?.[1] ?? ''
+  it('animação ligada com ofertas (contador > 0): classe brilha, estrela pulsando com halo', () => {
+    const h = html({ t: 'painel' })
+    expect(classe(h)).toContain('brilha')
+    expect(h).toContain('<span class="nb-estrela">★</span>')
+    expect(css).toMatch(/\.nb-selecao\.brilha \.nb-ico\{animation:nb-pulso [^}]*infinite/)
+    expect(css).toMatch(/\.nb-selecao\.brilha \.nb-ico::before\{[^}]*animation:nb-halo/)
+    expect(css).toMatch(/@keyframes nb-pulso\{0%,100%\{transform:scale\(1\)\}50%\{transform:scale\(1\.14\)\}\}/)
+    // a bolinha fica dentro do ícone que pulsa: pulsa junto
+    expect(h).toMatch(/<span class="nb-ico"[^>]*><span class="nb-estrela">★<\/span><b class="nb-bolinha"><span>\d+<\/span><\/b><\/span>/)
+  })
+  it('animação desligada com 0 ofertas', () => {
+    const tudo = euCom(['kit', ...ofertasSelecao(euCom(['kit']))])
+    expect(classe(html({ t: 'painel' }, tudo))).not.toContain('brilha')
+  })
+  it('animação desligada com prefers-reduced-motion', () => {
+    expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{\.nb-selecao\.brilha \.nb-ico,\.nb-selecao\.brilha \.nb-ico::before,\.nb-selecao\.brilha \.nb-estrela\{animation:none\}\}/)
+  })
+  it('Seleção maior e mais clara que os outros itens', () => {
+    expect(css).toMatch(/\.nb-selecao\{opacity:1;color:#FFE3A3;font-size:13\.5px\}/)
+    expect(css).toMatch(/\.nb-selecao \.nb-ico\{[^}]*font-size:29px/)
+  })
+  it('bolinha 3D: gradiente radial, reflexo, sombra, borda clara; número centralizado com flex e line-height 1', () => {
+    const regra = /\.nb-bolinha\{([^}]*)\}/.exec(css)![1]
+    expect(regra).toContain('display:flex;align-items:center;justify-content:center')
+    expect(regra).toContain('line-height:1')
+    expect(regra).toContain('padding:0 5px')
+    expect(regra).toMatch(/background:radial-gradient\(circle at 34% 28%/)
+    expect(regra).toContain('border:1px solid #FFC2BB')
+    expect(regra).toMatch(/box-shadow:0 2px 3px/)
+    expect(css).toMatch(/\.nb-bolinha::before\{[^}]*linear-gradient\(180deg,rgba\(255,255,255/)
+    expect(css).toMatch(/\.nb-bolinha>span\{[^}]*text-shadow/)
   })
 })
