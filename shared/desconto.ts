@@ -1,17 +1,21 @@
 // Presente da primeira compra: depois da primeira compra de um material extra feita pelo app,
 // ela ganha 30% no próximo material por 3 horas, contadas a partir da hora da compra (registrada pelo servidor).
 import type { ProdutoId } from './catalogo.js'
+import { CHECKOUT_DESCONTO_POPUP, UPSELLS_POPUP } from './popupDesconto.js'
 
 export const DESCONTO = { pct: 30, horas: 3 }
 
-/** preço com desconto e o checkout da Wiapy com esse preço (o Levi cria; vazio = desconto não aparece no app de verdade) */
-export const PRECO_PRESENTE: Partial<Record<ProdutoId, { precoCentavos: number; checkoutUrl: string; checkoutIds: string[] }>> = {
-  recheios: { precoCentavos: 550, checkoutUrl: '', checkoutIds: [] },
-  encomenda: { precoCentavos: 3290, checkoutUrl: '', checkoutIds: [] },
-  primeira: { precoCentavos: 1890, checkoutUrl: '', checkoutIds: [] },
-}
+/**
+ * Onde o presente pode ser usado: só nos materiais que têm checkout com desconto na Wiapy, os MESMOS do popup pós-compra
+ * (shared/popupDesconto.ts): Aulas R$13,90, Etiquetas R$8,90, Conta Feita R$6,90. Mesmo 30%, mesmo link, sem duplicar.
+ * Recheios, Encomenda e Primeira não têm checkout com desconto: comprar um deles dá o presente, mas eles não recebem desconto.
+ */
+export const PRECO_PRESENTE: Partial<Record<ProdutoId, { precoCentavos: number; checkoutUrl: string; checkoutIds: string[] }>> = Object.fromEntries(
+  UPSELLS_POPUP.map((p) => [p, { precoCentavos: CHECKOUT_DESCONTO_POPUP[p].precoCentavos, checkoutUrl: CHECKOUT_DESCONTO_POPUP[p].checkoutUrl, checkoutIds: CHECKOUT_DESCONTO_POPUP[p].checkoutIds }]),
+)
 
-export const EXTRAS_DESCONTO: ProdutoId[] = ['recheios', 'encomenda', 'primeira']
+/** compras que dão o presente (a primeira delas abre o prazo de 3 horas): todo material extra vendido no app */
+export const EXTRAS_DESCONTO: ProdutoId[] = ['recheios', 'encomenda', 'primeira', 'videoaulas', 'etiquetas', 'contafeita']
 
 export interface Desconto { pct: number; ate: string }
 
@@ -39,8 +43,9 @@ export function descontoDe(compras: Linha[], agora = Date.now()): Desconto | nul
   const extras = extrasQueContam(compras)
   const primeira = extras[0]
   if (!primeira) return null
-  // já usou: comprou outro extra depois da primeira compra
-  if (new Set(extras.map((c) => c.pagamento_id ?? c.pagoEm)).size > 1) return null
+  // já usou: depois da primeira compra, comprou (em outro pagamento) um material que recebe o desconto
+  const pag = primeira.pagamento_id ?? primeira.pagoEm
+  if (extras.some((c) => (c.pagamento_id ?? c.pagoEm) !== pag && !!PRECO_PRESENTE[c.produto as ProdutoId])) return null
   const ate = primeira.pagoEm + DESCONTO.horas * 3600e3
   if (!(ate > agora)) return null
   return { pct: DESCONTO.pct, ate: new Date(ate).toISOString() }

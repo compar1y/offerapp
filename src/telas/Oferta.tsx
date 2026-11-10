@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { PRODUTOS, vendaLigada, type ProdutoId } from '../../shared/catalogo'
 import { OFERTAS } from '../../shared/conteudo'
-import { ganhaPresente, ofertaDisponivel, precoPresente, reais, tem, useApp } from '../ctx'
+import { comPresente, ganhaPresente, ofertaDisponivel, precoPresente, reais, tem, textoFaixa, textoPresente, useApp } from '../ctx'
 import { AvisoPresente, BarraPresente, FaixaDesconto, useRelogio } from './PresenteDesconto'
-import { EXTRAS } from './Painel'
 
 import { Capa } from './Materiais'
 import { mockup } from '../imagens'
@@ -69,7 +68,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
   if (comprado) {
     const primeiro = prod.libera[0]
     // presente da primeira compra: aparece logo depois de liberar, se ainda tiver material extra para ela
-    const presente = EXTRAS.filter((x) => ofertaDisponivel(eu, x)).map((x) => precoPresente(eu, x)).find(Boolean)
+    const presente = comPresente(eu).map((x) => precoPresente(eu, x)).find(Boolean)
     return (
       <div className="card pop" style={{ textAlign: 'center', gap: 14 }}>
         <div style={{ fontSize: 64 }}>🎉</div>
@@ -77,7 +76,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         <p><b>{prod.nome}</b> já está no Início, em “Minhas compras”.</p>
         {presente && (
           <>
-            <FaixaDesconto pct={presente.pct} ate={presente.ate} texto={`Você ganhou ${presente.pct}% OFF no próximo material da Seleção especial.`} />
+            <FaixaDesconto pct={presente.pct} ate={presente.ate} texto={`Você ganhou ${textoFaixa(eu)}.`} />
             <button className="btn comprar-pulsa" onClick={() => trocar({ t: 'painel' })}>🎁 Ver meu desconto</button>
           </>
         )}
@@ -107,7 +106,7 @@ export function Oferta({ p, origem }: { p: ProdutoId; origem: string }) {
         <ul className="passos">{texto.itens.map((i) => <li key={i}>{i}</li>)}</ul>
         {p === 'etiquetas' && <img className="foto-oferta" src="/img/mockups/etiquetas-detalhe.webp" width={800} height={800} loading="lazy" alt="Etiqueta redonda “Panetones da Dona Cida” com fita vinho ao lado dos cartões “Feito com carinho para o seu Natal”" />}
         {desc && <FaixaDesconto pct={desc.pct} ate={desc.ate} de={reais(prod.precoCentavos)} por={reais(desc.precoCentavos)} />}
-        {!desc && ganhaPresente(eu, p) && <AvisoPresente />}
+        {!desc && ganhaPresente(eu, p) && <AvisoPresente texto={textoPresente(eu, p)} />}
         {!desc && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span className="sub">por</span><span className="preco">R${reais(prod.precoCentavos)}</span></div>
         )}

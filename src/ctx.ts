@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react'
 import { PRODUTOS, vendaLigada, type MaterialId, type ProdutoId } from '../shared/catalogo'
-import { PRECO_PRESENTE } from '../shared/desconto'
+import { DESCONTO, EXTRAS_DESCONTO, PRECO_PRESENTE } from '../shared/desconto'
+import { podeVerAulas } from './aulas'
 import type { BauId, Estado } from '../shared/jogo'
 import type { Eu, Salvavel } from './api'
 
@@ -71,8 +72,27 @@ export function precoPresente(eu: Eu, p: ProdutoId, agora = Date.now()) {
   return { ...preco, pct: d.pct, ate: d.ate }
 }
 
-/** aviso antes da compra: comprando este extra agora, ela ganha o presente da primeira compra */
-export const ganhaPresente = (eu: Eu, p: ProdutoId) => !!eu.acesso.ganhaPresente && !!PRECO_PRESENTE[p] && algumCheckoutDesconto()
+/** materiais que ela ainda pode comprar com o presente de 30% (com checkout com desconto, à venda e que ela não tem), fora `menos` */
+export function comPresente(eu: Eu, menos?: ProdutoId): ProdutoId[] {
+  return (Object.keys(PRECO_PRESENTE) as ProdutoId[]).filter((q) => q !== menos && !!PRECO_PRESENTE[q]?.checkoutUrl && ofertaDisponivel(eu, q) && (q !== 'videoaulas' || !podeVerAulas(eu)))
+}
 
-/** o presente só é anunciado se existir pelo menos um checkout com desconto para ela usar depois */
-export const algumCheckoutDesconto = (): boolean => Object.values(PRECO_PRESENTE).some((x) => !!x?.checkoutUrl)
+/** aviso antes da compra: comprando `p` agora (a primeira compra de extra), ela ganha 30% em outro material que ainda pode comprar */
+export const ganhaPresente = (eu: Eu, p: ProdutoId) => !!eu.acesso.ganhaPresente && EXTRAS_DESCONTO.includes(p) && comPresente(eu, p).length > 0
+
+const NOME_PRESENTE: Partial<Record<ProdutoId, [string, string]>> = {
+  videoaulas: ['nas Aulas em vídeo', 'Aulas'],
+  etiquetas: ['nas Etiquetas com o seu nome', 'Etiquetas'],
+  contafeita: ['no Conta Feita', 'Conta Feita'],
+}
+const ou = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} ou ${xs[xs.length - 1]}` : xs[0] ?? '')
+
+/** texto curto da faixa com relógio: onde o desconto vale (só nos que ela ainda pode comprar) */
+export const textoFaixa = (eu: Eu): string => `${DESCONTO.pct}% OFF em ${ou(comPresente(eu).map((q) => NOME_PRESENTE[q]![1]))}`
+
+/** texto do aviso antes da compra. Na oferta: o que ela ganha comprando ESTE material. No Início: comprando qualquer um. */
+export function textoPresente(eu: Eu, p?: ProdutoId): string {
+  const lista = comPresente(eu, p)
+  if (p) return `Comprando este material, você ganha ${DESCONTO.pct}% OFF ${ou(lista.map((q) => NOME_PRESENTE[q]![0]))}, válido por ${DESCONTO.horas} horas depois da compra.`
+  return `Comprando qualquer material daqui, você ganha ${DESCONTO.pct}% OFF em mais um (${ou(lista.map((q) => NOME_PRESENTE[q]![1]))}), por ${DESCONTO.horas} horas.`
+}
