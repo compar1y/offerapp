@@ -12,6 +12,7 @@ create table if not exists compras (
   metodo text,
   criado_em timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
+  pago_em timestamptz, -- hora da APROVAÇÃO do pagamento (webhook de pago); o prazo de 3 h do desconto conta daqui
   unique (pagamento_id, produto)
 );
 create index if not exists compras_email on compras (email);

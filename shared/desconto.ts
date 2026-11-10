@@ -1,5 +1,6 @@
 // Presente de 30% com prazo REAL de 3 horas (Levi, 10/11). A Wiapy não faz o link expirar, então quem controla é o app:
-// o prazo começa na hora da compra gravada pelo webhook (compras.criado_em, relógio do banco) e o servidor só devolve
+// o prazo começa na hora em que o pagamento foi APROVADO (compras.pago_em: a hora de aprovação que o webhook manda ou,
+// se não vier, a hora em que o app recebeu o aviso de pago; PIX gerado/pendente não conta) e o servidor só devolve
 // os links de desconto enquanto ele vale (server/descontoLinks.ts). No aparelho, o relógio só conta o que o servidor mandou.
 // - Presente da primeira compra: a primeira compra de um extra dá 30% em mais um (Aulas, Etiquetas ou Conta Feita) por 3 h.
 // - Popup pós-compra: a compra de um upsell dá 30% no próximo upsell por 3 h, a partir dessa compra.
@@ -18,10 +19,13 @@ export const EXTRAS_DESCONTO: ProdutoId[] = ['recheios', 'encomenda', 'primeira'
 
 export interface Desconto { pct: number; ate: string }
 
-export interface Linha { produto: string; status: string; criado_em?: string | null; atualizado_em?: string | null; metodo?: string | null; pagamento_id?: string | null }
+export interface Linha { produto: string; status: string; pago_em?: string | null; criado_em?: string | null; atualizado_em?: string | null; metodo?: string | null; pagamento_id?: string | null }
 
-/** hora da compra gravada pelo webhook (criado_em; o atualizado_em muda a cada reenvio e reabriria o prazo). NaN se não houver */
-const horaDa = (c: Linha) => (c.criado_em ? Date.parse(c.criado_em) : NaN)
+/**
+ * hora da APROVAÇÃO do pagamento (pago_em, gravada só no aviso de pago e nunca mudada num reenvio). NaN se não houver.
+ * Nem criado_em (no PIX é a hora em que foi gerado) nem atualizado_em (muda a cada reenvio) servem.
+ */
+const horaDa = (c: Linha) => (c.pago_em ? Date.parse(c.pago_em) : NaN)
 
 /** compras pagas que contam (fora do pedido do kit e sem ser presente de moedas), da mais antiga para a mais nova */
 function comprasQueContam(compras: Linha[], quais: ProdutoId[]) {

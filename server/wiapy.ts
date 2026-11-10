@@ -20,6 +20,8 @@ export interface Pedido {
   metodo: string
   produtos: ProdutoId[]
   bumpTitulos: string[]
+  /** hora da APROVAÇÃO do pagamento, se o webhook mandar (ISO). null = não veio; aí vale a hora em que o app recebeu o aviso */
+  aprovadoEm: string | null
 }
 
 const obj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {})
@@ -38,6 +40,38 @@ const STATUS: Record<string, StatusCompra> = {
   refunded: 'estornado',
   chargedback: 'estornado',
   chargeback: 'estornado',
+}
+
+// Campos de hora de aprovação aceitos (a doc da Wiapy não fixa um nome; só nomes de PAGO/APROVADO,
+// nunca created_at/updated_at, que podem ser a hora em que o PIX foi gerado ou a de um reenvio).
+const CAMPOS_APROVACAO = ['paid_at', 'approved_at', 'paid_date', 'approved_date', 'payment_date', 'confirmed_at', 'date_paid', 'date_approved', 'paidAt', 'approvedAt']
+
+/** lê uma hora do webhook: ISO, "AAAA-MM-DD HH:mm:ss" (sem fuso = Brasília) ou número (segundos/ms). null se inválida */
+export function lerHora(v: unknown): string | null {
+  let ms = NaN
+  if (typeof v === 'number' && Number.isFinite(v) && v > 0) ms = v < 1e12 ? v * 1000 : v
+  else if (typeof v === 'string' && v.trim()) {
+    const t = v.trim()
+    if (/^\d{9,13}$/.test(t)) return lerHora(Number(t))
+    const m = t.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)(Z|[+-]\d{2}:?\d{2})?$/i)
+    if (!m) return null
+    ms = Date.parse(`${m[1]}T${m[2]}${m[3] ?? '-03:00'}`)
+  }
+  if (!Number.isFinite(ms)) return null
+  const ano = new Date(ms).getUTCFullYear()
+  if (ano < 2020 || ano > 2100) return null
+  return new Date(ms).toISOString()
+}
+
+/** hora de aprovação que o webhook trouxe (no pagamento ou na raiz), só quando o status é pago */
+function horaAprovacao(pagamento: Record<string, unknown>, raiz: Record<string, unknown>): string | null {
+  for (const fonte of [pagamento, raiz]) {
+    for (const campo of CAMPOS_APROVACAO) {
+      const h = lerHora(fonte[campo])
+      if (h) return h
+    }
+  }
+  return null
 }
 
 /** JSON dos exemplos da doc às vezes vem com vírgula faltando ou sobrando */
@@ -85,6 +119,7 @@ export function lerPedido(corpo: unknown): Pedido {
     metodo: '',
     produtos: [],
     bumpTitulos: bumps.map((x) => x.titulo),
+    aprovadoEm: null,
   }
   if (!corpo || typeof corpo !== 'object') return base
   if (pagamento === null) return { ...base, tipo: 'abandono' }
@@ -111,15 +146,17 @@ export function lerPedido(corpo: unknown): Pedido {
   }
 
   const statusBruto = txt(pagamento.status)
+  const status = STATUS[statusBruto] ?? null
   return {
     ...base,
     tipo: 'pagamento',
     pagamentoId: txt(pagamento.id),
     statusBruto,
-    status: STATUS[statusBruto] ?? null,
+    status,
     valorCentavos: valor,
     metodo: txt(pagamento.payment_method),
     produtos,
+    aprovadoEm: status === 'pago' ? horaAprovacao(pagamento, b) : null,
   }
 }
 
@@ -133,3 +170,21 @@ export function semDadosPessoais(v: unknown): unknown {
   }
   return v
 }
+
+/**
+ * Hora em que o pagamento foi APROVADO, para gravar em compras.pago_em (é dela que contam as 3 h do presente e do popup).
+ * - Só quando o status é pago: PIX gerado/pendente nunca inicia o prazo.
+ * - Se a linha já tem pago_em (reenvio do mesmo aviso), mantém: o prazo não reabre.
+ * - Senão: a hora de aprovação do webhook; se não vier (ou vier no futuro), a hora em que o app recebeu o aviso.
+ */
+export function pagoEmDe(p: Pick<Pedido, 'status' | 'aprovadoEm'>, jaGravado: string | null | undefined, recebidoEm: Date): string | null {
+  if (p.status !== 'pago') return null
+  if (jaGravado) return jaGravado
+  const recebido = recebidoEm.toISOString()
+  if (p.aprovadoEm && Date.parse(p.aprovadoEm) <= recebidoEm.getTime() + 60e3) return p.aprovadoEm
+  return recebido
+}
+
+/** o banco ainda não tem a coluna pago_em (migração não rodada) */
+export const semColunaPagoEm = (e: { code?: string; message?: string } | null | undefined) =>
+  !!e && (e.code === 'PGRST204' || e.code === '42703' || /pago_em/.test(e.message ?? ''))

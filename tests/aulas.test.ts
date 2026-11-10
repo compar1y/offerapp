@@ -105,8 +105,8 @@ describe('banco', () => {
   it('a tabela de compras aceita todos os produtos do catálogo', async () => {
     const { readFileSync, readdirSync } = await import('node:fs')
     const { PRODUTOS } = await import('../shared/catalogo')
-    // o schema e a migração mais nova
-    const ultima = readdirSync('supabase').filter((f) => f.startsWith('migracao-')).sort().pop()!
+    // o schema e a migração mais nova que mexe na lista de produtos
+    const ultima = readdirSync('supabase').filter((f) => f.startsWith('migracao-')).sort().filter((f) => /compras_produto_check/.test(readFileSync(`supabase/${f}`, 'utf8'))).pop()!
     for (const arq of ['supabase/schema.sql', `supabase/${ultima}`]) {
       const sql = readFileSync(arq, 'utf8')
       const lista = sql.match(/check \(produto in \(([^)]*)\)\)/)![1]

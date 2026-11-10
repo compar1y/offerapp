@@ -19,7 +19,7 @@ function gravar(u: Usuaria) {
 let memoria: Usuaria | null = null
 const atual = () => memoria ?? (memoria = ler())
 
-const comprasPrevia = (u: Usuaria) => ((u.compras as { produto: string; criado_em: string; pagamento_id: string }[] | undefined) ?? []).map((c) => ({ ...c, status: 'pago' }))
+const comprasPrevia = (u: Usuaria) => ((u.compras as { produto: string; criado_em: string; pago_em?: string; pagamento_id: string }[] | undefined) ?? []).map((c) => ({ ...c, status: 'pago' }))
 const resposta = (dados: unknown, status = 200) => new Response(JSON.stringify(dados), { status, headers: { 'content-type': 'application/json' } })
 
 export function instalarPrevia() {
@@ -55,7 +55,7 @@ export function comprarNaPrevia(p: ProdutoId) {
   if (u.produtos.includes(p)) return
   const compras = (u.compras as unknown[] | undefined) ?? []
   const agora = new Date().toISOString()
-  gravar({ ...u, produtos: [...u.produtos, p], compras: [...compras, { produto: p, criado_em: agora, pagamento_id: `previa-${p}` }] })
+  gravar({ ...u, produtos: [...u.produtos, p], compras: [...compras, { produto: p, criado_em: agora, pago_em: agora, pagamento_id: `previa-${p}` }] })
 }
 
 export function recomecarPrevia() {

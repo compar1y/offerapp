@@ -3,34 +3,34 @@ import { descontoDe, popupDe } from '../shared/desconto'
 import { descontosAgora, LINKS_DESCONTO } from '../server/descontoLinks'
 
 const t = (iso: string) => Date.parse(iso)
-const kit = { produto: 'kit', status: 'pago', criado_em: '2026-11-09T10:00:00Z', pagamento_id: 'a' }
+const kit = { produto: 'kit', status: 'pago', pago_em: '2026-11-09T10:00:00Z', pagamento_id: 'a' }
 
 describe('presente da primeira compra: prazo REAL de 3 h a partir da compra gravada pelo webhook', () => {
-  it('compra recente: vale, com o fim do prazo 3 h depois da compra (criado_em, não o reenvio do webhook)', () => {
-    const c = [kit, { produto: 'encomenda', status: 'pago', criado_em: '2026-11-09T11:00:00Z', atualizado_em: '2026-11-09T11:05:00Z', pagamento_id: 'b' }]
+  it('compra recente: vale, com o fim do prazo 3 h depois da compra (pago_em, a aprovação; não o reenvio do webhook)', () => {
+    const c = [kit, { produto: 'encomenda', status: 'pago', pago_em: '2026-11-09T11:00:00Z', atualizado_em: '2026-11-09T11:05:00Z', pagamento_id: 'b' }]
     expect(descontoDe(c, t('2026-11-09T12:00:00Z'))).toEqual({ pct: 30, ate: '2026-11-09T14:00:00.000Z' })
     expect(descontoDe(c, t('2026-11-09T13:59:59Z'))).toEqual({ pct: 30, ate: '2026-11-09T14:00:00.000Z' })
   })
   it('compra com mais de 3 h: acabou', () => {
-    const c = [kit, { produto: 'encomenda', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }]
+    const c = [kit, { produto: 'encomenda', status: 'pago', pago_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }]
     expect(descontoDe(c, t('2026-11-09T14:00:00Z'))).toBeNull()
     expect(descontoDe(c, t('2026-11-12T09:00:00Z'))).toBeNull()
   })
   it('cliente sem hora de compra registrada: sem desconto (não dá para provar o prazo)', () => {
-    expect(descontoDe([kit, { produto: 'encomenda', status: 'pago', criado_em: null, pagamento_id: 'b' }], t('2026-11-09T12:00:00Z'))).toBeNull()
+    expect(descontoDe([kit, { produto: 'encomenda', status: 'pago', pago_em: null, pagamento_id: 'b' }], t('2026-11-09T12:00:00Z'))).toBeNull()
     expect(descontoDe([kit, { produto: 'encomenda', status: 'pago', pagamento_id: 'b' }], t('2026-11-09T12:00:00Z'))).toBeNull()
-    expect(descontoDe([kit, { produto: 'encomenda', status: 'pago', criado_em: 'lixo', pagamento_id: 'b' }], t('2026-11-09T12:00:00Z'))).toBeNull()
+    expect(descontoDe([kit, { produto: 'encomenda', status: 'pago', pago_em: 'lixo', pagamento_id: 'b' }], t('2026-11-09T12:00:00Z'))).toBeNull()
   })
   it('bump junto com o kit e presente de moedas não contam', () => {
-    const c = [kit, { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T10:00:00Z', pagamento_id: 'a' }, { produto: 'primeira', status: 'pago', criado_em: '2026-11-09T10:30:00Z', metodo: 'presente', pagamento_id: 'p' }]
+    const c = [kit, { produto: 'recheios', status: 'pago', pago_em: '2026-11-09T10:00:00Z', pagamento_id: 'a' }, { produto: 'primeira', status: 'pago', pago_em: '2026-11-09T10:30:00Z', metodo: 'presente', pagamento_id: 'p' }]
     expect(descontoDe(c, t('2026-11-09T10:40:00Z'))).toBeNull()
   })
   it('acaba quando ela usa (compra depois um material com desconto: Aulas, Etiquetas ou Conta Feita)', () => {
-    const c = [kit, { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }, { produto: 'etiquetas', status: 'pago', criado_em: '2026-11-09T11:30:00Z', pagamento_id: 'c' }]
+    const c = [kit, { produto: 'recheios', status: 'pago', pago_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }, { produto: 'etiquetas', status: 'pago', pago_em: '2026-11-09T11:30:00Z', pagamento_id: 'c' }]
     expect(descontoDe(c, t('2026-11-09T11:40:00Z'))).toBeNull()
   })
   it('comprar depois um material SEM desconto (Encomenda) não gasta nem renova o presente', () => {
-    const c = [kit, { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }, { produto: 'encomenda', status: 'pago', criado_em: '2026-11-09T11:30:00Z', pagamento_id: 'c' }]
+    const c = [kit, { produto: 'recheios', status: 'pago', pago_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }, { produto: 'encomenda', status: 'pago', pago_em: '2026-11-09T11:30:00Z', pagamento_id: 'c' }]
     expect(descontoDe(c, t('2026-11-09T11:40:00Z'))).toEqual({ pct: 30, ate: '2026-11-09T14:00:00.000Z' })
   })
   it('pendente não conta', () => {
@@ -40,17 +40,17 @@ describe('presente da primeira compra: prazo REAL de 3 h a partir da compra grav
 
 describe('popup pós-compra: 3 h a partir da compra do upsell', () => {
   it('compra recente de upsell: popup com o próximo, até 3 h depois dessa compra', () => {
-    const c = [kit, { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T08:00:00Z', pagamento_id: 'r' }, { produto: 'etiquetas', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }]
+    const c = [kit, { produto: 'recheios', status: 'pago', pago_em: '2026-11-09T08:00:00Z', pagamento_id: 'r' }, { produto: 'etiquetas', status: 'pago', pago_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }]
     expect(popupDe(c, t('2026-11-09T11:01:00Z'))).toEqual({ comprado: 'etiquetas', ate: '2026-11-09T14:00:00.000Z' })
   })
   it('mais de 3 h: nada; sem hora registrada: nada', () => {
-    expect(popupDe([kit, { produto: 'etiquetas', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }], t('2026-11-09T14:00:01Z'))).toBeNull()
-    expect(popupDe([kit, { produto: 'etiquetas', status: 'pago', criado_em: null, pagamento_id: 'b' }], t('2026-11-09T11:01:00Z'))).toBeNull()
+    expect(popupDe([kit, { produto: 'etiquetas', status: 'pago', pago_em: '2026-11-09T11:00:00Z', pagamento_id: 'b' }], t('2026-11-09T14:00:01Z'))).toBeNull()
+    expect(popupDe([kit, { produto: 'etiquetas', status: 'pago', pago_em: null, pagamento_id: 'b' }], t('2026-11-09T11:01:00Z'))).toBeNull()
   })
 })
 
 describe('servidor: os links com desconto só saem enquanto o prazo vale', () => {
-  const recheios = { produto: 'recheios', status: 'pago', criado_em: '2026-11-09T11:00:00Z', pagamento_id: 'r' }
+  const recheios = { produto: 'recheios', status: 'pago', pago_em: '2026-11-09T11:00:00Z', pagamento_id: 'r' }
   it('compra recente: os 3 links (os que ela não tem), com preço e fim do prazo', () => {
     const r = descontosAgora([kit, recheios], ['kit', 'recheios'], t('2026-11-09T12:00:00Z'))
     expect(r.desconto).toEqual({ pct: 30, ate: '2026-11-09T14:00:00.000Z' })
@@ -64,12 +64,12 @@ describe('servidor: os links com desconto só saem enquanto o prazo vale', () =>
     expect(JSON.stringify(r)).not.toMatch(/wiapy/)
   })
   it('cliente sem hora de compra: nenhum link, nenhum popup', () => {
-    const r = descontosAgora([kit, { ...recheios, criado_em: null }, { produto: 'etiquetas', status: 'pago', criado_em: null, pagamento_id: 'e' }], ['kit', 'recheios', 'etiquetas'], t('2026-11-09T12:00:00Z'))
+    const r = descontosAgora([kit, { ...recheios, pago_em: null }, { produto: 'etiquetas', status: 'pago', pago_em: null, pagamento_id: 'e' }], ['kit', 'recheios', 'etiquetas'], t('2026-11-09T12:00:00Z'))
     expect(r).toEqual({ desconto: null, popup: null, ofertasDesconto: {} })
   })
   it('popup de upsell: 3 h contadas a partir da compra do upsell, mesmo depois do presente acabar', () => {
     // presente da primeira compra (recheios às 08h) já acabou às 11h; a compra das Etiquetas às 12h abre o popup até 15h
-    const c = [kit, { ...recheios, criado_em: '2026-11-09T08:00:00Z' }, { produto: 'etiquetas', status: 'pago', criado_em: '2026-11-09T12:00:00Z', pagamento_id: 'e' }]
+    const c = [kit, { ...recheios, pago_em: '2026-11-09T08:00:00Z' }, { produto: 'etiquetas', status: 'pago', pago_em: '2026-11-09T12:00:00Z', pagamento_id: 'e' }]
     const r = descontosAgora(c, ['kit', 'recheios', 'etiquetas'], t('2026-11-09T12:30:00Z'))
     expect(r.desconto).toBeNull()
     expect(r.popup).toEqual({ comprado: 'etiquetas', oferta: 'contafeita', ate: '2026-11-09T15:00:00.000Z' })
