@@ -188,7 +188,10 @@ export function Painel() {
           <div className={`grade-extras${extras.length === 1 ? ' uma' : ''}`}>
             {extras.map((p) => (
               <button key={p} className="mini-capa" onClick={() => { clique(`extra.${p}`); ir({ t: 'oferta', p, origem: 'painel' }) }}>
-                <img src={p === 'etiquetas' ? '/img/mockups/etiquetas-capa.webp' : p === 'contafeita' ? '/img/mockups/contafeita-capa.webp' : capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />
+                {/* Etiquetas e Conta Feita: a capa é quadrada (as versões -capa.webp tinham faixas borradas em cima e embaixo) */}
+                {p === 'etiquetas' || p === 'contafeita'
+                  ? <img className="capa-quadrada" src={`/img/mockups/${p}.webp`} alt="" loading="lazy" />
+                  : <img src={capa(PRODUTOS[p].libera[0])} alt="" loading="lazy" />}
                 {precoPresente(eu, p) && <span className="selo-off">-{precoPresente(eu, p)!.pct}%</span>}
                 <span>{PRODUTOS[p].nome}</span>
                 {p === 'etiquetas' && <span className="mini-capa-sub">✍️ Digite o nome e sai pronto, com a sua marca</span>}
