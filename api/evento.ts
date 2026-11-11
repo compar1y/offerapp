@@ -3,7 +3,9 @@ import { db } from '../server/db.js'
 import { corpoJson, falha, json } from '../server/http.js'
 import { emailDaSessao } from '../server/sessao.js'
 
-const TIPOS = new Set(['onboarding', 'licao.aberta', 'licao.feita', 'receita.aberta', 'receita.feita', 'sos.aberto', 'pagina.aberta', 'oferta.vista', 'oferta.clicada', 'oferta.recusada', 'bau.aberto', 'loja.troca', 'missao.perfil', 'inicio.clique', 'navbar.clique', 'onboarding.passo'])
+const TIPOS = new Set(['onboarding', 'licao.aberta', 'licao.feita', 'receita.aberta', 'receita.feita', 'sos.aberto', 'pagina.aberta', 'oferta.vista', 'oferta.clicada', 'oferta.recusada', 'bau.aberto', 'loja.troca', 'missao.perfil', 'inicio.clique', 'navbar.clique', 'onboarding.passo',
+  'aula.aberta', 'aula.assistida', 'arquivo.baixado', 'etiquetas.aberta', 'etiquetas.baixada', 'contafeita.aberta', 'contafeita.nova', 'contafeita.copiada',
+  'popup.desconto.visto', 'popup.desconto.clicado', 'popup.desconto.fechado'])
 
 export async function POST(req: Request): Promise<Response> {
   try {
