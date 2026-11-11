@@ -141,7 +141,7 @@ describe('tela Liberado!: onde o que ela comprou aparece no Início', () => {
   })
 })
 
-describe('cards da Seleção especial e selo do popup', () => {
+describe('cards da Coleção especial e selo do popup', () => {
   it('Etiquetas e Conta Feita usam a capa quadrada, sem as faixas borradas', async () => {
     const fs = await import('node:fs')
     const painel = fs.readFileSync('src/telas/Painel.tsx', 'utf8')

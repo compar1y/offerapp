@@ -126,7 +126,7 @@ select{font:inherit;padding:12px;border-radius:14px;border:2px solid var(--linha
 .nb-item:hover{opacity:1}
 .nb-item.on{opacity:1;background:#E2A23B;color:#2E1E14}
 .nb-ico{position:relative;font-size:22px;line-height:1.1}
-/* Seleção especial em destaque (Levi, 10/11): maior e mais clara; com ofertas ('brilha') a estrela pulsa com halo dourado */
+/* Coleção especial em destaque (Levi, 10/11): maior e mais clara; com ofertas ('brilha') a estrela pulsa com halo dourado */
 .nb-selecao{opacity:1;color:#FFE3A3;font-size:13.5px}
 .nb-selecao .nb-ico{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;color:#FFD56B;font-size:29px;line-height:1}
 .nb-estrela{position:relative;display:block;line-height:1;text-shadow:0 0 6px rgba(255,205,90,.55)}

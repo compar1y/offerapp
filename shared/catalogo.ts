@@ -63,7 +63,7 @@ export const CONTAFEITA_WIAPY: { checkoutUrl: string; checkoutIds: string[]; pro
 
 /**
  * CHAVE ÚNICA DA VENDA do Respostas com a Conta Feita.
- * true: o card da Seleção especial e a tela de oferta aparecem para quem não comprou.
+ * true: o card da Coleção especial e a tela de oferta aparecem para quem não comprou.
  * false: nada da venda aparece para quem não comprou (quem já comprou continua com a ferramenta).
  */
 export const CONTAFEITA_VENDA_LIGADA: boolean = true

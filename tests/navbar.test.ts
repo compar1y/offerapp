@@ -1,4 +1,4 @@
-// Barra fixa no rodapé (src/telas/Navbar.tsx): onde aparece, item aceso e a bolinha da Seleção especial.
+// Barra fixa no rodapé (src/telas/Navbar.tsx): onde aparece, item aceso e a bolinha da Coleção especial.
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
@@ -79,9 +79,9 @@ describe('barra do rodapé: item aceso', () => {
   })
 })
 
-describe('barra do rodapé: bolinha da Seleção especial', () => {
+describe('barra do rodapé: bolinha da Coleção especial', () => {
   const bolinha = (h: string) => /<b class="nb-bolinha"><span>(\d+)<\/span><\/b>/.exec(h)?.[1] ?? null
-  it('conta as ofertas da Seleção especial que ela ainda não comprou', () => {
+  it('conta as ofertas da Coleção especial que ela ainda não comprou', () => {
     const so = euCom(['kit'])
     const n = contagemSelecao(so)
     expect(n).toBe(ofertasSelecao(so).length)
@@ -104,11 +104,11 @@ describe('barra do rodapé: bolinha da Seleção especial', () => {
     const eu = euCom(['kit', ...ofertasSelecao(euCom(['kit']))])
     expect(contagemSelecao(eu)).toBe(0)
     const h = html({ t: 'painel' }, eu)
-    expect(h).toContain('aria-label="Seleção especial"')
+    expect(h).toContain('aria-label="Coleção especial"')
     expect(bolinha(h)).toBeNull()
     expect(h).not.toContain('nb-bolinha')
   })
-  it('a Seleção especial do Início tem o id para onde a barra rola', async () => {
+  it('a Coleção especial do Início tem o id para onde a barra rola', async () => {
     const fs = await import('node:fs')
     expect(fs.readFileSync('src/telas/Painel.tsx', 'utf8')).toMatch(/className="card extras-card" id=\{ID_SELECAO\}/)
   })
@@ -123,7 +123,7 @@ describe('barra do rodapé: não cobre nada', () => {
   })
 })
 
-describe('Seleção em destaque: brilho e bolinha 3D', () => {
+describe('Coleção em destaque: brilho e bolinha 3D', () => {
   const css = readFileSync('src/estilo.css', 'utf8')
   const classe = (h: string) => /class="(nb-item[^"]*nb-selecao[^"]*)"/.exec(h)?.[1] ?? ''
   it('animação ligada com ofertas (contador > 0): classe brilha, estrela pulsando com halo', () => {
@@ -143,7 +143,7 @@ describe('Seleção em destaque: brilho e bolinha 3D', () => {
   it('animação desligada com prefers-reduced-motion', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{\.nb-selecao\.brilha \.nb-ico,\.nb-selecao\.brilha \.nb-ico::before,\.nb-selecao\.brilha \.nb-estrela\{animation:none\}\}/)
   })
-  it('Seleção maior e mais clara que os outros itens', () => {
+  it('Coleção maior e mais clara que os outros itens', () => {
     expect(css).toMatch(/\.nb-selecao\{opacity:1;color:#FFE3A3;font-size:13\.5px\}/)
     expect(css).toMatch(/\.nb-selecao \.nb-ico\{[^}]*font-size:29px/)
   })
@@ -157,5 +157,22 @@ describe('Seleção em destaque: brilho e bolinha 3D', () => {
     expect(regra).toMatch(/box-shadow:0 2px 3px/)
     expect(css).toMatch(/\.nb-bolinha::before\{[^}]*linear-gradient\(180deg,rgba\(255,255,255/)
     expect(css).toMatch(/\.nb-bolinha>span\{[^}]*text-shadow/)
+  })
+})
+
+describe('Coleção especial (antes "Seleção") e sem botão Sair no Início', () => {
+  it('nenhum "Seleção" visível no app; navbar diz "Coleção" e a seção "Coleção especial"', async () => {
+    const { readdirSync } = await import('node:fs')
+    const arquivos = (d: string): string[] => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? arquivos(`${d}/${e.name}`) : [`${d}/${e.name}`]))
+    for (const f of [...arquivos('src'), ...arquivos('shared'), 'index.html']) expect(readFileSync(f, 'utf8'), f).not.toMatch(/Seleção|seleção/)
+    const h = html({ t: 'painel' })
+    expect(h).toContain('<span class="nb-nome" aria-hidden="true">Coleção</span>')
+    expect(h).toMatch(/aria-label="Coleção especial, \d+ disponíveis"/)
+    expect(readFileSync('src/telas/Painel.tsx', 'utf8')).toContain('</b> Coleção especial</span>')
+  })
+  it('Início sem o botão Sair; o suporte do WhatsApp fica no fim', () => {
+    const painel = readFileSync('src/telas/Painel.tsx', 'utf8')
+    expect(painel).not.toMatch(/>Sair</)
+    expect(painel).toMatch(/<Suporte \/>\s*<\/div>\s*<Instalar \/>/)
   })
 })

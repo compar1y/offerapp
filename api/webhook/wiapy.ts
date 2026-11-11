@@ -4,7 +4,7 @@ import { db } from '../../server/db.js'
 import { env, exigir } from '../../server/env.js'
 import { falha, json } from '../../server/http.js'
 import { iguais } from '../../server/sessao.js'
-import { lerJsonTolerante, lerPedido, pagoEmDe, semColunaPagoEm, semDadosPessoais } from '../../server/wiapy.js'
+import { ehEventoDeTeste, lerJsonTolerante, lerPedido, pagoEmDe, semColunaPagoEm, semDadosPessoais } from '../../server/wiapy.js'
 import { emailLigado, enviarEmailAcesso } from '../../server/email.js'
 
 export async function POST(req: Request): Promise<Response> {
@@ -20,6 +20,11 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (env('WEBHOOK_GUARDAR_BRUTO') === '1') await db().from('webhook_bruto').insert({ corpo: semDadosPessoais(corpo) })
 
+    // evento de teste da Wiapy: responde 200 (o teste dela passa) e não libera nada
+    if (ehEventoDeTeste(req.headers.get('user-agent'), corpo)) {
+      await db().from('eventos').insert({ email: null, tipo: 'webhook.ignorado', dados: { motivo: 'evento de teste da Wiapy' } })
+      return json({ ok: true, ignorado: 'teste' })
+    }
     const p = lerPedido(corpo)
     if (p.tipo !== 'pagamento') return json({ ok: true, ignorado: p.tipo })
     if (!p.email || !p.status) {
