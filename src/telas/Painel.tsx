@@ -41,7 +41,7 @@ export const EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'etiquetas', 'conta
 /** produtos comprados à parte (mostrados em "Minhas compras") */
 const COMPRAS_EXTRAS: ProdutoId[] = ['recheios', 'encomenda', 'primeira']
 
-/** o que aparece na Seleção especial do Início: os extras à venda que ela ainda não comprou (+ Videoaulas).
+/** o que aparece na Coleção especial do Início: os extras à venda que ela ainda não comprou (+ Videoaulas).
  *  É a mesma lista que a bolinha da barra de baixo conta. */
 export function ofertasSelecao(eu: Eu): ProdutoId[] {
   const extras = EXTRAS.filter((p) => ofertaDisponivel(eu, p))
@@ -53,7 +53,7 @@ export const ID_SELECAO = 'selecao-especial'
 
 /** Início = área de membros: o que ela comprou primeiro, extras com preço embaixo. Uma tela só. */
 export function Painel() {
-  const { eu, estado, ir, evento, recarregar, sair } = useApp()
+  const { eu, estado, ir, evento, recarregar } = useApp()
   const temReceitas = eu.acesso.materiais.includes('ebook')
   const proxReceita = RECEITAS.find((r) => !estado.receitas.includes(r.n)) ?? RECEITAS[0]
   // compras feitas depois do kit (bump dos Recheios, Encomenda, Primeira Encomenda) ficam em "Minhas compras", logo abaixo das receitas
@@ -180,7 +180,7 @@ export function Painel() {
       {/* 4. extras: seção separada, mesma cara dos outros; o toque leva à página de compra (pedido do Levi) */}
       {(extras.length > 0 || mostrarOfertaVideo) && (
         <div className="card extras-card" id={ID_SELECAO}>
-          <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Seleção especial</span>
+          <span className="selo-extras"><b className="estrela" aria-hidden="true">★</b> Coleção especial</span>
           <h3>Mais materiais da Fábrica</h3>
           <p className="sub-extras">Para quem quer ir além das receitas. <span className="dinheiro-pulsa" aria-hidden="true">💰</span></p>
           {/* presente de 30% por 3 h (primeira compra ou popup): vale nas Aulas, nas Etiquetas e no Conta Feita */}
@@ -223,7 +223,6 @@ export function Painel() {
         <p className="sub" style={{ fontSize: 15, textAlign: 'center', margin: 0 }}>Precisa de ajuda?</p>
         <Suporte />
       </div>
-      <button className="link" onClick={sair}>Sair</button>
       <Instalar />
     </>
   )

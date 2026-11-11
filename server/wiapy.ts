@@ -188,3 +188,14 @@ export function pagoEmDe(p: Pick<Pedido, 'status' | 'aprovadoEm'>, jaGravado: st
 /** o banco ainda não tem a coluna pago_em (migração não rodada) */
 export const semColunaPagoEm = (e: { code?: string; message?: string } | null | undefined) =>
   !!e && (e.code === 'PGRST204' || e.code === '42703' || /pago_em/.test(e.message ?? ''))
+
+/**
+ * Evento de teste da Wiapy (botão "testar webhook" no painel dela): chega com o user-agent "Wiapy Evento de Teste"
+ * e/ou o produto "Produto de Teste Wiapy", e vinha liberando kit e recheios para o e-mail de teste. Nunca grava compra.
+ */
+export function ehEventoDeTeste(userAgent: string | null | undefined, corpo: unknown): boolean {
+  if (/wiapy\s+evento\s+de\s+teste/i.test(userAgent ?? '')) return true
+  const b = obj(corpo)
+  const titulos = [...lista(b.products).map((p) => txt(obj(p).title)), txt(obj(b.checkout).title)]
+  return titulos.some((t) => /produto\s+de\s+teste\s+wiapy/i.test(t))
+}
