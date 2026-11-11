@@ -77,6 +77,13 @@ describe('o caminho: boas-vindas → nome → Início, sem perguntas e sem confe
     expect(h).toContain('>Entrar na minha cozinha</button>')
     expect(h).not.toContain('Continuar')
   })
+  it('nome vazio não avança: botão desligado, aviso e seguir sai sem gravar', () => {
+    expect(corpo('Nome')).toContain('if (!nome) return')
+    expect(corpo('Nome')).not.toContain("'Confeiteira'")
+    const h = render(Nome)
+    expect(h).toMatch(/disabled=""[^>]*>Entrar na minha cozinha<\/button>/)
+    expect(h).toContain('Escreva o seu nome para continuar.')
+  })
   it('nenhuma tela pede para escolher confeiteira/avatar', () => {
     expect(src).not.toMatch(/export function Avatar|escolha a sua confeiteira|AVATARES/)
     expect(readFileSync('src/App.tsx', 'utf8')).not.toMatch(/<Avatar|'avatar'/)

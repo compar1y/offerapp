@@ -24,9 +24,11 @@ export function Boas() {
 export function Nome() {
   const { eu, trocar, salvarPerfil, evento } = useApp()
   const [apelido, setApelido] = useState(eu.apelido ?? '')
+  const nome = apelido.trim()
   const seguir = () => {
-    // a confeiteira não é mais escolhida: vai a padrão
-    salvarPerfil({ apelido: apelido.trim() || 'Confeiteira', avatar: eu.avatar ?? AVATAR_PADRAO })
+    // nome vazio não avança; a confeiteira não é mais escolhida: vai a padrão
+    if (!nome) return
+    salvarPerfil({ apelido: nome, avatar: eu.avatar ?? AVATAR_PADRAO })
     evento('onboarding.passo', { passo: 'nome' })
     trocar({ t: 'painel' })
   }
@@ -37,7 +39,8 @@ export function Nome() {
       <p className="sub">É assim que o app vai falar com você.</p>
       <input id="apelido" type="text" maxLength={24} autoComplete="given-name" placeholder="Ex.: Cida" value={apelido}
         onChange={(e) => setApelido(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') seguir() }} />
-      <button className="btn" onClick={seguir}>Entrar na minha cozinha</button>
+      {!nome && <p className="sub" aria-live="polite">Escreva o seu nome para continuar.</p>}
+      <button className="btn" onClick={seguir} disabled={!nome}>Entrar na minha cozinha</button>
     </div>
   )
 }
